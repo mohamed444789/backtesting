@@ -64,3 +64,184 @@ header button:not(.theme-toggle){margin-left:0}
 .theme-light .fullscreen-controls{background:#f1f5f9;border-color:#cbd5e1}
 .theme-light .fullscreen-controls label{color:#475569}
 @media(max-width:600px){header{gap:7px;padding:0 10px}.theme-toggle{font-size:10px;padding:6px}.theme-chart-toggle{font-size:9px;padding:6px}}
+
+
+/* Responsive terminal improvements */
+@media(max-width:1050px){
+  main{margin-left:65px}
+}
+@media(max-width:600px){
+  main{margin-left:65px}
+}
+
+/* Readable typography and comfortable controls */
+body{font-size:14px}
+header{font-size:13px}
+.nav{font-size:13px}
+.heading p{font-size:14px;line-height:1.5}
+h3{font-size:15px}
+h3 small{font-size:11px}
+.primary,.secondary{font-size:13px;min-height:40px}
+.toolbar button,.toolbar select{font-size:12px;min-height:38px}
+.form label{font-size:12px}
+input,select,textarea{font-size:13px;min-height:40px}
+.notice{font-size:12px;line-height:1.6}
+.row{font-size:12px}
+.quick{font-size:13px}
+.quick small{font-size:11px}
+th{font-size:11px}
+td{font-size:12px}
+.stat>div{font-size:12px}
+.stat>small{font-size:11px}
+
+/* Fullscreen the complete trading workspace, including Buy/Sell */
+.fullscreen-terminal{
+  position:fixed!important;
+  inset:0!important;
+  z-index:1000!important;
+  width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  margin:0!important;
+  padding:14px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+  grid-template-columns:minmax(0,1fr) minmax(280px,340px)!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  gap:12px!important;
+  background:#0a1017!important;
+}
+.fullscreen-terminal>.chart-panel{
+  min-width:0;
+  min-height:0;
+  height:100%;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+}
+.fullscreen-terminal .chart-heading,
+.fullscreen-terminal .drawing-toolbar,
+.fullscreen-terminal .fullscreen-controls{
+  flex-shrink:0;
+}
+.fullscreen-terminal .chart{
+  flex:1 1 auto;
+  height:auto;
+  min-height:320px;
+}
+.fullscreen-terminal>.form{
+  min-width:0;
+  min-height:0;
+  height:100%;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.fullscreen-terminal .mini{flex-shrink:0}
+.theme-light .fullscreen-terminal{background:#e2e8f0!important}
+.theme-light .fullscreen-terminal>.panel{background:#f8fafc}
+
+/* Keep chart and order ticket usable on smaller screens */
+@media(max-width:700px){
+  .fullscreen-terminal{
+    padding:8px!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,1fr) minmax(170px,38dvh)!important;
+    gap:8px!important;
+  }
+  .fullscreen-terminal>.chart-panel{min-height:0}
+  .fullscreen-terminal .chart{min-height:200px}
+  .fullscreen-terminal>.form{
+    height:auto;
+    max-height:38dvh;
+    padding:12px;
+  }
+}
+
+/* Wide-monitor layout: use available space instead of centering a narrow page */
+.content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 24px clamp(16px, 1.5vw, 36px);
+}
+
+/* Give the chart most of the terminal width; keep the order ticket compact */
+.terminal {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: 16px;
+}
+
+.chart-panel {
+  min-width: 0;
+}
+
+.chart {
+  height: clamp(420px, 55vh, 850px);
+}
+
+/* Fullscreen trading workspace fills the viewport */
+.fullscreen-terminal {
+  inset: 0 !important;
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  padding: 12px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px) !important;
+  gap: 12px !important;
+}
+
+.fullscreen-terminal > .chart-panel,
+.fullscreen-terminal > .form {
+  width: 100%;
+  min-width: 0;
+}
+
+.fullscreen-terminal .chart {
+  height: auto;
+  min-height: 320px;
+  flex: 1 1 auto;
+}
+
+/* Medium screens: retain a usable chart and order panel */
+@media (max-width: 1050px) {
+  .content {
+    padding: 20px 14px;
+  }
+
+  .terminal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chart {
+    height: clamp(360px, 55vh, 650px);
+  }
+}
+
+/* Small screens: stack controls instead of squeezing them */
+@media (max-width: 700px) {
+  .content {
+    padding: 14px 8px;
+  }
+
+  .fullscreen-terminal {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) minmax(170px, 38dvh) !important;
+  }
+}
+
+/* Keep replay controls consistently left-aligned */
+.toolbar,
+.fullscreen-controls {
+  justify-content: flex-start !important;
+  align-items: center;
+}
+
+.toolbar > b {
+  margin-right: 0;
+}
+
+.fullscreen-controls {
+  width: 100%;
+}
+
