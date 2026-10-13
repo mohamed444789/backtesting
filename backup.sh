@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail;cd "$(dirname "$0")";mkdir -p backups;stamp=$(date -u +%Y%m%dT%H%M%SZ);tmp=$(mktemp -d);trap 'rm -rf "$tmp"' EXIT
+docker compose exec -T atlas node -e "const D=require('better-sqlite3');const d=new D('/data/atlas.sqlite',{readonly:true});d.backup('/tmp/atlas.sqlite').then(()=>d.close()).catch(e=>{console.error(e);process.exit(1)})";docker cp atlas-forex-replay:/tmp/atlas.sqlite "$tmp/atlas.sqlite";docker cp atlas-forex-replay:/data/market "$tmp/market" 2>/dev/null||true;docker cp atlas-forex-replay:/data/screenshots "$tmp/screenshots" 2>/dev/null||true;tar -czf "backups/atlas-$stamp.tar.gz" -C "$tmp" .;echo "Created backups/atlas-$stamp.tar.gz"

@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail;cd "$(dirname "$0")";command -v docker >/dev/null||{ echo 'Docker required';exit 2; };port=$(sed -n 's/^ATLAS_PORT=//p' .env 2>/dev/null|tail -1);port=${port:-8080};curl -fsS "http://127.0.0.1:$port/api/health"|grep -q '"ok":true';curl -fsS "http://127.0.0.1:$port/api/instruments"|grep -q EURUSD;curl -fsS "http://127.0.0.1:$port/"|grep -qi Atlas;echo 'PASS: health, instrument API, frontend HTTP.'

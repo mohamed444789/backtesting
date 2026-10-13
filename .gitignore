@@ -1,0 +1,29 @@
+node_modules/
+**/dist/
+data/
+backups/
+logs/
+.env
+*.sqlite
+
+# Dependencies and build output
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local databases and downloaded market data
+*.db
+*.sqlite
+*.sqlite3
+data/
+backups/
+
+# Logs and archives
+*.log
+*.zip

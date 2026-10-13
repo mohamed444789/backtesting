@@ -1,0 +1,6 @@
+export type Candle={time:number;open:number;high:number;low:number;close:number;volume:number};
+export function valid(c:Candle){return Number.isFinite(c.time)&&c.time>0&&[c.open,c.high,c.low,c.close].every(x=>Number.isFinite(x)&&x>0)&&c.high>=Math.max(c.open,c.close,c.low)&&c.low<=Math.min(c.open,c.close,c.high)}
+export function aggregate(cs:Candle[],m:number):Candle[]{const out=new Map<number,Candle>();for(const c of cs){const t=Math.floor(c.time/(m*60))*(m*60),a=out.get(t);if(!a)out.set(t,{...c,time:t});else{a.high=Math.max(a.high,c.high);a.low=Math.min(a.low,c.low);a.close=c.close;a.volume+=c.volume}}return [...out.values()].sort((a,b)=>a.time-b.time)}
+export function exitHit(c:Candle,sl:number|null,tp:number|null,policy='conservative'){const s=sl!==null&&c.low<=sl&&c.high>=sl,t=tp!==null&&c.low<=tp&&c.high>=tp;if(s&&t)return policy==='target-first'?'target':'stop';return s?'stop':t?'target':null}
+export function pnl(side:string,entry:number,exit:number,lots:number,units=100000){return(side==='buy'?exit-entry:entry-exit)*lots*units}
+export function sizeForRisk(balance:number,pct:number,entry:number,stop:number,units=100000){if(balance<=0||pct<=0||entry<=0||stop<=0||entry===stop)throw Error('Invalid risk inputs');return balance*pct/100/(Math.abs(entry-stop)*units)}

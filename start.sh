@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail;cd "$(dirname "$0")";command -v docker >/dev/null||{ echo 'Docker required';exit 2; };docker info >/dev/null 2>&1||{ echo 'Start Docker first';exit 2; };docker compose up -d atlas;port=$(sed -n 's/^ATLAS_PORT=//p' .env 2>/dev/null|tail -1);port=${port:-8080};for i in $(seq 1 30);do if curl -fsS "http://127.0.0.1:$port/api/health" >/dev/null 2>&1;then echo "Ready: http://localhost:$port";exit 0;fi;sleep 2;done;docker compose logs --tail=80 atlas;exit 1
