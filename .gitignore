@@ -27,3 +27,6 @@ backups/
 # Logs and archives
 *.log
 *.zip
+
+# TypeScript build cache
+*.tsbuildinfo
