@@ -18,6 +18,6 @@ PYPORT
 fi
 printf 'ATLAS_PORT=%s
 ' "$port" > .env
-echo 'Building Atlas Forex Replay…';docker compose build atlas;docker compose up -d atlas
+echo 'Building MH Forex Replay…';docker compose build atlas;docker compose up -d atlas
 for i in $(seq 1 60); do if curl -fsS "http://127.0.0.1:$port/api/health" >/dev/null 2>&1; then echo "Ready: http://localhost:$port";exit 0;fi;sleep 2;done
 docker compose logs --tail=100 atlas >&2;echo 'ERROR: health check timed out' >&2;exit 1
