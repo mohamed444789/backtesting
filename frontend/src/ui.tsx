@@ -9,7 +9,7 @@ const onDrawingDoubleClick=()=>{window.setTimeout(()=>{try{const selected=manage
 
 // Drag the selected position's entry line vertically without changing its width.
 let entryDrag: {id:string; pointerId:number}|null=null;
-const paneRect=()=>chartEl.current?.querySelector('canvas')?.getBoundingClientRect()??chartEl.current?.getBoundingClientRect()??null;
+const paneRect=()=>chartEl.current?.getBoundingClientRect()??null;
 const onEntryPointerDown=(event:PointerEvent)=>{
   if(event.button!==0||!chartEl.current||!series.current)return;
   try{
