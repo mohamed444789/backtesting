@@ -115,9 +115,13 @@ for(const t of trades.filter((x:any)=>x.status==='open')){
 }
 let drag:any=null;
 const stopEvent=(e:PointerEvent)=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()};
+const getPricePaneRect=()=>{
+  const paneEl=series.current?.getPane?.().getHTMLElement?.() as HTMLElement|undefined;
+  return paneEl?.getBoundingClientRect()??container.getBoundingClientRect();
+};
 const findNearestLine=(clientY:number,fields:string[])=>{
-  const rect=container.getBoundingClientRect(),y=clientY-rect.top;
-  let nearest:any=null,distance=9;
+  const paneRect=getPricePaneRect(),y=clientY-paneRect.top;
+  let nearest:any=null,distance=13;
   for(const item of positionLines.current){
     if(!fields.includes(item.field))continue;
     const coordinate=series.current.priceToCoordinate(item.price);
@@ -153,8 +157,8 @@ const onPointerDown=(e:PointerEvent)=>{
 };
 const onPointerMove=(e:PointerEvent)=>{
   if(drag&&drag.pointerId===e.pointerId){
-    const rect=container.getBoundingClientRect();
-    const coordinate=series.current.coordinateToPrice(e.clientY-rect.top);
+    const paneRect=getPricePaneRect();
+    const coordinate=series.current.coordinateToPrice(e.clientY-paneRect.top);
     if(coordinate!==null&&coordinate!==undefined&&Number.isFinite(Number(coordinate))&&Number(coordinate)>0){
       const next=roundPrice(Number(coordinate),session?.symbol);
       drag.nextPrice=next;
