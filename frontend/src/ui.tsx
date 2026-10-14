@@ -1,4 +1,4 @@
-import React,{useEffect,useRef,useState}from'react';import{calculateEma}from'./drawings/ema';import{createChart,CandlestickSeries,LineSeries,ColorType,TickMarkType,LineStyle}from'lightweight-charts';import{DrawingManager}from'lightweight-charts-drawing';import{Activity,BarChart3,BookOpen,ChartNoAxesCombined,Database,Download,History,LayoutDashboard,Play,Pause,Plus,RefreshCw,Settings as SettingsIcon,ShieldCheck,Maximize2,Minimize2,Pencil,Minus,Trash2,LineChart,TrendingDown,TrendingUp,Wallet,GitBranch,Ruler,CalendarRange,Square,Grip}from'lucide-react';const api=async(p:string,i?:RequestInit)=>{const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json',...(i?.headers||{})},...i});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||r.statusText);return d};const fmt=(n:number)=>new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n);const priceDigits=(symbol?:string)=>symbol==='XAUUSD'?2:symbol?.endsWith('JPY')?3:5;const defaultExitDistance=(symbol?:string)=>symbol==='XAUUSD'?1:symbol?.endsWith('JPY')?0.1:0.001;const priceText=(value:number,symbol?:string)=>Number(value).toFixed(priceDigits(symbol));const roundPrice=(value:number,symbol?:string)=>Number(Number(value).toFixed(priceDigits(symbol)));const formatBerlinTime=(seconds:number)=>new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(new Date(seconds*1000));const formatBerlinAxisTime=(time:any,tickMarkType:any)=>{if(typeof time!=='number')return null;const d=new Date(time*1000);const options:any={timeZone:'Europe/Berlin',hourCycle:'h23'};switch(tickMarkType){case TickMarkType.Year:options.year='numeric';break;case TickMarkType.Month:options.month='short';break;case TickMarkType.DayOfMonth:options.day='2-digit';break;case TickMarkType.Time:options.hour='2-digit';options.minute='2-digit';break;case TickMarkType.TimeWithSeconds:options.hour='2-digit';options.minute='2-digit';options.second='2-digit';break;default:return null}return new Intl.DateTimeFormat('de-DE',options).format(d)};export default function App(){const[page,P]=useState('Dashboard'),[symbols,S]=useState<any[]>([]),[symbol,Y]=useState('EURUSD'),[sessions,SS]=useState<any[]>([]),[session,SE]=useState<any>(null),[candles,C]=useState<any[]>([]),[trades,T]=useState<any[]>([]),[analytics,A]=useState<any>({}),[toast,N]=useState(''),[busy,B]=useState(false),[tf,F]=useState(1),[balance,BL]=useState(10000),[start,ST]=useState('2024-01-01'),[end,EN]=useState('2024-01-31'),[side,SD]=useState('buy'),[type,TY]=useState('market'),[lots,L]=useState(.1),[sl,SL]=useState(''),[tp,TP]=useState(''),[price,PR]=useState(''),[editing,ED]=useState<any>(null),[notes,NT]=useState(''),[strategy,STG]=useState(''),[downloads,D]=useState<any[]>([]),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(1),[drawMode,setDrawMode]=useState('none'),[emaVisible,setEmaVisible]=useState(true),[fullscreen,setFullscreen]=useState(false),[orderTicketOpen,setOrderTicketOpen]=useState(false),[theme,setTheme]=useState<'dark'|'light'>(()=>(localStorage.getItem('atlas-theme') as 'dark'|'light')||'dark'),[replayEnd,RE]=useState('2024-01-31'),[sessionName,SN]=useState(''),[drawingEditor,setDrawingEditor]=useState<any>(null);const [drawingPanelPosition,setDrawingPanelPosition]=useState({x:14,y:14}),drawingPanelDrag=useRef<any>(null);const chartEl=useRef<HTMLDivElement>(null),chart=useRef<any>(),series=useRef<any>(),emaSeries=useRef<any>(),lastDataCount=useRef(0),chartDataRef=useRef<any[]>([]),drawModeRef=useRef('none'),drawingRefs=useRef<any[]>([]),trendStart=useRef<any>(null),drawingManager=useRef<any>(null),stepRef=useRef<any>(),busyRef=useRef(false);drawModeRef.current=drawMode;useEffect(()=>{if(!drawingEditor)return;const closeOnOutside=(e:PointerEvent)=>{const target=e.target as HTMLElement|null;if(target?.closest?.('.drawing-settings-modal, .order-ticket-panel, .order-tools-rail'))return;setDrawingEditor(null)};document.addEventListener('pointerdown',closeOnOutside,true);return()=>document.removeEventListener('pointerdown',closeOnOutside,true)},[drawingEditor]);const startDrawingPanelDrag=(e:React.PointerEvent<HTMLDivElement>)=>{if(e.button!==0)return;e.preventDefault();drawingPanelDrag.current={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,originX:drawingPanelPosition.x,originY:drawingPanelPosition.y};e.currentTarget.setPointerCapture(e.pointerId)};const moveDrawingPanelDrag=(e:React.PointerEvent<HTMLDivElement>)=>{const drag=drawingPanelDrag.current;if(!drag||drag.pointerId!==e.pointerId)return;const workspace=e.currentTarget.closest('.chart-workspace') as HTMLElement|null,bar=e.currentTarget.closest('.floating-drawing-tools') as HTMLElement|null;if(!workspace||!bar)return;const maxX=Math.max(0,workspace.clientWidth-bar.offsetWidth),maxY=Math.max(0,workspace.clientHeight-bar.offsetHeight);setDrawingPanelPosition({x:Math.max(0,Math.min(maxX,drag.originX+e.clientX-drag.startX)),y:Math.max(0,Math.min(maxY,drag.originY+e.clientY-drag.startY))})};const endDrawingPanelDrag=(e:React.PointerEvent<HTMLDivElement>)=>{if(drawingPanelDrag.current?.pointerId!==e.pointerId)return;drawingPanelDrag.current=null;if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)};const note=(s:string)=>{N(s);setTimeout(()=>N(''),4000)};const refresh=async()=>{try{const[a,b,c,d,e]=await Promise.all([api('/instruments'),api('/sessions'),api('/trades'),api('/analytics'),api('/downloads')]);S(a);SS(b);T(c);A(d);D(e)}catch(e:any){note(e.message)}};useEffect(()=>{refresh()},[]);const open=async(id:number)=>{try{let d=await api(`/sessions/${id}/visible`);if(!Array.isArray(d.candles)||d.candles.length===0){const first=await api(`/sessions/${id}/step`,{method:'POST',body:'{"count":1}'});d=await api(`/sessions/${id}/visible`);if(first.done&&(!d.candles||!d.candles.length))note('No candles available at this replay date. Check Historical Data coverage.')}SE(d.session);C(Array.isArray(d.candles)?d.candles:[]);F(d.session.timeframe);T(await api(`/sessions/${id}/trades`));P('Replay Terminal')}catch(e:any){note(e.message)}};useEffect(()=>{if(page!=='Replay Terminal'||!chartEl.current)return;const c=createChart(chartEl.current,{autoSize:true,layout:{background:{type:ColorType.Solid,color:theme==='dark'?'#0b1119':'#ffffff'},textColor:theme==='dark'?'#94a3b8':'#475569'},grid:{vertLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'},horzLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'}},crosshair:{mode:0,vertLine:{labelVisible:true},horzLine:{labelVisible:true}},rightPriceScale:{visible:true,borderVisible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',autoScale:true,minimumWidth:80,ticksVisible:true,scaleMargins:{top:0.08,bottom:0.08}},timeScale:{timeVisible:true,visible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',tickMarkFormatter:(time:any,tickMarkType:any)=>formatBerlinAxisTime(time,tickMarkType)},localization:{locale:'de-DE',timeFormatter:(time:any)=>typeof time==='number'?formatBerlinTime(time):String(time)}});series.current=c.addSeries(CandlestickSeries,{upColor:'#26c99a',downColor:'#ef666b',wickUpColor:'#26c99a',wickDownColor:'#ef666b',borderVisible:false,priceLineVisible:true,lastValueVisible:true,priceFormat:{type:'price',precision:session?.symbol==='XAUUSD'?2:session?.symbol?.endsWith('JPY')?3:5,minMove:session?.symbol==='XAUUSD'?0.01:session?.symbol?.endsWith('JPY')?0.001:0.00001}});chart.current=c;emaSeries.current=c.addSeries(LineSeries,{color:'#60a5fa',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,title:'EMA 200',visible:emaVisible});lastDataCount.current=0;chartDataRef.current=[];const manager=new DrawingManager(c,series.current,{magnet:'weak'});
+import React,{useEffect,useRef,useState}from'react';import{calculateEma}from'./drawings/ema';import{createChart,CandlestickSeries,LineSeries,ColorType,TickMarkType,LineStyle}from'lightweight-charts';import{DrawingManager}from'lightweight-charts-drawing';import{Activity,BarChart3,BookOpen,ChartNoAxesCombined,Database,Download,History,LayoutDashboard,Play,Pause,Plus,RefreshCw,Settings as SettingsIcon,ShieldCheck,Maximize2,Minimize2,Pencil,Minus,Trash2,LineChart,TrendingDown,TrendingUp,Wallet,GitBranch,Ruler,CalendarRange,Square,Grip}from'lucide-react';const api=async(p:string,i?:RequestInit)=>{const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json',...(i?.headers||{})},...i});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||r.statusText);return d};const fmt=(n:number)=>new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n);const priceDigits=(symbol?:string)=>symbol==='XAUUSD'?2:symbol?.endsWith('JPY')?3:5;const defaultExitDistance=(symbol?:string)=>symbol==='XAUUSD'?1:symbol?.endsWith('JPY')?0.1:0.001;const priceText=(value:number,symbol?:string)=>Number(value).toFixed(priceDigits(symbol));const roundPrice=(value:number,symbol?:string)=>Number(Number(value).toFixed(priceDigits(symbol)));const formatBerlinTime=(seconds:number)=>new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(new Date(seconds*1000));const formatBerlinAxisTime=(time:any,tickMarkType:any)=>{if(typeof time!=='number')return null;const d=new Date(time*1000);const options:any={timeZone:'Europe/Berlin',hourCycle:'h23'};switch(tickMarkType){case TickMarkType.Year:options.year='numeric';break;case TickMarkType.Month:options.month='short';break;case TickMarkType.DayOfMonth:options.day='2-digit';break;case TickMarkType.Time:options.hour='2-digit';options.minute='2-digit';break;case TickMarkType.TimeWithSeconds:options.hour='2-digit';options.minute='2-digit';options.second='2-digit';break;default:return null}return new Intl.DateTimeFormat('de-DE',options).format(d)};export default function App(){const[page,P]=useState('Dashboard'),[symbols,S]=useState<any[]>([]),[symbol,Y]=useState('EURUSD'),[sessions,SS]=useState<any[]>([]),[session,SE]=useState<any>(null),[candles,C]=useState<any[]>([]),[trades,T]=useState<any[]>([]),[analytics,A]=useState<any>({}),[toast,N]=useState(''),[busy,B]=useState(false),[tf,F]=useState(1),[balance,BL]=useState(10000),[start,ST]=useState('2024-01-01'),[end,EN]=useState('2024-01-31'),[side,SD]=useState('buy'),[type,TY]=useState('market'),[lots,L]=useState(.1),[sl,SL]=useState(''),[tp,TP]=useState(''),[price,PR]=useState(''),[editing,ED]=useState<any>(null),[notes,NT]=useState(''),[strategy,STG]=useState(''),[downloads,D]=useState<any[]>([]),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(1),[drawMode,setDrawMode]=useState('none'),[emaVisible,setEmaVisible]=useState(true),[fullscreen,setFullscreen]=useState(false),[orderTicketOpen,setOrderTicketOpen]=useState(false),[theme,setTheme]=useState<'dark'|'light'>(()=>(localStorage.getItem('atlas-theme') as 'dark'|'light')||'dark'),[replayEnd,RE]=useState('2024-01-31'),[sessionName,SN]=useState(''),[drawingEditor,setDrawingEditor]=useState<any>(null);const [drawingPanelPosition,setDrawingPanelPosition]=useState({x:14,y:14}),drawingPanelDrag=useRef<any>(null);const chartEl=useRef<HTMLDivElement>(null),chart=useRef<any>(),series=useRef<any>(),emaSeries=useRef<any>(),lastDataCount=useRef(0),chartDataRef=useRef<any[]>([]),drawModeRef=useRef('none'),drawingRefs=useRef<any[]>([]),trendStart=useRef<any>(null),drawingManager=useRef<any>(null),stepRef=useRef<any>(),busyRef=useRef(false),activeTradeId=useRef<number|null>(null);drawModeRef.current=drawMode;useEffect(()=>{if(!drawingEditor)return;const closeOnOutside=(e:PointerEvent)=>{const target=e.target as HTMLElement|null;if(target?.closest?.('.drawing-settings-modal, .order-ticket-panel, .order-tools-rail'))return;setDrawingEditor(null)};document.addEventListener('pointerdown',closeOnOutside,true);return()=>document.removeEventListener('pointerdown',closeOnOutside,true)},[drawingEditor]);const startDrawingPanelDrag=(e:React.PointerEvent<HTMLDivElement>)=>{if(e.button!==0)return;e.preventDefault();drawingPanelDrag.current={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,originX:drawingPanelPosition.x,originY:drawingPanelPosition.y};e.currentTarget.setPointerCapture(e.pointerId)};const moveDrawingPanelDrag=(e:React.PointerEvent<HTMLDivElement>)=>{const drag=drawingPanelDrag.current;if(!drag||drag.pointerId!==e.pointerId)return;const workspace=e.currentTarget.closest('.chart-workspace') as HTMLElement|null,bar=e.currentTarget.closest('.floating-drawing-tools') as HTMLElement|null;if(!workspace||!bar)return;const maxX=Math.max(0,workspace.clientWidth-bar.offsetWidth),maxY=Math.max(0,workspace.clientHeight-bar.offsetHeight);setDrawingPanelPosition({x:Math.max(0,Math.min(maxX,drag.originX+e.clientX-drag.startX)),y:Math.max(0,Math.min(maxY,drag.originY+e.clientY-drag.startY))})};const endDrawingPanelDrag=(e:React.PointerEvent<HTMLDivElement>)=>{if(drawingPanelDrag.current?.pointerId!==e.pointerId)return;drawingPanelDrag.current=null;if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)};const note=(s:string)=>{N(s);setTimeout(()=>N(''),4000)};const refresh=async()=>{try{const[a,b,c,d,e]=await Promise.all([api('/instruments'),api('/sessions'),api('/trades'),api('/analytics'),api('/downloads')]);S(a);SS(b);T(c);A(d);D(e)}catch(e:any){note(e.message)}};useEffect(()=>{refresh()},[]);const open=async(id:number)=>{try{let d=await api(`/sessions/${id}/visible`);if(!Array.isArray(d.candles)||d.candles.length===0){const first=await api(`/sessions/${id}/step`,{method:'POST',body:'{"count":1}'});d=await api(`/sessions/${id}/visible`);if(first.done&&(!d.candles||!d.candles.length))note('No candles available at this replay date. Check Historical Data coverage.')}SE(d.session);C(Array.isArray(d.candles)?d.candles:[]);F(d.session.timeframe);T(await api(`/sessions/${id}/trades`));P('Replay Terminal')}catch(e:any){note(e.message)}};useEffect(()=>{if(page!=='Replay Terminal'||!chartEl.current)return;const c=createChart(chartEl.current,{autoSize:true,layout:{background:{type:ColorType.Solid,color:theme==='dark'?'#0b1119':'#ffffff'},textColor:theme==='dark'?'#94a3b8':'#475569'},grid:{vertLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'},horzLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'}},crosshair:{mode:0,vertLine:{labelVisible:true},horzLine:{labelVisible:true}},rightPriceScale:{visible:true,borderVisible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',autoScale:true,minimumWidth:80,ticksVisible:true,scaleMargins:{top:0.08,bottom:0.08}},timeScale:{timeVisible:true,visible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',tickMarkFormatter:(time:any,tickMarkType:any)=>formatBerlinAxisTime(time,tickMarkType)},localization:{locale:'de-DE',timeFormatter:(time:any)=>typeof time==='number'?formatBerlinTime(time):String(time)}});series.current=c.addSeries(CandlestickSeries,{upColor:'#26c99a',downColor:'#ef666b',wickUpColor:'#26c99a',wickDownColor:'#ef666b',borderVisible:false,priceLineVisible:true,lastValueVisible:true,priceFormat:{type:'price',precision:session?.symbol==='XAUUSD'?2:session?.symbol?.endsWith('JPY')?3:5,minMove:session?.symbol==='XAUUSD'?0.01:session?.symbol?.endsWith('JPY')?0.001:0.00001}});chart.current=c;emaSeries.current=c.addSeries(LineSeries,{color:'#60a5fa',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,title:'EMA 200',visible:emaVisible});lastDataCount.current=0;chartDataRef.current=[];const manager=new DrawingManager(c,series.current,{magnet:'weak'});
 drawingManager.current=manager;
 // Weak magnet snaps dragged prices to candle OHLC. Disable it only for a position's
 // left entry anchor so that anchor can follow the cursor vertically at arbitrary prices.
@@ -99,14 +99,15 @@ const container=chartEl.current;
 for(const item of positionLines.current){try{series.current.removePriceLine(item.line??item)}catch{}}
 positionLines.current=[];
 for(const t of trades.filter((x:any)=>x.status==='open')){
-  const entry=Number(t.entry),distance=defaultExitDistance(t.symbol||session?.symbol);
-  for(const [field,color,title] of [['entry','#38bdf8',`${t.side==='buy'?'LONG':'SHORT'} entry`],['sl','#ef4444','SL'],['tp','#22c55e','TP']] as any){
+  const entry=Number(t.entry),distance=defaultExitDistance(t.symbol||session?.symbol),direction=t.side==='buy'?'LONG':'SHORT';
+  for(const [field,color,label] of [['entry','#38bdf8','ENTRY'],['sl','#ef4444','SL'],['tp','#22c55e','TP']] as any){
     const hasValue=t[field]!=null&&Number.isFinite(Number(t[field]))&&Number(t[field])>0;
     const fallback=field==='sl'?(t.side==='buy'?entry-distance:entry+distance):field==='tp'?(t.side==='buy'?entry+distance:entry-distance):entry;
     const value=hasValue?Number(t[field]):fallback;
     if(Number.isFinite(value)&&value>0){
       try{
-        const line=series.current.createPriceLine({price:value,color,lineWidth:2,lineStyle:field!=='entry'&&!hasValue?LineStyle.Dashed:LineStyle.Solid,axisLabelVisible:true,title:`#${t.id} ${title}`});
+        const lineTitle=`#${t.id}_${direction}_${label}`;
+        const line=series.current.createPriceLine({price:value,color,lineWidth:2,lineStyle:field!=='entry'&&!hasValue?LineStyle.Dashed:LineStyle.Solid,axisLabelVisible:true,title:lineTitle});
         positionLines.current.push({line,tradeId:Number(t.id),field,price:value,draft:field!=='entry'&&!hasValue});
       }catch{}
     }
@@ -114,11 +115,11 @@ for(const t of trades.filter((x:any)=>x.status==='open')){
 }
 let drag:any=null;
 const stopEvent=(e:PointerEvent)=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()};
-const findDraggableLine=(clientY:number)=>{
+const findNearestLine=(clientY:number,fields:string[])=>{
   const rect=container.getBoundingClientRect(),y=clientY-rect.top;
   let nearest:any=null,distance=9;
   for(const item of positionLines.current){
-    if(item.field!=='sl'&&item.field!=='tp')continue;
+    if(!fields.includes(item.field))continue;
     const coordinate=series.current.priceToCoordinate(item.price);
     if(coordinate===null||coordinate===undefined)continue;
     const delta=Math.abs(coordinate-y);
@@ -126,14 +127,28 @@ const findDraggableLine=(clientY:number)=>{
   }
   return nearest;
 };
+const findDraggableLine=(clientY:number)=>findNearestLine(clientY,['sl','tp']);
+const findTradeEntryLine=(clientY:number)=>findNearestLine(clientY,['entry']);
 const onPointerDown=(e:PointerEvent)=>{
   if(e.button!==0||(drawingManager.current&&drawingManager.current.tool()!==null))return;
   const item=findDraggableLine(e.clientY);
-  if(!item)return;
-  drag={item,pointerId:e.pointerId,originalPrice:item.price,nextPrice:item.price};
-  container.style.cursor='ns-resize';
-  try{container.setPointerCapture(e.pointerId)}catch{}
+  if(item){
+    drag={item,pointerId:e.pointerId,originalPrice:item.price,nextPrice:item.price};
+    container.style.cursor='ns-resize';
+    try{container.setPointerCapture(e.pointerId)}catch{}
+    stopEvent(e);
+    return;
+  }
+  const entryLine=findTradeEntryLine(e.clientY);
+  if(!entryLine)return;
+  const trade=trades.find((t:any)=>Number(t.id)===entryLine.tradeId&&t.status==='open');
+  if(!trade)return;
+  activeTradeId.current=entryLine.tradeId;
   stopEvent(e);
+  if(window.confirm(`Close trade #${trade.id} (${String(trade.side).toUpperCase()}) at the current replay price?`)){
+    activeTradeId.current=null;
+    void closeTrade(trade);
+  }
 };
 const onPointerMove=(e:PointerEvent)=>{
   if(drag&&drag.pointerId===e.pointerId){
@@ -149,7 +164,11 @@ const onPointerMove=(e:PointerEvent)=>{
     stopEvent(e);
     return;
   }
-  container.style.cursor=findDraggableLine(e.clientY)?'ns-resize':'';
+  if(drawingManager.current&&drawingManager.current.tool()!==null){activeTradeId.current=null;container.style.cursor='';return;}
+  const draggable=findDraggableLine(e.clientY);
+  const entryLine=findTradeEntryLine(e.clientY);
+  activeTradeId.current=entryLine?.tradeId??null;
+  container.style.cursor=draggable?'ns-resize':entryLine?'pointer':'';
 };
 const onPointerUp=async(e:PointerEvent)=>{
   if(!drag||drag.pointerId!==e.pointerId)return;
@@ -174,15 +193,31 @@ const onPointerCancel=(e:PointerEvent)=>{
   try{cancelled.item.line.applyOptions({price:cancelled.originalPrice});cancelled.item.price=cancelled.originalPrice}catch{}
   stopEvent(e);
 };
+const onKeyDown=(e:KeyboardEvent)=>{
+  if((e.key!=='Delete'&&e.key!=='Backspace')||e.repeat||activeTradeId.current===null)return;
+  const target=e.target as HTMLElement|null;
+  if(target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+  if(drawingManager.current&&drawingManager.current.tool()!==null)return;
+  const trade=trades.find((t:any)=>Number(t.id)===activeTradeId.current&&t.status==='open');
+  if(!trade){activeTradeId.current=null;return;}
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+  if(window.confirm(`Close trade #${trade.id} (${String(trade.side).toUpperCase()}) at the current replay price?`)){
+    activeTradeId.current=null;
+    void closeTrade(trade);
+  }
+};
 container.addEventListener('pointerdown',onPointerDown,true);
 container.addEventListener('pointermove',onPointerMove,true);
 container.addEventListener('pointerup',onPointerUp,true);
 container.addEventListener('pointercancel',onPointerCancel,true);
+window.addEventListener('keydown',onKeyDown,true);
 return()=>{
   container.removeEventListener('pointerdown',onPointerDown,true);
   container.removeEventListener('pointermove',onPointerMove,true);
   container.removeEventListener('pointerup',onPointerUp,true);
   container.removeEventListener('pointercancel',onPointerCancel,true);
+  window.removeEventListener('keydown',onKeyDown,true);
+  activeTradeId.current=null;
   container.style.cursor='';
   if(drag){try{drag.item.line.applyOptions({price:drag.originalPrice})}catch{}}
   for(const item of positionLines.current){try{series.current?.removePriceLine(item.line??item)}catch{}}
