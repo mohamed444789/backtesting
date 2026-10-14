@@ -23,7 +23,8 @@ const onPositionEntryPointerDown = (e: PointerEvent) => {
     const x0 = chart.current.timeScale().timeToCoordinate(d.points[0].time);
     const x1 = chart.current.timeScale().timeToCoordinate(d.points[1].time);
     if (yEntry == null || x0 == null || x1 == null) continue;
-    if (Math.abs(y - yEntry) <= 8 && x >= Math.min(x0, x1) - 2 && x <= Math.max(x0, x1) + 2) {
+    // Only intercept the left entry anchor. The right anchor should remain available for horizontal resizing.
+    if (Math.abs(x - x0) <= 16 && Math.abs(y - yEntry) <= 16) {
       entryDrag = { drawing: d, pointerId: e.pointerId };
       e.preventDefault();
       e.stopImmediatePropagation();
