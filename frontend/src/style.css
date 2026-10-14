@@ -491,3 +491,18 @@ td{font-size:12px}
   color: #334155;
   border-color: #cbd5e1;
 }
+
+
+/* Keep the saved-session selector readable in both replay control bars. */
+.toolbar .saved-session-select,
+.fullscreen-controls .saved-session-select {
+  min-width: 160px;
+  max-width: 240px;
+}
+@media (max-width: 700px) {
+  .toolbar .saved-session-select,
+  .fullscreen-controls .saved-session-select {
+    min-width: 125px;
+    max-width: 180px;
+  }
+}
