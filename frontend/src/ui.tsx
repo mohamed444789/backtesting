@@ -39,7 +39,7 @@ const onEntryPointerMove=(event:PointerEvent)=>{
   const points=[...d.points];
   points[0]={...points[0],price:Number(next)};
   const positionPoints=[points[0],points[1]] as typeof d.points;
-  manager.update({...d,points:positionPoints});
+  manager.update({...d,points:positionPoints} as any);
   event.preventDefault();
   event.stopImmediatePropagation();
   event.stopPropagation();
