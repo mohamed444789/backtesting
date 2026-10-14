@@ -133,6 +133,7 @@ const onPointerDown=(e:PointerEvent)=>{
   if(e.button!==0||(drawingManager.current&&drawingManager.current.tool()!==null))return;
   const item=findDraggableLine(e.clientY);
   if(item){
+    activeTradeId.current=null;
     drag={item,pointerId:e.pointerId,originalPrice:item.price,nextPrice:item.price};
     container.style.cursor='ns-resize';
     try{container.setPointerCapture(e.pointerId)}catch{}
@@ -167,7 +168,7 @@ const onPointerMove=(e:PointerEvent)=>{
   if(drawingManager.current&&drawingManager.current.tool()!==null){activeTradeId.current=null;container.style.cursor='';return;}
   const draggable=findDraggableLine(e.clientY);
   const entryLine=findTradeEntryLine(e.clientY);
-  activeTradeId.current=entryLine?.tradeId??null;
+  activeTradeId.current=draggable?null:(entryLine?.tradeId??null);
   container.style.cursor=draggable?'ns-resize':entryLine?'pointer':'';
 };
 const onPointerUp=async(e:PointerEvent)=>{
