@@ -36,7 +36,8 @@ const onEntryPointerMove=(event:PointerEvent)=>{
   if(!d||!d.points?.length)return;
   const points=[...d.points];
   points[0]={...points[0],price:Number(next)};
-  manager.update({...d,points});
+  // Keep the position drawing's discriminated tuple type intact.
+  manager.update({...d,points:points as typeof d.points});
   event.preventDefault();
   event.stopPropagation();
 };
