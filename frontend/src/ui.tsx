@@ -7,10 +7,9 @@ const defaultFibLevels=[{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'
 manager.on('change',()=>{if(!applyingFibDefaults){try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(d?.kind==='fib-retracement'){const levels=d.style?.levels;if(!Array.isArray(levels)||levels.length!==defaultFibLevels.length||defaultFibLevels.some((x,i)=>Number(levels[i]?.coeff)!==x.coeff)){applyingFibDefaults=true;manager.update({...d,style:{...d.style,levels:defaultFibLevels}});applyingFibDefaults=false}}}catch(e){applyingFibDefaults=false;console.warn('Could not apply Fibonacci defaults',e)}}try{localStorage.setItem(storageKey,manager.exportJSON())}catch(e){console.warn('Could not save chart drawings',e)}});
 const onDrawingDoubleClick=()=>{window.setTimeout(()=>{try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(!d||!['fib-retracement','long-position','short-position'].includes(d.kind))return;const entry=Number(d.points?.[0]?.price??0);const fallbackDistance=Math.abs(Number(d.points?.[1]?.price??entry)-entry)||0;const stopDistance=Number(d.style?.stopLevel??fallbackDistance);const targetDistance=Number(d.style?.profitLevel??fallbackDistance);const isLong=d.kind==='long-position';setDrawingEditor({id:d.id,kind:d.kind,entry,stop:isLong?entry-stopDistance:entry+stopDistance,target:isLong?entry+targetDistance:entry-targetDistance,levels:((()=>{try{if(Array.isArray(d.style?.levels)&&d.style.levels.length)return d.style.levels;const saved=localStorage.getItem('atlas-fib-default-levels');if(saved)return JSON.parse(saved)}catch(e){console.warn('Could not load Fibonacci defaults',e)}return [{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'#4caf50',visible:true},{coeff:.681,color:'#089981',visible:true},{coeff:1,color:'#808080',visible:true}]})()).map((level:any)=>({...level}))})}catch(e){console.warn('Could not open drawing settings',e)}},0)};
 
-// Make the entry-price line of a selected long/short-position draggable.
-// The drawing library exposes the entry as points[0], but does not consistently
-// start a drag when the pointer lands on the horizontal entry line itself.
+// Drag the selected position's entry line vertically without changing its width.
 let entryDrag: {id:string; pointerId:number}|null=null;
+const paneRect=()=>chartEl.current?.querySelector('canvas')?.getBoundingClientRect()??chartEl.current?.getBoundingClientRect()??null;
 const onEntryPointerDown=(event:PointerEvent)=>{
   if(event.button!==0||!chartEl.current||!series.current)return;
   try{
@@ -20,28 +19,29 @@ const onEntryPointerDown=(event:PointerEvent)=>{
     if(!d||!['long-position','short-position'].includes(d.kind))return;
     const entry=Number(d.points?.[0]?.price);
     if(!Number.isFinite(entry))return;
+    const pane=paneRect();
     const y=series.current.priceToCoordinate(entry);
-    if(y==null||Math.abs(event.clientY-chartEl.current.getBoundingClientRect().top-y)>9)return;
+    if(!pane||y==null||Math.abs(event.clientY-(pane.top+y))>18)return;
     entryDrag={id:String(d.id),pointerId:event.pointerId};
     event.preventDefault();
+    event.stopImmediatePropagation();
     event.stopPropagation();
   }catch(e){console.warn('Could not start entry-line drag',e)}
 };
 const onEntryPointerMove=(event:PointerEvent)=>{
   if(!entryDrag||entryDrag.pointerId!==event.pointerId||!chartEl.current||!series.current)return;
-  const rect=chartEl.current.getBoundingClientRect();
-  const next=series.current.coordinateToPrice(event.clientY-rect.top);
+  const pane=paneRect();
+  if(!pane)return;
+  const next=series.current.coordinateToPrice(event.clientY-pane.top);
   if(next==null||!Number.isFinite(Number(next)))return;
   const d=manager.get(entryDrag.id);
-  if(!d||!d.points?.length)return;
+  if(!d||!d.points?.length||!['long-position','short-position'].includes(d.kind))return;
   const points=[...d.points];
   points[0]={...points[0],price:Number(next)};
-  // Position drawings have a fixed two-point tuple in the library's Drawing union.
-  if(d.kind==='long-position'||d.kind==='short-position'){
-    const positionPoints:[typeof d.points[0],typeof d.points[1]]=[points[0],points[1]??d.points[1]];
-    manager.update({...d,points:positionPoints});
-  }
+  const positionPoints=[points[0],points[1]] as typeof d.points;
+  manager.update({...d,points:positionPoints});
   event.preventDefault();
+  event.stopImmediatePropagation();
   event.stopPropagation();
 };
 const onEntryPointerUp=(event:PointerEvent)=>{
