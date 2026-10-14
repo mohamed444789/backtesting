@@ -57,7 +57,7 @@ document.addEventListener('pointerup', onPositionEntryPointerUp, true);
 document.addEventListener('pointercancel', onPositionEntryPointerUp, true);
 
 document.addEventListener('dblclick',onDrawingDoubleClick,true);
-return()=>{document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
+return()=>{document.removeEventListener('pointerdown',onPositionEntryPointerDown,true);document.removeEventListener('pointermove',onPositionEntryPointerMove,true);document.removeEventListener('pointerup',onPositionEntryPointerUp,true);document.removeEventListener('pointercancel',onPositionEntryPointerUp,true);entryDrag=null;document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
 if(!series.current)return;
 const previousRange=chart.current?.timeScale().getVisibleLogicalRange();
 const m=new Map<number,any>();
