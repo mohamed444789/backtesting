@@ -506,3 +506,61 @@ td{font-size:12px}
     max-width: 180px;
   }
 }
+
+
+/* Center the drawing tools in the Price action header instead of beside the plot. */
+.chart-heading .drawing-rail-header,
+.fullscreen-terminal .chart-heading .drawing-rail-header {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 180px);
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+  gap: 4px;
+  height: auto;
+  max-height: none;
+  padding: 4px 6px;
+  overflow: visible;
+  background: #101821;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.chart-heading .drawing-rail-header button {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  color: #a9b7c8;
+}
+.chart-heading .drawing-rail-header button:hover {
+  background: #1b2b3b;
+  border-color: #64748b;
+}
+.theme-light .chart-heading .drawing-rail-header,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header {
+  background: #f8fafc;
+  border: 1px solid #94a3b8;
+}
+.theme-light .chart-heading .drawing-rail-header button {
+  color: #475569;
+}
+.theme-light .chart-heading .drawing-rail-header button:hover {
+  background: #e2e8f0;
+  border-color: #64748b;
+}
+@media (max-width: 700px) {
+  .chart-heading .drawing-rail-header,
+  .fullscreen-terminal .chart-heading .drawing-rail-header {
+    max-width: calc(100% - 130px);
+    gap: 2px;
+    padding: 3px;
+  }
+  .chart-heading .drawing-rail-header button {
+    flex-basis: 26px;
+    width: 26px;
+    height: 28px;
+  }
+}
