@@ -411,3 +411,45 @@ td{font-size:12px}
   border-color:#c8c8c8!important;
   color:#202124!important;
 }
+
+
+/* Final neutral TradingView-like drawing properties panel */
+.drawing-settings-modal{
+  background:#f8f9fd!important;
+  color:#131722!important;
+  border:1px solid #d1d4dc!important;
+  border-radius:8px!important;
+  box-shadow:0 6px 22px rgba(0,0,0,.16)!important;
+}
+.drawing-settings-modal h2{color:#131722!important}
+.drawing-settings-modal .settings-help{color:#434651!important}
+.drawing-settings-modal label{color:#434651!important}
+.drawing-settings-modal .position-price-row{
+  display:grid!important;
+  grid-template-columns:120px minmax(0,1fr)!important;
+  gap:12px!important;
+  align-items:center!important;
+  width:100%!important;
+  margin:14px 0!important;
+}
+.drawing-settings-modal .position-price-row input{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  min-height:34px!important;
+  padding:7px 9px!important;
+  background:#fff!important;
+  color:#131722!important;
+  border:1px solid #cfd3dc!important;
+  border-radius:4px!important;
+}
+.drawing-settings-modal button.primary{
+  background:#2962ff!important;
+  border:1px solid #2962ff!important;
+  color:#fff!important;
+}
+.drawing-settings-modal button.secondary{
+  background:#f8f9fd!important;
+  border:1px solid #cfd3dc!important;
+  color:#131722!important;
+}
