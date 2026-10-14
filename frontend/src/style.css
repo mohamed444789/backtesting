@@ -564,3 +564,42 @@ td{font-size:12px}
     height: 28px;
   }
 }
+
+
+/* Make the complete Price action header match the replay timeframe control bar. */
+.chart-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #0b131c;
+  border: 1px solid #29394a;
+  border-radius: 6px;
+}
+.chart-heading .drawing-rail-header,
+.fullscreen-terminal .chart-heading .drawing-rail-header {
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+.theme-light .chart-heading {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.theme-light .chart-heading .drawing-rail-header {
+  background: transparent;
+  border: 0;
+}
+/* In fullscreen, show the timeframe/replay bar first and Price action directly below it. */
+.fullscreen-terminal > .chart-panel > .fullscreen-controls {
+  order: -1;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+.fullscreen-terminal > .chart-panel > .chart-heading {
+  order: 0;
+}
