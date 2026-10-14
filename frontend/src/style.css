@@ -453,3 +453,19 @@ td{font-size:12px}
   border:1px solid #cfd3dc!important;
   color:#131722!important;
 }
+
+
+/* Fullscreen fixes: keep the drawing rail inside the plot area and let it scroll
+   instead of overlapping the balance/open/closed-position cards. */
+.fullscreen-terminal .chart-workspace {
+  min-height: 0;
+}
+.fullscreen-terminal .drawing-rail {
+  align-self: stretch;
+  height: auto;
+  max-height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
