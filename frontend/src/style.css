@@ -245,3 +245,18 @@ td{font-size:12px}
   width: 100%;
 }
 
+
+/* TradingView-style left drawing rail and per-drawing settings */
+.chart-workspace{display:flex;align-items:stretch;gap:8px;min-width:0;margin-top:10px}
+.drawing-rail{display:flex;flex:0 0 38px;flex-direction:column;align-items:stretch;gap:5px;padding:5px 3px;background:#0d151f;border:1px solid #273647;border-radius:6px;height:max-content;position:relative;z-index:3}
+.drawing-rail button{display:grid;place-items:center;width:30px;height:32px;padding:0;border:1px solid transparent;border-radius:4px;background:transparent;color:#9aabc0}
+.drawing-rail button:hover{background:#1b2b3b;border-color:#3b536b;color:#e4edf8}
+.drawing-rail button.selected-tool{background:#183c35;border-color:#32c99a;color:#69e4ba}
+.chart-workspace>.chart{flex:1;min-width:0;margin:0;height:400px}
+.drawing-settings-modal{max-height:min(82vh,720px);overflow:auto}
+.drawing-settings-modal .settings-help{font-size:11px;line-height:1.5;color:#94a6ba}
+.fib-level-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;margin:14px 0 20px}
+.fib-level-row{display:flex!important;align-items:center;gap:9px;padding:7px 8px;margin:0!important;border:1px solid #273647;border-radius:5px;background:#0c141d;color:#cbd7e5!important;font-size:11px!important}
+.fib-level-row input[type=checkbox]{display:block;width:14px;min-height:14px;height:14px;margin:0;accent-color:#32c99a}
+.fib-color{width:9px;height:9px;border-radius:50%;flex:none}
+@media(max-width:600px){.chart-workspace{gap:5px}.drawing-rail{flex-basis:34px;padding:4px 2px}.drawing-rail button{width:28px;height:30px}.chart-workspace>.chart{height:300px}.fib-level-list{grid-template-columns:1fr}}
