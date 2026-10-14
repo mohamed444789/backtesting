@@ -12,7 +12,7 @@ const onDrawingDoubleClick=()=>{window.setTimeout(()=>{try{const selected=manage
 // whole risk/reward drawing instead of changing the entry price.
 let entryDrag: { drawing: any; pointerId: number } | null = null;
 const onPositionEntryPointerDown = (e: PointerEvent) => {
-  if (drawModeRef.current !== 'none' || !chartEl.current || !chartEl.current.contains(e.target as Node)) return;
+  if (!chartEl.current || !chartEl.current.contains(e.target as Node)) return;
   const rect = chartEl.current.getBoundingClientRect();
   const x = e.clientX - rect.left, y = e.clientY - rect.top;
   const manager = drawingManager.current;
