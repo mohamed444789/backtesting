@@ -7,6 +7,55 @@ const defaultFibLevels=[{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'
 manager.on('change',()=>{if(!applyingFibDefaults){try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(d?.kind==='fib-retracement'){const levels=d.style?.levels;if(!Array.isArray(levels)||levels.length!==defaultFibLevels.length||defaultFibLevels.some((x,i)=>Number(levels[i]?.coeff)!==x.coeff)){applyingFibDefaults=true;manager.update({...d,style:{...d.style,levels:defaultFibLevels}});applyingFibDefaults=false}}}catch(e){applyingFibDefaults=false;console.warn('Could not apply Fibonacci defaults',e)}}try{localStorage.setItem(storageKey,manager.exportJSON())}catch(e){console.warn('Could not save chart drawings',e)}});
 const onDrawingDoubleClick=()=>{window.setTimeout(()=>{try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(!d||!['fib-retracement','long-position','short-position'].includes(d.kind))return;const entry=Number(d.points?.[0]?.price??0);const fallbackDistance=Math.abs(Number(d.points?.[1]?.price??entry)-entry)||0;const stopDistance=Number(d.style?.stopLevel??fallbackDistance);const targetDistance=Number(d.style?.profitLevel??fallbackDistance);const isLong=d.kind==='long-position';setDrawingEditor({id:d.id,kind:d.kind,entry,stop:isLong?entry-stopDistance:entry+stopDistance,target:isLong?entry+targetDistance:entry-targetDistance,levels:((()=>{try{if(Array.isArray(d.style?.levels)&&d.style.levels.length)return d.style.levels;const saved=localStorage.getItem('atlas-fib-default-levels');if(saved)return JSON.parse(saved)}catch(e){console.warn('Could not load Fibonacci defaults',e)}return [{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'#4caf50',visible:true},{coeff:.681,color:'#089981',visible:true},{coeff:1,color:'#808080',visible:true}]})()).map((level:any)=>({...level}))})}catch(e){console.warn('Could not open drawing settings',e)}},0)};
 
+// Allow the position entry line itself to be dragged vertically (not only its left anchor).
+// The drawing library treats clicks along this line as a body drag, which moves the
+// whole risk/reward drawing instead of changing the entry price.
+let entryDrag: { drawing: any; pointerId: number } | null = null;
+const onPositionEntryPointerDown = (e: PointerEvent) => {
+  if (drawModeRef.current !== 'none' || !chartEl.current || !chartEl.current.contains(e.target as Node)) return;
+  const rect = chartEl.current.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const manager = drawingManager.current;
+  if (!manager || !series.current || !chart.current) return;
+  for (const d of manager.drawings()) {
+    if ((d.kind !== 'long-position' && d.kind !== 'short-position') || d.hidden || !d.points?.[0] || !d.points?.[1]) continue;
+    const yEntry = series.current.priceToCoordinate(Number(d.points[0].price));
+    const x0 = chart.current.timeScale().timeToCoordinate(d.points[0].time);
+    const x1 = chart.current.timeScale().timeToCoordinate(d.points[1].time);
+    if (yEntry == null || x0 == null || x1 == null) continue;
+    if (Math.abs(y - yEntry) <= 8 && x >= Math.min(x0, x1) - 2 && x <= Math.max(x0, x1) + 2) {
+      entryDrag = { drawing: d, pointerId: e.pointerId };
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+  }
+};
+const onPositionEntryPointerMove = (e: PointerEvent) => {
+  if (!entryDrag || e.pointerId !== entryDrag.pointerId || !chartEl.current || !series.current) return;
+  const rect = chartEl.current.getBoundingClientRect();
+  const price = series.current.coordinateToPrice(e.clientY - rect.top);
+  if (price == null || !Number.isFinite(Number(price))) return;
+  const d = drawingManager.current?.get(entryDrag.drawing.id);
+  if (!d) return;
+  const points = [...d.points];
+  points[0] = { ...points[0], price: Number(price) };
+  points[1] = { ...points[1], price: Number(price) };
+  drawingManager.current.update({ ...d, points });
+  e.preventDefault();
+  e.stopImmediatePropagation();
+};
+const onPositionEntryPointerUp = (e: PointerEvent) => {
+  if (!entryDrag || e.pointerId !== entryDrag.pointerId) return;
+  entryDrag = null;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+};
+document.addEventListener('pointerdown', onPositionEntryPointerDown, true);
+document.addEventListener('pointermove', onPositionEntryPointerMove, true);
+document.addEventListener('pointerup', onPositionEntryPointerUp, true);
+document.addEventListener('pointercancel', onPositionEntryPointerUp, true);
+
 document.addEventListener('dblclick',onDrawingDoubleClick,true);
 return()=>{document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
 if(!series.current)return;
