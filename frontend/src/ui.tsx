@@ -1,43 +1,64 @@
 import React,{useEffect,useRef,useState}from'react';import{calculateEma}from'./drawings/ema';import{createChart,CandlestickSeries,LineSeries,ColorType}from'lightweight-charts';import{DrawingManager}from'lightweight-charts-drawing';import{Activity,BarChart3,BookOpen,ChartNoAxesCombined,Database,Download,History,LayoutDashboard,Play,Pause,Plus,RefreshCw,Settings as SettingsIcon,ShieldCheck,Maximize2,Minimize2,Pencil,Minus,Trash2,LineChart,TrendingDown,TrendingUp,Wallet,GitBranch,Ruler,CalendarRange,Square}from'lucide-react';const api=async(p:string,i?:RequestInit)=>{const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json',...(i?.headers||{})},...i});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||r.statusText);return d};const fmt=(n:number)=>new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n);const formatBerlinTime=(seconds:number)=>new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(new Date(seconds*1000));const formatBerlinAxisTime=(time:any)=>{if(typeof time!=='number')return '';const d=new Date(time*1000);return new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)};export default function App(){const[page,P]=useState('Dashboard'),[symbols,S]=useState<any[]>([]),[symbol,Y]=useState('EURUSD'),[sessions,SS]=useState<any[]>([]),[session,SE]=useState<any>(null),[candles,C]=useState<any[]>([]),[trades,T]=useState<any[]>([]),[analytics,A]=useState<any>({}),[toast,N]=useState(''),[busy,B]=useState(false),[tf,F]=useState(1),[balance,BL]=useState(10000),[start,ST]=useState('2024-01-01'),[end,EN]=useState('2024-01-31'),[side,SD]=useState('buy'),[type,TY]=useState('market'),[lots,L]=useState(.1),[sl,SL]=useState(''),[tp,TP]=useState(''),[price,PR]=useState(''),[editing,ED]=useState<any>(null),[notes,NT]=useState(''),[strategy,STG]=useState(''),[downloads,D]=useState<any[]>([]),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(1),[drawMode,setDrawMode]=useState('none'),[emaVisible,setEmaVisible]=useState(true),[fullscreen,setFullscreen]=useState(false),[theme,setTheme]=useState<'dark'|'light'>(()=>(localStorage.getItem('atlas-theme') as 'dark'|'light')||'dark'),[replayEnd,RE]=useState('2024-01-31'),[sessionName,SN]=useState(''),[drawingEditor,setDrawingEditor]=useState<any>(null);const chartEl=useRef<HTMLDivElement>(null),chart=useRef<any>(),series=useRef<any>(),emaSeries=useRef<any>(),lastDataCount=useRef(0),chartDataRef=useRef<any[]>([]),drawModeRef=useRef('none'),drawingRefs=useRef<any[]>([]),trendStart=useRef<any>(null),drawingManager=useRef<any>(null),stepRef=useRef<any>(),busyRef=useRef(false);drawModeRef.current=drawMode;useEffect(()=>{if(!drawingEditor)return;const closeOnOutside=(e:PointerEvent)=>{if(!(e.target as HTMLElement)?.closest?.('.drawing-settings-modal'))setDrawingEditor(null)};document.addEventListener('pointerdown',closeOnOutside,true);return()=>document.removeEventListener('pointerdown',closeOnOutside,true)},[drawingEditor]);const note=(s:string)=>{N(s);setTimeout(()=>N(''),4000)};const refresh=async()=>{try{const[a,b,c,d,e]=await Promise.all([api('/instruments'),api('/sessions'),api('/trades'),api('/analytics'),api('/downloads')]);S(a);SS(b);T(c);A(d);D(e)}catch(e:any){note(e.message)}};useEffect(()=>{refresh()},[]);const open=async(id:number)=>{try{let d=await api(`/sessions/${id}/visible`);if(!Array.isArray(d.candles)||d.candles.length===0){const first=await api(`/sessions/${id}/step`,{method:'POST',body:'{"count":1}'});d=await api(`/sessions/${id}/visible`);if(first.done&&(!d.candles||!d.candles.length))note('No candles available at this replay date. Check Historical Data coverage.')}SE(d.session);C(Array.isArray(d.candles)?d.candles:[]);F(d.session.timeframe);T(await api(`/sessions/${id}/trades`));P('Replay Terminal')}catch(e:any){note(e.message)}};useEffect(()=>{if(page!=='Replay Terminal'||!chartEl.current)return;const c=createChart(chartEl.current,{autoSize:true,layout:{background:{type:ColorType.Solid,color:theme==='dark'?'#0b1119':'#ffffff'},textColor:theme==='dark'?'#94a3b8':'#475569'},grid:{vertLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'},horzLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'}},crosshair:{mode:0,vertLine:{labelVisible:true},horzLine:{labelVisible:true}},rightPriceScale:{visible:true,borderVisible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',autoScale:true,minimumWidth:80,ticksVisible:true,scaleMargins:{top:0.08,bottom:0.08}},timeScale:{timeVisible:true,visible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',tickMarkFormatter:(time:any)=>formatBerlinAxisTime(time)},localization:{locale:'de-DE',timeFormatter:(time:any)=>typeof time==='number'?formatBerlinTime(time):String(time)}});series.current=c.addSeries(CandlestickSeries,{upColor:'#26c99a',downColor:'#ef666b',wickUpColor:'#26c99a',wickDownColor:'#ef666b',borderVisible:false,priceLineVisible:true,lastValueVisible:true,priceFormat:{type:'price',precision:session?.symbol==='XAUUSD'?2:session?.symbol?.endsWith('JPY')?3:5,minMove:session?.symbol==='XAUUSD'?0.01:session?.symbol?.endsWith('JPY')?0.001:0.00001}});chart.current=c;emaSeries.current=c.addSeries(LineSeries,{color:'#60a5fa',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,title:'EMA 200',visible:emaVisible});lastDataCount.current=0;chartDataRef.current=[];const manager=new DrawingManager(c,series.current,{magnet:'weak'});
 drawingManager.current=manager;
-// Weak magnet snaps dragged prices to candle OHLC. Disable it only for a position's
-// left entry anchor so that anchor can follow the cursor vertically at arbitrary prices.
-// Use the same pane-local coordinates as DrawingManager.panePoint() in the library.
-let positionEntryMagnetPointer: number | null = null;
+// Dedicated drag handling for the left entry anchor of Long/Short Position drawings.
+// Use the drawing manager's own pane coordinates, but bypass its generic drag/magnet
+// path for this handle so vertical price adjustments are always continuous.
+let positionEntryDrag: { id: string; pointerId: number } | null = null;
 const onPositionEntryPointerDown = (e: PointerEvent) => {
-  if (manager.tool() !== null || !chartEl.current || !chart.current || !series.current) return;
-  const paneEl = series.current.getPane?.().getHTMLElement?.();
-  if (!paneEl) return;
-  const paneRect = paneEl.getBoundingClientRect();
-  const chartRect = chartEl.current.getBoundingClientRect();
-  const leftScaleWidth = chart.current.priceScale('left').width();
-  const x = e.clientX - chartRect.left - leftScaleWidth;
-  const y = e.clientY - paneRect.top;
+  if (!chartEl.current?.contains(e.target as Node)) return;
+  const internals = manager as any;
+  const cursor = internals.panePoint(e);
+  const coords = internals.coords;
+  if (!cursor || !coords) return;
+  let best: { drawing: any; distance: number } | null = null;
   const drawings = manager.drawings();
   for (let i = drawings.length - 1; i >= 0; i--) {
-    const d = drawings[i];
-    if ((d.kind !== 'long-position' && d.kind !== 'short-position') || d.hidden || !d.points?.[0]) continue;
-    const anchorX = chart.current.timeScale().timeToCoordinate(d.points[0].time);
-    const anchorY = series.current.priceToCoordinate(Number(d.points[0].price));
+    const d: any = drawings[i];
+    if ((d.kind !== 'long-position' && d.kind !== 'short-position') || d.hidden || d.locked || !d.points?.[0]) continue;
+    const anchorX = coords.timeToX(d.points[0].time);
+    const anchorY = coords.priceToY(Number(d.points[0].price));
     if (anchorX == null || anchorY == null) continue;
-    if (Math.hypot(x - anchorX, y - anchorY) <= 14) {
-      positionEntryMagnetPointer = e.pointerId;
-      manager.setMagnet('off');
-      return;
-    }
+    const distance = Math.hypot(cursor.x - anchorX, cursor.y - anchorY);
+    if (distance <= 18 && (!best || distance < best.distance)) best = { drawing: d, distance };
+  }
+  if (!best) return;
+  // Stop the generic handler from interpreting this as a body/close-point drag.
+  manager.select([best.drawing.id]);
+  positionEntryDrag = { id: best.drawing.id, pointerId: e.pointerId };
+  internals.holdChart();
+  e.preventDefault();
+  e.stopImmediatePropagation();
+};
+const onPositionEntryPointerMove = (e: PointerEvent) => {
+  const active = positionEntryDrag;
+  if (!active || e.pointerId !== active.pointerId) return;
+  const internals = manager as any;
+  const cursor = internals.panePoint(e);
+  const price = internals.coords.yToPrice(cursor.y);
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  if (price == null || !Number.isFinite(Number(price))) return;
+  const d: any = manager.get(active.id);
+  if (!d || (d.kind !== 'long-position' && d.kind !== 'short-position') || d.points.length < 2) return;
+  const points = [...d.points];
+  points[0] = { ...points[0], price: Number(price) };
+  // Keep the close time unchanged but lock it to the new entry price.
+  points[1] = { ...points[1], price: Number(price) };
+  manager.update({ ...d, points });
+};
+const finishPositionEntryDrag = (e?: PointerEvent) => {
+  if (!positionEntryDrag || (e && e.pointerId !== positionEntryDrag.pointerId)) return;
+  positionEntryDrag = null;
+  (manager as any).releaseChart();
+  if (e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
   }
 };
-const onPositionEntryPointerUp = (e: PointerEvent) => {
-  if (positionEntryMagnetPointer !== e.pointerId) return;
-  positionEntryMagnetPointer = null;
-  manager.setMagnet('weak');
-};
-const onPositionEntryWindowBlur = () => {
-  if (positionEntryMagnetPointer === null) return;
-  positionEntryMagnetPointer = null;
-  manager.setMagnet('weak');
-};
+const onPositionEntryPointerUp = (e: PointerEvent) => finishPositionEntryDrag(e);
+const onPositionEntryWindowBlur = () => finishPositionEntryDrag();
 document.addEventListener('pointerdown', onPositionEntryPointerDown, true);
+document.addEventListener('pointermove', onPositionEntryPointerMove, true);
 document.addEventListener('pointerup', onPositionEntryPointerUp, true);
 document.addEventListener('pointercancel', onPositionEntryPointerUp, true);
 window.addEventListener('blur', onPositionEntryWindowBlur);
@@ -51,7 +72,7 @@ const onDrawingDoubleClick=()=>{window.setTimeout(()=>{try{const selected=manage
 // Let lightweight-charts-drawing handle position anchors natively; its entry handle (index 0)
 // updates the entry price while preserving the close point's time.
 document.addEventListener('dblclick',onDrawingDoubleClick,true);
-return()=>{document.removeEventListener('pointerdown',onPositionEntryPointerDown,true);document.removeEventListener('pointerup',onPositionEntryPointerUp,true);document.removeEventListener('pointercancel',onPositionEntryPointerUp,true);window.removeEventListener('blur',onPositionEntryWindowBlur);if(positionEntryMagnetPointer!==null)manager.setMagnet('weak');positionEntryMagnetPointer=null;document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
+return()=>{document.removeEventListener('pointerdown',onPositionEntryPointerDown,true);document.removeEventListener('pointermove',onPositionEntryPointerMove,true);document.removeEventListener('pointerup',onPositionEntryPointerUp,true);document.removeEventListener('pointercancel',onPositionEntryPointerUp,true);window.removeEventListener('blur',onPositionEntryWindowBlur);finishPositionEntryDrag();document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
 if(!series.current)return;
 const previousRange=chart.current?.timeScale().getVisibleLogicalRange();
 const m=new Map<number,any>();
