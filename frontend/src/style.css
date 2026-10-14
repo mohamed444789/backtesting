@@ -318,3 +318,50 @@ td{font-size:12px}
 .drawing-settings-overlay{background:transparent!important;pointer-events:none!important;place-items:start center!important;padding:0!important}
 .drawing-settings-modal{pointer-events:auto!important;position:fixed;top:12vh;left:50%;transform:translateX(-50%);margin:0;box-shadow:0 12px 40px #0003}
 .drawing-settings-header{cursor:move;user-select:none}
+
+
+/* Light TradingView-inspired floating drawing properties panel */
+.drawing-settings-overlay{
+  background:transparent!important;
+  pointer-events:none!important;
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  padding:0!important;
+  z-index:1100!important;
+}
+.drawing-settings-modal{
+  pointer-events:auto!important;
+  position:fixed!important;
+  top:12vh;
+  left:50%;
+  transform:translateX(-50%);
+  margin:0!important;
+  width:min(390px,calc(100vw - 24px))!important;
+  max-height: min(86vh, 760px)!important;
+  overflow:auto!important;
+  padding:20px!important;
+  background:#fffde7!important;
+  color:#202124!important;
+  border:1px solid #e5ddbb!important;
+  border-radius:8px!important;
+  box-shadow:0 5px 24px #0002!important;
+}
+.drawing-settings-modal h2{
+  color:#202124!important;
+  font-size:19px!important;
+  margin:0 0 18px!important;
+}
+.drawing-settings-modal .settings-help{color:#65615a!important}
+.drawing-settings-modal label{color:#3f3b32!important}
+.drawing-settings-modal input:not([type=checkbox]),
+.drawing-settings-modal select{
+  color:#202124!important;
+  background:#fffef8!important;
+  border:1px solid #e1d8b6!important;
+  border-radius:6px!important;
+}
+.drawing-settings-modal button{
+  border-radius:6px;
+}
+.drawing-settings-header{cursor:move!important;user-select:none}
