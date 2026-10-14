@@ -6,8 +6,51 @@ let applyingFibDefaults=false;
 const defaultFibLevels=[{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'#4caf50',visible:true},{coeff:.681,color:'#089981',visible:true},{coeff:1,color:'#808080',visible:true}];
 manager.on('change',()=>{if(!applyingFibDefaults){try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(d?.kind==='fib-retracement'){const levels=d.style?.levels;if(!Array.isArray(levels)||levels.length!==defaultFibLevels.length||defaultFibLevels.some((x,i)=>Number(levels[i]?.coeff)!==x.coeff)){applyingFibDefaults=true;manager.update({...d,style:{...d.style,levels:defaultFibLevels}});applyingFibDefaults=false}}}catch(e){applyingFibDefaults=false;console.warn('Could not apply Fibonacci defaults',e)}}try{localStorage.setItem(storageKey,manager.exportJSON())}catch(e){console.warn('Could not save chart drawings',e)}});
 const onDrawingDoubleClick=()=>{window.setTimeout(()=>{try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(!d||!['fib-retracement','long-position','short-position'].includes(d.kind))return;const entry=Number(d.points?.[0]?.price??0);const fallbackDistance=Math.abs(Number(d.points?.[1]?.price??entry)-entry)||0;const stopDistance=Number(d.style?.stopLevel??fallbackDistance);const targetDistance=Number(d.style?.profitLevel??fallbackDistance);const isLong=d.kind==='long-position';setDrawingEditor({id:d.id,kind:d.kind,entry,stop:isLong?entry-stopDistance:entry+stopDistance,target:isLong?entry+targetDistance:entry-targetDistance,levels:((()=>{try{if(Array.isArray(d.style?.levels)&&d.style.levels.length)return d.style.levels;const saved=localStorage.getItem('atlas-fib-default-levels');if(saved)return JSON.parse(saved)}catch(e){console.warn('Could not load Fibonacci defaults',e)}return [{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'#4caf50',visible:true},{coeff:.681,color:'#089981',visible:true},{coeff:1,color:'#808080',visible:true}]})()).map((level:any)=>({...level}))})}catch(e){console.warn('Could not open drawing settings',e)}},0)};
+
+// Make the entry-price line of a selected long/short-position draggable.
+// The drawing library exposes the entry as points[0], but does not consistently
+// start a drag when the pointer lands on the horizontal entry line itself.
+let entryDrag: {id:string; pointerId:number}|null=null;
+const onEntryPointerDown=(event:PointerEvent)=>{
+  if(event.button!==0||!chartEl.current||!series.current)return;
+  try{
+    const ids=manager.selection();
+    const id=ids[ids.length-1];
+    const d=id?manager.get(id):null;
+    if(!d||!['long-position','short-position'].includes(d.kind))return;
+    const entry=Number(d.points?.[0]?.price);
+    if(!Number.isFinite(entry))return;
+    const y=series.current.priceToCoordinate(entry);
+    if(y==null||Math.abs(event.clientY-chartEl.current.getBoundingClientRect().top-y)>9)return;
+    entryDrag={id:String(d.id),pointerId:event.pointerId};
+    event.preventDefault();
+    event.stopPropagation();
+  }catch(e){console.warn('Could not start entry-line drag',e)}
+};
+const onEntryPointerMove=(event:PointerEvent)=>{
+  if(!entryDrag||entryDrag.pointerId!==event.pointerId||!chartEl.current||!series.current)return;
+  const rect=chartEl.current.getBoundingClientRect();
+  const next=series.current.coordinateToPrice(event.clientY-rect.top);
+  if(next==null||!Number.isFinite(Number(next)))return;
+  const d=manager.get(entryDrag.id);
+  if(!d||!d.points?.length)return;
+  const points=[...d.points];
+  points[0]={...points[0],price:Number(next)};
+  manager.update({...d,points});
+  event.preventDefault();
+  event.stopPropagation();
+};
+const onEntryPointerUp=(event:PointerEvent)=>{
+  if(!entryDrag||entryDrag.pointerId!==event.pointerId)return;
+  entryDrag=null;
+};
+chartEl.current?.addEventListener('pointerdown',onEntryPointerDown,true);
+window.addEventListener('pointermove',onEntryPointerMove,true);
+window.addEventListener('pointerup',onEntryPointerUp,true);
+window.addEventListener('pointercancel',onEntryPointerUp,true);
+
 document.addEventListener('dblclick',onDrawingDoubleClick,true);
-return()=>{document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
+return()=>{chartEl.current?.removeEventListener('pointerdown',onEntryPointerDown,true);window.removeEventListener('pointermove',onEntryPointerMove,true);window.removeEventListener('pointerup',onEntryPointerUp,true);window.removeEventListener('pointercancel',onEntryPointerUp,true);document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
 if(!series.current)return;
 const previousRange=chart.current?.timeScale().getVisibleLogicalRange();
 const m=new Map<number,any>();
