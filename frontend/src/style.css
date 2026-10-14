@@ -603,3 +603,14 @@ td{font-size:12px}
 .fullscreen-terminal > .chart-panel > .chart-heading {
   order: 0;
 }
+
+
+/* The drawing tools sit directly on the Price action bar; no separate outline. */
+.chart-heading .drawing-rail-header,
+.fullscreen-terminal .chart-heading .drawing-rail-header,
+.theme-light .chart-heading .drawing-rail-header,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
