@@ -469,3 +469,25 @@ td{font-size:12px}
   overflow-y: auto;
   flex-shrink: 0;
 }
+
+
+/* Keep the chart theme switch with the replay controls, not in the chart title. */
+.toolbar .theme-toggle-toolbar,
+.fullscreen-controls .theme-toggle-toolbar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: #172431;
+  color: #d4e0ed;
+  border: 1px solid #2c3c4e;
+  border-radius: 5px;
+  padding: 9px 10px;
+  font-size: 10px;
+}
+.theme-light .toolbar .theme-toggle-toolbar,
+.theme-light .fullscreen-controls .theme-toggle-toolbar {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #cbd5e1;
+}
