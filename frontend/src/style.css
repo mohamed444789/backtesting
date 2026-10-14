@@ -614,3 +614,19 @@ td{font-size:12px}
   outline: none !important;
   box-shadow: none !important;
 }
+
+
+/* Improve selected drawing-tool contrast in light theme. */
+.theme-light .chart-heading .drawing-rail-header button.selected-tool,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header button.selected-tool {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+  box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.12);
+}
+.theme-light .chart-heading .drawing-rail-header button.selected-tool:hover,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header button.selected-tool:hover {
+  background: #a7f3d0;
+  border-color: #047857;
+  color: #064e3b;
+}
