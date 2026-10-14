@@ -630,3 +630,137 @@ td{font-size:12px}
   border-color: #047857;
   color: #064e3b;
 }
+
+
+/* Floating drawing tools inside the chart canvas with a draggable grip. */
+.chart-workspace {
+  position: relative;
+  isolation: isolate;
+}
+.chart-workspace .floating-drawing-tools {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 20;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  width: max-content;
+  max-width: calc(100% - 12px);
+  height: auto;
+  max-height: calc(100% - 12px);
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+}
+.chart-workspace .floating-drawing-tools button {
+  display: grid;
+  flex: 0 0 30px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #cbd5e1;
+}
+.chart-workspace .floating-drawing-tools button:hover {
+  background: #263548;
+  border-color: #64748b;
+  color: #f8fafc;
+}
+.chart-workspace .floating-drawing-tools button.selected-tool {
+  background: #064e3b;
+  border-color: #10b981;
+  color: #d1fae5;
+}
+.chart-workspace .drawing-toolbar-grip {
+  display: grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 30px;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.chart-workspace .drawing-toolbar-grip:hover {
+  background: #263548;
+  color: #f8fafc;
+}
+.chart-workspace .drawing-toolbar-grip:active {
+  cursor: grabbing;
+}
+.theme-light .chart-workspace .floating-drawing-tools {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+}
+.theme-light .chart-workspace .floating-drawing-tools button {
+  color: #334155;
+}
+.theme-light .chart-workspace .floating-drawing-tools button:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+.theme-light .chart-workspace .floating-drawing-tools button.selected-tool {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+}
+.theme-light .chart-workspace .drawing-toolbar-grip {
+  color: #64748b;
+}
+.theme-light .chart-workspace .drawing-toolbar-grip:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.toolbar .fullscreen-switch,
+.fullscreen-controls .fullscreen-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  background: #172431;
+  color: #dce6f2;
+  border: 1px solid #3a4b5f;
+}
+.theme-light .toolbar .fullscreen-switch,
+.theme-light .fullscreen-controls .fullscreen-switch {
+  background: #fff;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+.theme-light .toolbar .fullscreen-switch:hover,
+.theme-light .fullscreen-controls .fullscreen-switch:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+@media (max-width: 700px) {
+  .chart-workspace .floating-drawing-tools {
+    gap: 2px;
+    padding: 3px;
+  }
+  .chart-workspace .floating-drawing-tools button {
+    flex-basis: 28px;
+    width: 28px;
+    height: 29px;
+  }
+  .chart-workspace .drawing-toolbar-grip {
+    width: 20px;
+    flex-basis: 20px;
+    height: 29px;
+  }
+}
