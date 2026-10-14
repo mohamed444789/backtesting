@@ -764,3 +764,11 @@ td{font-size:12px}
     height: 29px;
   }
 }
+
+
+/* Keep the fullscreen toggle pinned to the far-right end of either replay bar. */
+.toolbar .fullscreen-switch,
+.fullscreen-controls .fullscreen-switch {
+  margin-left: auto !important;
+  flex-shrink: 0;
+}
