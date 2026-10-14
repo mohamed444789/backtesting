@@ -36,8 +36,11 @@ const onEntryPointerMove=(event:PointerEvent)=>{
   if(!d||!d.points?.length)return;
   const points=[...d.points];
   points[0]={...points[0],price:Number(next)};
-  // Keep the position drawing's discriminated tuple type intact.
-  manager.update({...d,points:points as typeof d.points});
+  // Position drawings have a fixed two-point tuple in the library's Drawing union.
+  if(d.kind==='long-position'||d.kind==='short-position'){
+    const positionPoints:[typeof d.points[0],typeof d.points[1]]=[points[0],points[1]??d.points[1]];
+    manager.update({...d,points:positionPoints});
+  }
   event.preventDefault();
   event.stopPropagation();
 };
