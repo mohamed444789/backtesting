@@ -772,3 +772,43 @@ td{font-size:12px}
   margin-left: auto !important;
   flex-shrink: 0;
 }
+
+
+/* Rectangle settings: compact, theme-aware color picker. */
+.rectangle-color-row {
+  display: block;
+  margin: 12px 0 18px;
+  color: inherit;
+  font-size: 12px;
+}
+.rectangle-color-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.rectangle-color-control input[type="color"] {
+  display: block;
+  flex: 0 0 56px;
+  width: 56px !important;
+  height: 42px;
+  min-height: 42px;
+  margin: 0 !important;
+  padding: 3px !important;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+.rectangle-color-control span {
+  font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #cbd5e1;
+  letter-spacing: 0.3px;
+}
+.theme-light .rectangle-color-control input[type="color"] {
+  border-color: #cbd5e1;
+  background: #fff;
+}
+.theme-light .rectangle-color-control span {
+  color: #334155;
+}
