@@ -313,3 +313,8 @@ td{font-size:12px}
     min-height: 320px;
   }
 }
+
+/* Drawing settings behave like a floating TradingView properties panel. */
+.drawing-settings-overlay{background:transparent!important;pointer-events:none!important;place-items:start center!important;padding:0!important}
+.drawing-settings-modal{pointer-events:auto!important;position:fixed;top:12vh;left:50%;transform:translateX(-50%);margin:0;box-shadow:0 12px 40px #0003}
+.drawing-settings-header{cursor:move;user-select:none}
