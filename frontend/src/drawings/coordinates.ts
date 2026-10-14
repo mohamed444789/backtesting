@@ -1,4 +1,4 @@
-import type { IChartApi, ISeriesApi, Time } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, Logical, Time } from 'lightweight-charts';
 export type CssPoint={x:number;y:number};
 export type ResolvedAnchor={time:Time;logical:number;x:number;y:number;price:number};
 export class ChartCoordinateAdapter {
@@ -14,17 +14,17 @@ export class ChartCoordinateAdapter {
  fromPoint(p:CssPoint):{time:Time;logical:number;price:number}|null {
   const ts=this.chart.timeScale(),logical=ts.coordinateToLogical(p.x),price=this.series.coordinateToPrice(p.y),time=ts.coordinateToTime(p.x);
   if(logical==null||price==null||time==null||!Number.isFinite(logical)||!Number.isFinite(price)||price<=0)return null;
-  const nearest=Math.round(logical),nearestTime=ts.coordinateToTime(ts.logicalToCoordinate(nearest)??NaN);
+  const nearest=Math.round(logical),nearestTime=ts.coordinateToTime(ts.logicalToCoordinate(nearest as Logical)??NaN);
   return {time:nearestTime??time,logical:nearest,price};
  }
  toPoint(anchor:{time:Time;logical?:number;price:number}):CssPoint|null {
-  const ts=this.chart.timeScale();const logical=anchor.logical;const x=logical!=null?ts.logicalToCoordinate(logical):ts.timeToCoordinate(anchor.time);const y=this.series.priceToCoordinate(anchor.price);
+  const ts=this.chart.timeScale();const logical=anchor.logical;const x=logical!=null?ts.logicalToCoordinate(logical as Logical):ts.timeToCoordinate(anchor.time);const y=this.series.priceToCoordinate(anchor.price);
   if(x==null||y==null||!Number.isFinite(x)||!Number.isFinite(y))return null;
   return {x,y};
  }
  resolve(anchor:{time:Time;logical?:number;price:number},data:readonly {time:Time}[]):ResolvedAnchor|null {
   const index=data.findIndex(c=>String(c.time)===String(anchor.time));if(index<0)return null;
-  const x=this.chart.timeScale().logicalToCoordinate(index),y=this.series.priceToCoordinate(anchor.price);
+  const x=this.chart.timeScale().logicalToCoordinate(index as Logical),y=this.series.priceToCoordinate(anchor.price);
   if(x==null||y==null||!Number.isFinite(x)||!Number.isFinite(y))return null;
   return {time:anchor.time,logical:index,x,y,price:anchor.price};
  }
