@@ -8,3 +8,96 @@
 
 .ds-inspector-grid{grid-template-columns:1fr 1.25fr}.ds-inspector-grid .ds-table-scroll{max-height:250px}.ds-console-grid{grid-template-columns:1.15fr .85fr;align-items:stretch}.ds-console-grid .ds-log-card{margin-top:0}.ds-console-grid .ds-download-console{margin-top:0}.ds-console-output{height:245px;overflow:auto;background:#080e17;border:1px solid #1b2a3d;border-radius:7px;padding:12px;font:10px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}.ds-console-job{padding:7px 0;border-bottom:1px solid #1c2a3b}.ds-console-job>div:first-child{display:flex;justify-content:space-between;gap:8px;color:#dbe7f5}.ds-console-job small{display:block;color:#91a3b8;margin-top:5px;overflow-wrap:anywhere}.ds-console-job .good{color:#34d399}.ds-console-job .bad{color:#fb7185}.ds-console-job .ds-progress{margin-top:7px}.theme-light .ds-console-output{background:#0a1018;color:#e5edf7}.theme-light .ds-console-job>div:first-child{color:#e5edf7}.theme-light .ds-inspector-grid .ds-table-scroll{background:#fff}
 @media(max-width:1150px){.ds-inspector-grid,.ds-console-grid{grid-template-columns:1fr}}
+
+/* Overview now follows the reference's four fixed desktop rows:
+   1 metrics, 2 storage analysis, 3 table/schema/sample, 4 logs/download logs. */
+.app:has(.ds-page) aside{width:170px;padding:20px 10px}
+.app:has(.ds-page) main{margin-left:170px}
+.app:has(.ds-page) main>header{padding:0 20px}
+.app:has(.ds-page) .content{max-width:none;padding:22px 18px;margin:0}
+.app:has(.ds-page) aside .logo{gap:9px;padding:0 7px 22px;letter-spacing:1.5px}
+.app:has(.ds-page) aside .nav{gap:8px;padding:11px 9px;font-size:11px}
+.ds-overview-grid{grid-template-columns:1.12fr 1.13fr 1fr;align-items:stretch}
+.ds-inspector-grid{grid-template-columns:1.08fr .98fr 1.12fr;align-items:stretch}
+.ds-console-grid{grid-template-columns:1.17fr .83fr;align-items:stretch}
+.ds-metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ds-metric{min-width:0}
+.ds-metric-top{gap:9px}
+.ds-metric-top>label{font-size:11px;font-weight:500;color:#a9bad0}
+.ds-metric strong{font-size:23px;font-weight:650;letter-spacing:-.025em}
+.ds-metric small{font-size:10px}
+.ds-metric-foot{font-size:10px;line-height:1.4}
+.ds-card-title{gap:8px;margin-bottom:12px}
+.ds-card-title>b{font-size:12px;font-weight:650;letter-spacing:-.01em}
+.ds-card-title>span:first-child{display:flex;align-items:center;justify-content:center}
+.ds-card-title>span:first-child svg{width:17px;height:17px;stroke-width:2.2}
+.ds-overview-grid>.ds-card,.ds-inspector-grid>.ds-card,.ds-console-grid>.ds-card{min-width:0}
+.ds-overview-grid>.ds-card{min-height:190px}
+.ds-inspector-grid>.ds-card{min-height:286px}
+.ds-inspector-grid .ds-card-title>b{white-space:nowrap;font-size:11.5px}
+.ds-inspector-grid .ds-table-scroll{max-height:225px}
+.ds-inventory-scroll .ds-table th,.ds-inventory-scroll .ds-table td{padding:9px 7px}
+.ds-table-name{display:flex;align-items:center;gap:7px;min-width:0}
+.ds-table-icon{width:18px;height:18px;display:inline-flex;flex:0 0 18px;align-items:center;justify-content:center}
+.ds-icon-candles{color:#21c7ad}.ds-icon-trades{color:#24c88a}.ds-icon-sessions{color:#38bdf8}.ds-icon-drawings{color:#f59e0b}.ds-icon-orders{color:#f59e0b}.ds-icon-downloads{color:#38bdf8}.ds-icon-settings{color:#94a3b8}.ds-icon-journal_notes{color:#a78bfa}
+.ds-inventory-scroll tbody tr.selected{background:#102f55}
+.ds-inventory-scroll tbody tr.selected td{color:#f1f7ff}
+.ds-details-scroll .ds-table th,.ds-details-scroll .ds-table td,.ds-sample-scroll .ds-table th,.ds-sample-scroll .ds-table td{padding:8px 6px;font-size:10px}
+.ds-sample-scroll .ds-table td{max-width:115px;overflow:hidden;text-overflow:ellipsis}
+.ds-text-action{display:flex;align-items:center;gap:3px;margin-top:9px;background:transparent;border:0;padding:3px 0;color:#46b9ff;font-size:10px;font-weight:600}
+.ds-text-action:hover{color:#8bd5ff}
+.ds-storage-donut{gap:16px;min-width:0}
+.ds-donut{background:conic-gradient(#25a8ff 0 calc(var(--ds-db,0)*1%),#8b5cf6 calc(var(--ds-db,0)*1%) calc((var(--ds-db,0) + var(--ds-wal,0))*1%),#22c55e calc((var(--ds-db,0) + var(--ds-wal,0))*1%) 100%)}
+.ds-legend{gap:9px}
+.ds-legend span{font-size:10px;gap:6px}
+.ds-legend span b{white-space:nowrap}
+.ds-legend .orange{background:#f59e0b}
+.ds-history-summary{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:-2px 0 1px}
+.ds-history-summary strong{font:650 20px 'Space Grotesk',sans-serif;color:var(--ds-ink,#edf5ff);letter-spacing:-.025em}
+.ds-history-summary span{font-size:9px;color:var(--ds-muted,#9aadc3)}
+.ds-history-chart svg{display:block;width:100%;height:128px;overflow:visible}
+.ds-chart-grid{stroke:#26384b;stroke-width:.8}
+.ds-chart-label{fill:#899cb3;font-size:8.5px;font-family:'DM Sans',sans-serif}
+.ds-history-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#8195ac;font-size:9px;margin-top:1px}
+.ds-history-foot span:first-child{display:flex;align-items:center;gap:6px}
+.ds-history-foot i{display:inline-block;width:7px;height:7px;background:#29aaff;border-radius:50%}
+.ds-system-note{display:flex;align-items:flex-start;gap:7px;color:#8da1b8;font-size:9px;line-height:1.55;margin-top:14px}
+.ds-system-note svg{flex:0 0 auto;color:#4bb8fa}
+.ds-log-card .ds-terminal,.ds-download-console .ds-console-output{height:252px}
+.ds-log-header{gap:9px;flex-wrap:nowrap}
+.ds-log-header>.ds-card-title{flex:0 0 auto;min-width:140px}
+.ds-log-controls{justify-content:flex-end;min-width:0;flex-wrap:nowrap}
+.ds-log-controls select{min-width:70px;padding:7px 6px}
+.ds-log-controls .ds-search{min-width:90px;max-width:170px}
+.ds-log-controls .secondary{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:30px}
+.ds-log-line{grid-template-columns:68px 42px 65px minmax(0,1fr);gap:7px}
+.ds-console-output{scrollbar-width:thin;scrollbar-color:#31465e #080e17}
+.ds-console-line{display:grid;grid-template-columns:62px 42px minmax(0,1fr);gap:7px;padding:2px 0;border-bottom:1px solid #172536;color:#cbd9e8;font:10px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+.ds-console-line time{color:#8295aa}
+.ds-console-line b{color:#36b5ff;font-weight:700}
+.ds-console-line .level-warn{color:#fbbf24}
+.ds-console-line .level-error{color:#fb7185}
+.ds-console-line span{overflow-wrap:anywhere}
+.ds-console-job{font:10px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+.ds-console-job>div:first-child{font-size:10px}
+.ds-live{font-size:9px}
+.ds-health.is-error{color:#fb7185;background:#32141b;border-color:#7f1d1d}
+.ds-health.is-error i{background:#fb7185}
+.theme-light .ds-page{--ds-muted:#53677e;--ds-ink:#102033}
+.theme-light .ds-metric-top>label{color:#465b72}
+.theme-light .ds-card-title>b{color:#13263a}
+.theme-light .ds-metric strong{color:#13263a}
+.theme-light .ds-metric:after{background:linear-gradient(90deg,transparent,#1688d355,transparent)}
+.theme-light .ds-chart-grid{stroke:#dbe5ef}
+.theme-light .ds-chart-label{fill:#596e85}
+.theme-light .ds-history-summary strong{color:#102033}
+.theme-light .ds-system-note{color:#53677e}
+.theme-light .ds-text-action{color:#086db5}
+.theme-light .ds-inventory-scroll tbody tr.selected{background:#dcebff}
+.theme-light .ds-inventory-scroll tbody tr.selected td{color:#12304f}
+.theme-light .ds-icon-candles{color:#078d7a}.theme-light .ds-icon-trades{color:#087e51}.theme-light .ds-icon-sessions{color:#086eb8}.theme-light .ds-icon-drawings{color:#b66a00}.theme-light .ds-icon-orders{color:#b66a00}.theme-light .ds-icon-downloads{color:#086eb8}.theme-light .ds-icon-settings{color:#53677e}.theme-light .ds-icon-journal_notes{color:#7c3aed}
+.theme-light .ds-log-line .message{color:#dbe7f5}
+.theme-light .ds-terminal-empty{color:#93a7bd}
+@media(min-width:1250px){.ds-overview-grid{grid-template-columns:1.12fr 1.13fr 1fr}.ds-inspector-grid{grid-template-columns:1.08fr .98fr 1.12fr}.ds-console-grid{grid-template-columns:1.17fr .83fr}}
+@media(max-width:1249px){.app:has(.ds-page) aside{width:190px}.app:has(.ds-page) main{margin-left:190px}.ds-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-overview-grid>.ds-card:last-child{grid-column:1/-1}.ds-inspector-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-inspector-grid>.ds-card:first-child{grid-row:span 2}.ds-console-grid{grid-template-columns:1fr}.ds-log-header{flex-wrap:wrap}.ds-log-controls{justify-content:flex-start;flex-wrap:wrap}}
+@media(max-width:760px){.app:has(.ds-page) aside{width:62px;padding:15px 5px}.app:has(.ds-page) main{margin-left:62px}.app:has(.ds-page) aside .logo span,.app:has(.ds-page) aside .local,.app:has(.ds-page) aside .navtitle,.app:has(.ds-page) aside .nav:not(.active){font-size:0}.app:has(.ds-page) aside .logo{padding:0 0 18px;justify-content:center}.app:has(.ds-page) aside .nav{justify-content:center;font-size:0;gap:0;padding:12px 3px}.app:has(.ds-page) .content{padding:14px 10px}.app:has(.ds-page) main>header{padding:0 10px}.ds-overview-grid,.ds-inspector-grid,.ds-console-grid{grid-template-columns:1fr}.ds-overview-grid>.ds-card:last-child{grid-column:auto}.ds-inspector-grid>.ds-card:first-child{grid-row:auto}.ds-log-header{flex-wrap:wrap}.ds-log-header>.ds-card-title{min-width:0}.ds-log-controls{width:100%;flex-wrap:wrap}.ds-log-controls .ds-search{flex:1}.ds-metrics{gap:7px}.ds-metric-top>label{font-size:10px}.ds-metric strong{font-size:17px}.ds-metric-foot{font-size:9px}.ds-storage-donut{flex-wrap:wrap}.ds-legend{min-width:100%}}
