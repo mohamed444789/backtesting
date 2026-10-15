@@ -1,3 +1,4 @@
+import './database-storage.css';
 import React,{useCallback,useEffect,useMemo,useState}from'react';
 import{Activity,Database,HardDrive,Layers,RefreshCw,Search,Table2,Terminal,Download,AlertTriangle,CheckCircle2,Radio,Pause,Play,Copy,ChevronRight,Columns3,Box,Clock3}from'lucide-react';
 type Column={name:string;type:string;notnull:number;pk:number;dflt_value:any};
