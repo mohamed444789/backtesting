@@ -92,7 +92,7 @@ if(canUpdate){
 chartDataRef.current=chartData;
 if(emaSeries.current){try{emaSeries.current.setData(calculateEma(chartData.map((x:any)=>({time:Number(x.time),close:Number(x.close)}))));emaSeries.current.applyOptions({visible:emaVisible})}catch(e){console.error('EMA update failed',e)}}
 lastDataCount.current=chartData.length;
-},[candles,tf,theme,emaVisible]);const positionLines=useRef<any[]>([]);useEffect(()=>{
+},[candles,tf,theme,emaVisible,page,session?.id]);const positionLines=useRef<any[]>([]);useEffect(()=>{
 if(!series.current||!chartEl.current)return;
 if(page!=='Replay Terminal')return;
 const container=chartEl.current;
