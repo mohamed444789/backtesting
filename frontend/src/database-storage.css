@@ -115,3 +115,14 @@
 .theme-light .ds-filter-chips button.active{color:#075da8;background:#e0f0ff;border-color:#75b7ea;box-shadow:inset 0 0 0 1px #c2e1fb}
 @media(max-width:1249px){.ds-filter-chips{flex-wrap:wrap}.ds-log-controls{gap:5px}.ds-filter-chips button{padding:6px 7px}}
 @media(max-width:760px){.ds-filter-chips{overflow:auto;max-width:100%;flex-wrap:nowrap}.ds-filter-chips button{padding:7px 8px}.ds-log-controls .ds-search{max-width:none}}
+
+.theme-light .ds-legend span{color:#40566e}
+.theme-light .ds-legend span b{color:#13263a}
+.theme-light .ds-donut small{color:#53677e}
+.theme-light .ds-history-foot{color:#53677e}
+.theme-light .ds-autoscroll{color:#50657a}
+.theme-light .ds-table td:last-child{color:#53677e}
+.theme-light .ds-console-line time{color:#9aadc2}
+.theme-light .ds-console-line span{color:#dbe7f5}
+.theme-light .ds-console-job small{color:#a8bbd0}
+.theme-light .ds-card-extra .ds-count{color:#40566e}
