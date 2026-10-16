@@ -513,3 +513,53 @@
  .ds-log-line .scope{display:none}
  .ds-console-output{font-size:12px}
 }
+
+
+/* Readability and workspace sizing: prioritize comfortable desktop viewing. */
+.ds-page{font-size:14px}
+.ds-title p{font-size:14px;line-height:1.55}
+.ds-health,.ds-live{font-size:12px}
+.ds-tabs button{font-size:13px;padding:14px 16px}
+.ds-metric-top,.ds-metric-top>label{font-size:13px}
+.ds-metric strong{font-size:26px}
+.ds-metric small,.ds-metric-foot{font-size:12px;line-height:1.55}
+.ds-card{padding:17px}
+.ds-card-title>b{font-size:14px}
+.ds-count{font-size:12px}
+.ds-table{font-size:13px}
+.ds-table th{font-size:12px}
+.ds-table th,.ds-table td{padding:11px 10px;line-height:1.5}
+.ds-legend,.ds-legend span,.ds-storage-row>div:first-child{font-size:12px;line-height:1.6}
+.ds-legend p,.ds-muted,.ds-system-note{font-size:12px;line-height:1.6}
+.ds-search input{font-size:13px}
+.ds-log-controls select,.ds-log-controls .secondary,.ds-subtabs button{font-size:12px}
+.ds-filter-chips button{font-size:11px;padding:8px 10px}
+.ds-autoscroll{font-size:12px}
+.ds-log-line{grid-template-columns:88px 54px 90px minmax(0,1fr);gap:10px}
+.ds-terminal{height:440px!important;font-size:13px;line-height:1.9;padding:16px}
+.ds-console-output{height:440px!important;font-size:13px;line-height:1.9;padding:16px;font-family:'Cascadia Mono','Cascadia Code',Consolas,'SFMono-Regular',Menlo,monospace;font-variant-ligatures:none}
+.ds-console-line{grid-template-columns:76px 52px minmax(0,1fr);gap:9px;font-size:12px;line-height:1.8}
+.ds-console-job{font-size:12px;line-height:1.8}
+.ds-console-job>div:first-child{font-size:13px}
+.ds-console-job small,.ds-job>div:first-child,.ds-job strong{font-size:12px;line-height:1.65}
+.ds-error{font-size:13px;line-height:1.6}
+.ds-pagination,.ds-text-action{font-size:12px}
+.ds-sample-title{font-size:14px}
+.ds-details-scroll .ds-table th,.ds-details-scroll .ds-table td,.ds-sample-scroll .ds-table th,.ds-sample-scroll .ds-table td{font-size:12px;padding:10px 9px}
+@media(min-width:1250px){
+ .ds-log-card .ds-terminal,.ds-download-console .ds-console-output{height:480px!important}
+ .ds-card{padding:18px}
+}
+@media(max-width:760px){
+ .ds-title p{font-size:13px}
+ .ds-tabs button{font-size:12px;padding:12px}
+ .ds-card-title>b{font-size:13px}
+ .ds-metric-top,.ds-metric-top>label{font-size:11px}
+ .ds-metric strong{font-size:21px}
+ .ds-metric small,.ds-metric-foot{font-size:11px}
+ .ds-table{font-size:12px}
+ .ds-log-line{grid-template-columns:72px 48px minmax(0,1fr);gap:7px}
+ .ds-log-line .scope{display:none}
+ .ds-terminal,.ds-console-output{height:360px!important;font-size:12px;line-height:1.8}
+ .ds-console-line{grid-template-columns:68px 45px minmax(0,1fr);font-size:11px}
+}
