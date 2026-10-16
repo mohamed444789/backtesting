@@ -203,3 +203,23 @@
 .theme-light .ds-coverage-stats span{color:#526880}
 .theme-light .ds-coverage-stats b{color:#142b42}
 @media(max-width:760px){.ds-coverage-head{align-items:flex-start}.ds-coverage-instrument{width:100%;justify-content:space-between}.ds-coverage-instrument select{flex:1}.ds-coverage-stats{grid-template-columns:1fr}.ds-table-list-card .ds-table-scroll{max-height:300px}.ds-download-page>.ds-card .ds-terminal{height:280px}}
+
+
+/* Sortable database inventory headers. */
+.ds-inventory-sort{display:flex;align-items:center;justify-content:space-between;gap:7px;width:100%;min-height:32px;padding:7px 6px;border:0;border-radius:4px;background:transparent;color:inherit;text-align:left;font:inherit;font-size:10px;font-weight:650;white-space:nowrap;cursor:pointer}
+.ds-inventory-sort:hover{background:#172b40;color:#eaf6ff}
+.ds-inventory-sort span{color:#7e95ac;font-size:11px}
+.ds-inventory-sort:focus-visible{outline:2px solid #299fe6;outline-offset:-2px}
+.theme-light .ds-inventory-sort:hover{background:#e6f3ff;color:#163c5c}
+.theme-light .ds-inventory-sort span{color:#536b83}
+/* In-panel navigation switches between rows and schema without a persistent COLUMNS strip. */
+.ds-data-nav{display:flex;align-items:center;gap:5px;margin:12px 0 10px;padding-bottom:8px;border-bottom:1px solid #24364a}
+.ds-data-nav button{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid transparent;border-radius:6px;background:transparent;color:#91a6bd;font-size:11px;font-weight:600;cursor:pointer}
+.ds-data-nav button:hover{background:#14283a;color:#e5f3ff}
+.ds-data-nav button.active{background:#12324c;border-color:#245a7e;color:#7bd0ff}
+.ds-schema-view{max-height:560px}
+.ds-schema-view .ds-table td{font-size:11px}
+.theme-light .ds-data-nav{border-color:#d8e3ee}
+.theme-light .ds-data-nav button{color:#536b83}
+.theme-light .ds-data-nav button:hover{background:#eff6fd;color:#1b405f}
+.theme-light .ds-data-nav button.active{background:#e0f1ff;border-color:#afdaff;color:#075da8}
