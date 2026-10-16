@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { valid, type Candle } from './core.js';
 
 export interface CliCandleDownloadOptions {
@@ -20,6 +21,7 @@ export interface CliCandleDownloadResult {
 }
 
 const CLI_TIMEOUT_MS = 180_000;
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const MAX_PROCESS_OUTPUT_CHARS = 4_000;
 
 function utcDayStartSeconds(date: string): number {
@@ -169,8 +171,6 @@ export function buildDukascopyCliArgs(options: DukascopyCliArgs): string[] {
 
   const nextDate = nextUtcDate(options.date);
   return [
-    '--no-install',
-    'dukascopy-node',
     '-i', instrument,
     '-from', options.date,
     '-to', nextDate,
@@ -193,11 +193,32 @@ export function buildDukascopyCliArgs(options: DukascopyCliArgs): string[] {
   ];
 }
 
-function runCli(args: string[], signal?: AbortSignal): Promise<{ stdout: string; stderr: string }> {
-  if (signal?.aborted) return Promise.reject(new Error('CLI download cancelled'));
+async function resolveCliCommand(): Promise<string> {
+  const binaryName = process.platform === 'win32' ? 'dukascopy-node.cmd' : 'dukascopy-node';
+  const candidates = [
+    path.resolve(process.cwd(), 'node_modules', '.bin', binaryName),
+    path.resolve(process.cwd(), '..', 'node_modules', '.bin', binaryName),
+    path.resolve(MODULE_DIR, '..', '..', 'node_modules', '.bin', binaryName),
+  ];
+
+  for (const candidate of [...new Set(candidates)]) {
+    try {
+      await fs.access(candidate);
+      return candidate;
+    } catch {
+      // Try the next workspace/root-relative location.
+    }
+  }
+
+  throw new Error('Could not locate the installed dukascopy-node CLI. Install workspace dependencies first.');
+}
+
+async function runCli(args: string[], signal?: AbortSignal): Promise<{ stdout: string; stderr: string }> {
+  if (signal?.aborted) throw new Error('CLI download cancelled');
+  const command = await resolveCliCommand();
+  if (signal?.aborted) throw new Error('CLI download cancelled');
 
   return new Promise((resolve, reject) => {
-    const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
     const child = spawn(command, args, {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
