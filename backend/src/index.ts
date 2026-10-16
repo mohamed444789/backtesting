@@ -109,4 +109,12 @@ async function download(id:number,symbol:string,start:string,end:string){
   appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message);
  }
 }
-app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}app.listen(port,'0.0.0.0',()=>console.log('MH Forex Replay listening on '+port));
+app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}const interruptedDownloads=db.prepare("select id,symbol,start_date,end_date,status from downloads where status in ('queued','running') order by id").all() as any[];
+let recoveryWaitFor:number|undefined;
+for(const job of interruptedDownloads){
+ const id=Number(job.id);
+ appLog('WARN','DOWNLOAD','Recovering persisted '+String(job.status)+' job #'+id+' after backend restart; replaying its date range from the beginning (existing candles are deduplicated).');
+ scheduleDownload(id,String(job.symbol).toLowerCase(),String(job.start_date),String(job.end_date),recoveryWaitFor);
+ recoveryWaitFor=id;
+}
+app.listen(port,'0.0.0.0',()=>console.log('MH Forex Replay listening on '+port));
