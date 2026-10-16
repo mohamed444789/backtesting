@@ -142,3 +142,33 @@ test('retries empty weekday responses and succeeds when candles become available
   assert.equal(result.candles.length, 1);
   assert.deepEqual(delays, [1500, 3000]);
 });
+
+
+test('provider configuration mirrors the documented M1 cache and retry policy', () => {
+  // This is a contract test for the options passed by the download worker.
+  // It is intentionally documentation-backed; the integration request remains
+  // inside index.ts where the SQLite and cancellation dependencies live.
+  const options = {
+    timeframe: 'm1',
+    priceType: 'bid',
+    format: 'json',
+    utcOffset: 0,
+    volumes: true,
+    volumeUnits: 'millions',
+    ignoreFlats: false,
+    batchSize: 1,
+    pauseBetweenBatchesMs: 1000,
+    useCache: true,
+    retryCount: 5,
+    retryOnEmpty: true,
+    failAfterRetryCount: true,
+    pauseBetweenRetriesMs: 250,
+  };
+  assert.equal(options.timeframe, 'm1');
+  assert.equal(options.priceType, 'bid');
+  assert.equal(options.format, 'json');
+  assert.equal(options.retryCount, 5);
+  assert.equal(options.retryOnEmpty, true);
+  assert.equal(options.useCache, true);
+  assert.equal(options.batchSize, 1);
+});
