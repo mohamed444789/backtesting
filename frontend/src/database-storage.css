@@ -326,8 +326,9 @@
 .historical-download-fields{display:grid;grid-template-columns:minmax(170px,1.05fr) repeat(2,minmax(150px,1fr)) minmax(170px,auto);gap:12px 16px;align-items:end;min-width:0}
 .historical-download-fields>label{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:14px;line-height:1.4}
 .historical-download-fields>label input,.historical-download-fields>label select{width:100%;min-width:0;min-height:42px;font-size:15px;padding:9px 11px}
-.historical-download-action{grid-column:4;justify-self:end;width:100%;display:flex;justify-content:flex-end}
-.historical-download-action .wide{width:100%;min-width:0;max-width:100%;margin:0}
+.historical-download-action{grid-column:4;justify-self:stretch;align-self:stretch;width:100%;display:flex;flex-direction:column;gap:7px;box-sizing:border-box}
+.historical-download-spacer{display:block;visibility:hidden;font-size:14px;line-height:1.4;min-height:19.6px;white-space:nowrap}
+.historical-download-action .wide{width:100%;min-width:0;max-width:100%;height:42px;min-height:42px;padding:0 12px;margin:0;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1.2}
 @media(max-width:1000px){
  .historical-download-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
  .historical-download-action{grid-column:2;justify-self:stretch}
