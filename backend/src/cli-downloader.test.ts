@@ -68,7 +68,7 @@ test('CLI arguments select one UTC M1 bid day as disposable CSV with retries', (
     fileName: 'job-1',
   });
 
-  assert.ok(args.includes('--no-install'));
+  assert.equal(args[0], '-i');
   assert.ok(args.includes('eurusd'));
   assert.ok(args.includes('m1'));
   assert.ok(args.includes('bid'));
@@ -78,7 +78,7 @@ test('CLI arguments select one UTC M1 bid day as disposable CSV with retries', (
   assert.ok(args.includes('/data/staging'));
   assert.ok(args.includes('15'));
   assert.ok(args.includes('2000'));
-  assert.ok(args.includes('--no-fail-after-retries'));
+  assert.ok(args.includes('-fr'));
 });
 
 test('rejects invalid date, instrument and required output paths when building CLI arguments', () => {
