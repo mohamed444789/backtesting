@@ -9,5 +9,76 @@ app.post('/api/orders',(q,r)=>{const b=q.body||{},s:any=db.prepare('select * fro
 app.get('/api/trades',(_q,r)=>r.json(db.prepare('select * from trades order by entry_time desc limit 1000').all()));app.get('/api/sessions/:id/trades',(q,r)=>r.json(db.prepare('select * from trades where session_id=? order by entry_time desc').all(Number(q.params.id))));app.post('/api/sessions/:sessionId/trades/:tradeId/close',(q,r)=>{const sessionId=Number(q.params.sessionId),tradeId=Number(q.params.tradeId),s:any=db.prepare('select * from sessions where id=?').get(sessionId);if(!s)return r.status(404).json({error:'Session not found'});const t:any=db.prepare('select * from trades where id=? and session_id=?').get(tradeId,sessionId);if(!t)return r.status(404).json({error:'Trade not found in this session'});if(t.status!=='open')return r.status(409).json({error:'Trade is already closed'});const c:any=db.prepare('select close,time from candles where symbol=? and time<=? order by time desc limit 1').get(s.symbol,s.cursor);if(!c)return r.status(422).json({error:'No revealed candle available at the replay cursor'});const profit=pnl(t.side,t.entry,c.close,t.lots);const result=db.transaction(()=>{const changed=db.prepare("update trades set exit_time=?,exit=?,pnl=?,status='closed' where id=? and session_id=? and status='open'").run(c.time,c.close,profit,tradeId,sessionId);if(changed.changes!==1)throw Error('Trade is already closed');db.prepare('update sessions set balance=balance+? where id=?').run(profit,sessionId);return{trade:db.prepare('select * from trades where id=?').get(tradeId),session:db.prepare('select * from sessions where id=?').get(sessionId)}})();r.json(result)});app.patch('/api/trades/:id',(q,r)=>{const b=q.body||{};db.prepare('update trades set notes=coalesce(?,notes),strategy=coalesce(?,strategy),tags=coalesce(?,tags) where id=?').run(b.notes??null,b.strategy??null,b.tags?JSON.stringify(b.tags):null,Number(q.params.id));r.json(db.prepare('select * from trades where id=?').get(Number(q.params.id)))});
 app.get('/api/analytics',(_q,r)=>{const ts=db.prepare("select * from trades where status='closed'").all() as any[],w=ts.filter(t=>t.pnl>0),l=ts.filter(t=>t.pnl<0),gp=w.reduce((a,t)=>a+t.pnl,0),gl=-l.reduce((a,t)=>a+t.pnl,0),net=gp-gl;r.json({total:ts.length,wins:w.length,losses:l.length,breakEven:ts.length-w.length-l.length,winRate:ts.length?w.length/ts.length*100:0,grossProfit:gp,grossLoss:gl,net,profitFactor:gl?gp/gl:null,averageWinner:w.length?gp/w.length:0,averageLoser:l.length?-gl/l.length:0,expectancy:ts.length?net/ts.length:0,trades:ts})});app.get('/api/settings',(_q,r)=>r.json(Object.fromEntries((db.prepare('select key,value from settings').all() as any[]).map(x=>[x.key,JSON.parse(x.value)]))));app.put('/api/settings',(q,r)=>{const st=db.prepare('insert into settings(key,value) values(?,?) on conflict(key) do update set value=excluded.value');for(const[k,v]of Object.entries(q.body||{}))st.run(k,JSON.stringify(v));r.json({ok:true})});
 const upload=multer({storage:multer.diskStorage({destination:(_q,_f,cb)=>cb(null,path.join(root,'screenshots')),filename:(_q,f,cb)=>cb(null,Date.now()+'-'+f.originalname.replace(/[^a-zA-Z0-9._-]/g,'_').slice(-80))}),limits:{fileSize:8*1024*1024},fileFilter:(_q,f,cb)=>cb(null,['image/png','image/jpeg','image/webp'].includes(f.mimetype))});app.post('/api/trades/:id/screenshots',upload.single('image'),(q,r)=>{if(!q.file)return r.status(400).json({error:'PNG/JPEG/WebP image up to 8 MB required'});db.prepare('insert into journal_notes(trade_id,body) values(?,?)').run(Number(q.params.id),'Screenshot: '+q.file.filename);r.status(201).json({filename:q.file.filename})});
-app.get('/api/downloads',(_q,r)=>r.json(db.prepare('select * from downloads order by id desc').all()));app.post('/api/downloads',(q,r)=>{const b=q.body||{};if(!b.symbol||!b.startDate||!b.endDate||b.startDate>b.endDate)return r.status(400).json({error:'Instrument and valid date range required'});const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status) values(?,?,?,'queued')").run(String(b.symbol).toUpperCase(),b.startDate,b.endDate).lastInsertRowid);r.status(202).json({id,status:'queued'});download(id,String(b.symbol).toLowerCase(),String(b.startDate),String(b.endDate))});async function download(id:number,symbol:string,start:string,end:string){try{db.prepare("update downloads set status='running' where id=?").run(id);const mod:any=await import('dukascopy-node');const fn=mod.getHistoricalRates||mod.default; if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');const result=await fn({instrument:symbol,dates:{from:new Date(start+'T00:00:00Z'),to:new Date(end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',volume:true});const cs=Array.isArray(result)?result:result.data||[];const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');const tx=db.transaction((arr:any[])=>{for(const x of arr){const c={time:Math.floor(new Date(x.timestamp??x.time).getTime()/1000),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(c))put.run(symbol.toUpperCase(),c.time,c.open,c.high,c.low,c.close,c.volume)}});for(let i=0;i<cs.length;i+=3000){tx(cs.slice(i,i+3000));db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.round((i+3000)/Math.max(1,cs.length)*100)),id)}db.prepare("update downloads set status='completed',progress=100 where id=?").run(id)}catch(e){db.prepare("update downloads set status='failed',error=? where id=?").run(String(e).slice(0,800),id)}}
+app.get('/api/downloads',(_q,r)=>r.json(db.prepare('select * from downloads order by id desc').all()));app.post('/api/downloads',(q,r)=>{const b=q.body||{};if(!b.symbol||!b.startDate||!b.endDate||b.startDate>b.endDate)return r.status(400).json({error:'Instrument and valid date range required'});const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status) values(?,?,?,'queued')").run(String(b.symbol).toUpperCase(),b.startDate,b.endDate).lastInsertRowid);r.status(202).json({id,status:'queued'});download(id,String(b.symbol).toLowerCase(),String(b.startDate),String(b.endDate))});const MARKET_TZ='America/New_York';
+const MAX_DAY_ATTEMPTS=3;
+const RETRY_DELAY_MS=1000;
+const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
+function marketClock(epochMs:number){
+  const parts=new Intl.DateTimeFormat('en-US',{timeZone:MARKET_TZ,weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(epochMs));
+  return Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value])) as Record<string,string>;
+}
+function forexMarketOpen(epochMs:number){
+  const t=marketClock(epochMs),day=t.weekday,h=Number(t.hour),m=Number(t.minute),afterOpen=h>17||(h===17&&m>=0),beforeClose=h<17;
+  if(day==='Sat')return false;
+  if(day==='Sun')return afterOpen;
+  if(day==='Fri')return beforeClose;
+  return true;
+}
+function utcDayHasOpenMarket(startMs:number,endMs:number){
+  for(let t=startMs;t<endMs;t+=60*60*1000)if(forexMarketOpen(t))return true;
+  return false;
+}
+async function download(id:number,symbol:string,start:string,end:string){
+  const pair=symbol.toUpperCase(),failures:string[]=[];
+  try{
+    db.prepare("update downloads set status='running',progress=0,error=NULL where id=?").run(id);
+    const mod:any=await import('dukascopy-node'),fn=mod.getHistoricalRates||mod.default;
+    if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
+    const first=Date.parse(start+'T00:00:00Z'),last=Date.parse(end+'T00:00:00Z');
+    if(!Number.isFinite(first)||!Number.isFinite(last)||first>last)throw Error('Invalid UTC date range');
+    const totalDays=Math.floor((last-first)/86400000)+1;
+    const hasCandles=db.prepare('select 1 from candles where symbol=? and time>=? and time<? limit 1');
+    const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume,price_type) values(?,?,?,?,?,?,?,?)');
+    const saveDay=db.transaction((rows:any[])=>{
+      for(const x of rows){
+        const rawTime=x.timestamp??x.time;
+        const ms=rawTime instanceof Date?rawTime.getTime():typeof rawTime==='number'?(rawTime<1e12?rawTime*1000:rawTime):new Date(rawTime).getTime();
+        if(!Number.isFinite(ms)||ms<dayStart||ms>=dayEnd||!forexMarketOpen(ms))continue;
+        const c={time:Math.floor(ms/1000),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};
+        if(valid(c))put.run(pair,c.time,c.open,c.high,c.low,c.close,c.volume,'bid');
+      }
+    });
+    for(let n=0;n<totalDays;n++){
+      const dayStart=first+n*86400000,dayEnd=dayStart+86400000,day=new Date(dayStart).toISOString().slice(0,10);
+      if(!utcDayHasOpenMarket(dayStart,dayEnd)){
+        db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
+        continue;
+      }
+      if(hasCandles.get(pair,Math.floor(dayStart/1000),Math.floor(dayEnd/1000))){
+        db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
+        continue;
+      }
+      let saved=false,lastError='No candles returned for an open-market period';
+      for(let attempt=1;attempt<=MAX_DAY_ATTEMPTS;attempt++){
+        try{
+          const result=await fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd-60000)},timeframe:'m1',format:'json',priceType:'bid',volume:true});
+          const rows=Array.isArray(result)?result:result?.data||[];
+          const relevant=rows.filter((x:any)=>{
+            const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();
+            return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms);
+          });
+          if(relevant.length===0)throw Error('No candles returned for an open-market period');
+          saveDay(relevant);
+          saved=true;
+          break;
+        }catch(e){lastError=String(e).slice(0,300);if(attempt<MAX_DAY_ATTEMPTS)await sleep(RETRY_DELAY_MS*attempt);}
+      }
+      if(!saved)failures.push(day+': '+lastError);
+      db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
+    }
+    db.prepare("update downloads set status='completed',progress=100,error=? where id=?").run(failures.length?('Skipped after '+MAX_DAY_ATTEMPTS+' attempts: '+failures.join('; ')).slice(0,800):null,id);
+  }catch(e){
+    db.prepare("update downloads set status='failed',error=? where id=?").run(String(e).slice(0,800),id);
+  }
+}
 app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}app.listen(port,'0.0.0.0',()=>console.log('MH Forex Replay listening on '+port));
