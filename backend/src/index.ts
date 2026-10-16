@@ -1,6 +1,6 @@
 import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
-const logBuffer:AppLog[]=[];const logClients=new Set<any>();let nextLogId=1;
+const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
 appLog('INFO','API','Atlas backend process initialized');
 app.use((q,r,next)=>{const started=Date.now();if(q.path.startsWith('/api/')&&!q.path.startsWith('/api/logs')&&['POST','PUT','PATCH','DELETE'].includes(q.method)){r.on('finish',()=>appLog(r.statusCode>=400?'WARN':'INFO','HTTP',q.method+' '+q.path+' → '+r.statusCode+' ('+(Date.now()-started)+' ms)'))}next()});
@@ -24,7 +24,7 @@ function validDateOnly(value:string){if(!/^\d{4}-\d{2}-\d{2}$/.test(value))retur
 function splitDateRange(start:string,end:string,chunkDays=7){const chunks:{start:string;end:string}[]=[];const last=new Date(end+'T00:00:00Z').getTime();let cursor=new Date(start+'T00:00:00Z').getTime();const dayMs=86400000;while(cursor<=last){const stop=Math.min(last,cursor+(chunkDays-1)*dayMs);chunks.push({start:new Date(cursor).toISOString().slice(0,10),end:new Date(stop).toISOString().slice(0,10)});cursor=stop+dayMs}return chunks}
 app.get('/api/downloads',(_q,r)=>r.json(db.prepare('select * from downloads order by id desc').all()));
 app.post('/api/downloads',(q,r)=>{const b=q.body||{},symbol=String(b.symbol||'').toUpperCase(),start=String(b.startDate||''),end=String(b.endDate||'');if(!symbol||!validDateOnly(start)||!validDateOnly(end)||start>end)return r.status(400).json({error:'Instrument and valid start/end dates in YYYY-MM-DD format are required'});const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress) values(?,?,?,'queued',0)").run(symbol,start,end).lastInsertRowid);appLog('INFO','DOWNLOAD','Queued job #'+id+' for '+symbol+' from '+start+' to '+end);download(id,symbol.toLowerCase(),start,end);r.status(202).json({id,status:'queued'})});
-app.post('/api/downloads/:id/retry',(q,r)=>{const previous=db.prepare('select * from downloads where id=?').get(Number(q.params.id)) as any;if(!previous)return r.status(404).json({error:'Download job not found'});if(previous.status!=='failed')return r.status(409).json({error:'Only failed download jobs can be retried'});const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress) values(?,?,?,'queued',0)").run(previous.symbol,previous.start_date,previous.end_date).lastInsertRowid);appLog('WARN','DOWNLOAD','Retry requested for failed job #'+previous.id+'; created new job #'+id+' for '+previous.symbol+' '+previous.start_date+' to '+previous.end_date);download(id,String(previous.symbol).toLowerCase(),String(previous.start_date),String(previous.end_date));r.status(202).json({id,status:'queued',retryOf:Number(previous.id)})});
+app.post('/api/downloads/:id/retry',(q,r)=>{const previous=db.prepare('select * from downloads where id=?').get(Number(q.params.id)) as any;if(!previous)return r.status(404).json({error:'Download job not found'});const canRetry=['failed','queued','running'].includes(String(previous.status));if(!canRetry)return r.status(409).json({error:'Only failed, queued, or running jobs can be retried/restarted'});const restarting=['queued','running'].includes(String(previous.status));const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress) values(?,?,?,'queued',0)").run(previous.symbol,previous.start_date,previous.end_date).lastInsertRowid);if(restarting){cancelledDownloads.add(Number(previous.id));db.prepare("update downloads set status='restarted',error=? where id=?").run('Manually restarted; replacement job #'+id+' is running the same date range from the beginning.',Number(previous.id))}appLog(restarting?'WARN':'INFO','DOWNLOAD',(restarting?'Restart':'Retry')+' requested for job #'+previous.id+'; created job #'+id+' for '+previous.symbol+' '+previous.start_date+' to '+previous.end_date);download(id,String(previous.symbol).toLowerCase(),String(previous.start_date),String(previous.end_date));r.status(202).json({id,status:'queued',retryOf:Number(previous.id),restarted:restarting})});
 async function download(id:number,symbol:string,start:string,end:string){
  let activeChunk:{start:string;end:string}|null=null;
  try{
@@ -34,18 +34,18 @@ async function download(id:number,symbol:string,start:string,end:string){
   appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' weekly chunks');
   const mod:any=await import('dukascopy-node');
   const fn=mod.getHistoricalRates||mod.default;
-  if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
+  if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before fetching because it was manually restarted');return;}
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
   const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const rawTime=x.timestamp??x.time;const numeric=typeof rawTime==='number'?rawTime:NaN;const milliseconds=Number.isFinite(numeric)?(Math.abs(numeric)<1e12?numeric*1000:numeric):new Date(rawTime).getTime();const c={time:Math.floor(milliseconds/1000),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(c))inserted+=put.run(symbol.toUpperCase(),c.time,c.open,c.high,c.low,c.close,c.volume).changes}return inserted});
   let inputRows=0,insertedRows=0;
   for(let index=0;index<chunks.length;index++){
-   const chunk=chunks[index];activeChunk=chunk;
+   const chunk=chunks[index];activeChunk=chunk;if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between chunks because it was manually restarted');return;}
    appLog('INFO','FETCH','Job #'+id+': requesting chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+')');
    let result:any;
    for(let attempt=1;attempt<=2;attempt++){
-    try{result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',volume:true});break}
+    try{result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',volume:true});if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight chunk because it was manually restarted');return;}break}
     catch(e){
-     if(attempt===2)throw e;
+     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during fetch');return;}if(attempt===2)throw e;
      appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' failed on attempt 1; retrying once: '+String(e).slice(0,300));
      await new Promise(resolve=>setTimeout(resolve,800));
     }
@@ -70,6 +70,7 @@ async function download(id:number,symbol:string,start:string,end:string){
   db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
   appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' weekly chunks; '+inputRows+' rows processed and '+insertedRows+' new candles inserted (duplicates ignored).');
  }catch(e){
+  if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after manual restart');return;}
   const detail=e instanceof Error?e.message:String(e);
   const range=activeChunk?' [failed chunk '+activeChunk.start+' to '+activeChunk.end+']':'';
   const message=(detail+range).slice(0,800);
