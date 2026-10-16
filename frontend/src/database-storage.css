@@ -237,3 +237,10 @@
 .ds-job .ds-error-text{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 0;line-height:1.5}
 .theme-light .ds-job-title>span{color:#536b83}
 @media(max-width:760px){.ds-download-filters{overflow:auto;flex-wrap:nowrap}.ds-job-actions{align-items:flex-start}}
+
+
+/* Historical Data page sub-navigation uses the same visual language as Database & Storage. */
+.historical-data-tabs{margin-top:2px;margin-bottom:16px;flex-wrap:wrap}
+.historical-data-tabs button{display:flex;align-items:center;gap:7px}
+.ds-embedded{min-width:0}
+.ds-embedded>.ds-error{margin-top:0}
