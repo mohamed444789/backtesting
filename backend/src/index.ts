@@ -39,15 +39,15 @@ async function download(id:number,symbol:string,start:string,end:string){
     const totalDays=Math.floor((last-first)/86400000)+1;
     const hasCandles=db.prepare('select 1 from candles where symbol=? and time>=? and time<? limit 1');
     const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume,price_type) values(?,?,?,?,?,?,?,?)');
-    const saveDay=db.transaction((rows:any[])=>{
-      for(const x of rows){
+    const saveDay=(rows:any[],dayStart:number,dayEnd:number)=>db.transaction((batch:any[])=>{
+      for(const x of batch){
         const rawTime=x.timestamp??x.time;
         const ms=rawTime instanceof Date?rawTime.getTime():typeof rawTime==='number'?(rawTime<1e12?rawTime*1000:rawTime):new Date(rawTime).getTime();
         if(!Number.isFinite(ms)||ms<dayStart||ms>=dayEnd||!forexMarketOpen(ms))continue;
         const c={time:Math.floor(ms/1000),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};
         if(valid(c))put.run(pair,c.time,c.open,c.high,c.low,c.close,c.volume,'bid');
       }
-    });
+    })();
     for(let n=0;n<totalDays;n++){
       const dayStart=first+n*86400000,dayEnd=dayStart+86400000,day=new Date(dayStart).toISOString().slice(0,10);
       if(!utcDayHasOpenMarket(dayStart,dayEnd)){
@@ -68,7 +68,7 @@ async function download(id:number,symbol:string,start:string,end:string){
             return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms);
           });
           if(relevant.length===0)throw Error('No candles returned for an open-market period');
-          saveDay(relevant);
+          saveDay(relevant,dayStart,dayEnd);
           saved=true;
           break;
         }catch(e){lastError=String(e).slice(0,300);if(attempt<MAX_DAY_ATTEMPTS)await sleep(RETRY_DELAY_MS*attempt);}
