@@ -47,7 +47,7 @@ async function download(id:number,symbol:string,start:string,end:string){
         const c={time:Math.floor(ms/1000),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};
         if(valid(c))put.run(pair,c.time,c.open,c.high,c.low,c.close,c.volume,'bid');
       }
-    })();
+    })(rows);
     for(let n=0;n<totalDays;n++){
       const dayStart=first+n*86400000,dayEnd=dayStart+86400000,day=new Date(dayStart).toISOString().slice(0,10);
       if(!utcDayHasOpenMarket(dayStart,dayEnd)){
