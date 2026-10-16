@@ -268,3 +268,55 @@
 .historical-console-heading p{font-size:11px;color:#8fa3bb;margin:0}
 .theme-light .historical-console-heading h2{color:#162b41}
 .theme-light .historical-console-heading p{color:#536b83}
+
+
+/* Readability pass: bring historical-data and download-console typography up to a comfortable size. */
+.historical-download-form h3{font-size:20px;line-height:1.3}
+.historical-download-form>label{font-size:15px;line-height:1.45;gap:8px}
+.historical-download-form>label input,
+.historical-download-form>label select{font-size:15px;line-height:1.4;min-height:42px;padding:10px 12px}
+.historical-download-form>.notice{font-size:15px;line-height:1.6;padding:14px 16px;border-radius:8px}
+.historical-download-form>.wide{font-size:14px;min-height:42px}
+.historical-console-heading h2{font-size:19px}
+.historical-console-heading p{font-size:13px;line-height:1.5}
+.ds-download-page>.ds-card>.ds-card-title>b{font-size:17px}
+.ds-download-page .ds-card-title{gap:10px;margin-bottom:16px}
+.ds-download-page .ds-card-title>span:first-child svg{width:20px;height:20px}
+.ds-download-page .ds-count{font-size:12px;padding:6px 10px}
+.ds-download-filters{gap:8px;margin:4px 0 14px}
+.ds-download-filters button{font-size:14px;line-height:1.25;padding:10px 13px;min-height:42px;gap:8px}
+.ds-download-filters button em{font-size:12px;font-weight:650;opacity:1}
+.ds-download-search{min-height:42px;padding:0 12px;gap:9px}
+.ds-download-search>svg{width:17px;height:17px;flex:0 0 auto}
+.ds-download-search input{font-size:14px;padding:10px 0!important}
+.ds-job{padding:16px 0}
+.ds-job-title{gap:12px}
+.ds-job-title>b,.ds-job-title>span{font-size:14px;line-height:1.5}
+.ds-job-actions strong{font-size:13px;line-height:1.4}
+.ds-retry-button{font-size:13px;padding:9px 12px;min-height:36px}
+.ds-job .ds-progress{height:8px;margin-top:9px}
+.ds-job .ds-error-text{font-size:13px;line-height:1.55}
+.ds-download-page .ds-muted{font-size:13px;line-height:1.6}
+.ds-download-page .ds-terminal{font-size:12px;line-height:1.8}
+.ds-download-page .ds-autoscroll{font-size:13px}
+.ds-download-page .ds-console-output{font-size:12px;line-height:1.75;padding:14px}
+.ds-download-page .ds-console-line{grid-template-columns:72px 48px minmax(0,1fr);gap:9px;font-size:12px;line-height:1.7;padding:4px 0}
+.ds-download-page .ds-console-job{font-size:12px;line-height:1.65;padding:10px 0}
+.ds-download-page .ds-console-job>div:first-child{font-size:12px;gap:12px;line-height:1.5}
+.ds-download-page .ds-console-job small{font-size:12px;line-height:1.6;margin-top:6px}
+.ds-download-page .ds-console-output .ds-terminal-empty{font-size:13px;line-height:1.7}
+.ds-embedded .ds-error{font-size:13px;line-height:1.55}
+@media(max-width:700px){
+ .historical-download-form h3{font-size:19px}
+ .historical-download-form>label{font-size:14px}
+ .historical-download-form>label input,.historical-download-form>label select{font-size:16px}
+ .historical-download-form>.notice{font-size:14px;padding:12px}
+ .ds-download-filters button{font-size:13px;padding:9px 11px;min-height:40px}
+ .ds-download-filters button em{font-size:11px}
+ .ds-job-title>b,.ds-job-title>span{font-size:13px}
+ .ds-job-actions strong,.ds-retry-button{font-size:12px}
+ .ds-download-page .ds-console-line{grid-template-columns:60px 40px minmax(0,1fr);gap:6px;font-size:11px}
+}
+.theme-light .historical-download-form>.notice{color:#263c53}
+.theme-light .ds-download-page .ds-job-title>span{color:#536b83}
+.theme-light .ds-download-page .ds-console-line{color:#dbe7f5}
