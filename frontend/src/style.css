@@ -964,3 +964,36 @@ td{font-size:12px}
 .nav{font-size:14px;font-weight:500;line-height:1.45;letter-spacing:0}
 .nav.active{font-weight:650}
 .nav svg{width:18px;height:18px;flex:0 0 18px}
+
+
+/* Stabilize the non-fullscreen chart canvas.
+   A flex-growing auto-height chart can feed its measured size back into its parent;
+   Lightweight Charts then repeatedly resizes the plot and the autoscaled price axis
+   appears to drift. Keep a definite plot height outside fullscreen as well. */
+.terminal:not(.fullscreen-terminal) > .chart-panel {
+  min-height: 0;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+.terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace {
+  flex: 0 0 auto;
+  width: 100%;
+  height: clamp(420px, 55vh, 700px);
+  min-height: 0;
+}
+.terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace > .chart {
+  flex: 1 1 0;
+  width: 0;
+  height: 100%;
+  min-height: 0;
+}
+@media (max-width: 700px) {
+  .terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace {
+    height: clamp(320px, 48vh, 520px);
+    min-height: 320px;
+  }
+  .terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace > .chart {
+    min-height: 0;
+  }
+}
