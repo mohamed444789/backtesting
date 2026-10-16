@@ -8,7 +8,6 @@ export interface CliCandleDownloadOptions {
   instrument: string;
   date: string;
   dataRoot: string;
-  cacheFolderPath: string;
   signal?: AbortSignal;
   allowEmpty?: boolean;
 }
@@ -157,7 +156,6 @@ export interface DukascopyCliArgs {
   instrument: string;
   date: string;
   outputDirectory: string;
-  cacheFolderPath: string;
   fileName: string;
 }
 
@@ -166,7 +164,6 @@ export function buildDukascopyCliArgs(options: DukascopyCliArgs): string[] {
   const instrument = options.instrument.trim().toLowerCase();
   if (!instrument) throw new Error('Instrument is required');
   if (!options.outputDirectory.trim()) throw new Error('CLI output directory is required');
-  if (!options.cacheFolderPath.trim()) throw new Error('CLI cache folder is required');
   if (!options.fileName.trim()) throw new Error('CLI file name is required');
 
   const nextDate = nextUtcDate(options.date);
@@ -184,8 +181,6 @@ export function buildDukascopyCliArgs(options: DukascopyCliArgs): string[] {
     '-fl',
     '-f', 'csv',
     '-dir', options.outputDirectory,
-    '-ch',
-    '-chpath', options.cacheFolderPath,
     '-df', 'YYYY-MM-DD HH:mm:ss',
     '-tz', 'UTC',
     '-r', '15',
@@ -308,7 +303,6 @@ export async function downloadDateCandlesViaCli(
     instrument: options.instrument,
     date: options.date,
     outputDirectory: workDir,
-    cacheFolderPath: options.cacheFolderPath,
     fileName,
   });
 
