@@ -338,3 +338,27 @@
  .historical-download-action{grid-column:1;justify-self:stretch}
  .historical-download-action .wide{width:100%;min-width:0}
 }
+
+
+/* Download job selection, batch retry, and active-job stop controls. */
+.ds-bulk-retry-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border:1px solid var(--ds-line,#26384d);border-radius:8px;background:var(--ds-panel-raised,#111e2d)}
+.ds-bulk-retry-controls>span{font-size:13px;font-weight:650;color:var(--ds-ink,#edf5ff);margin-right:auto}
+.ds-bulk-retry-controls button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:7px 11px;font-size:12px;white-space:nowrap}
+.ds-bulk-retry-controls button:disabled{opacity:.48;cursor:not-allowed}
+.ds-job-select{display:inline-flex;align-items:center;gap:9px;min-width:0;cursor:pointer}
+.ds-job-select input{width:17px;height:17px;flex:0 0 17px;margin:0;accent-color:#168de0;cursor:pointer}
+.ds-stop-button{display:inline-flex;align-items:center;justify-content:center;min-height:36px;min-width:66px;padding:8px 12px!important;border-color:#7f2937!important;color:#fecdd3!important;background:#2a141c!important;font-size:12px!important;font-weight:650}
+.ds-stop-button:hover:not(:disabled){background:#491b27!important;border-color:#e05267!important;color:#fff1f2!important}
+.ds-stop-button:disabled{opacity:.55;cursor:wait}
+.theme-light .ds-bulk-retry-controls{background:#f4f8fc;border-color:#d4dfeb}
+.theme-light .ds-bulk-retry-controls>span{color:#102033}
+.theme-light .ds-stop-button{background:#fff1f2!important;color:#9f1239!important;border-color:#f3b5c3!important}
+.theme-light .ds-stop-button:hover:not(:disabled){background:#ffe0e7!important;color:#881337!important}
+@media(max-width:700px){
+ .ds-bulk-retry-controls{align-items:stretch}
+ .ds-bulk-retry-controls>span{width:100%;margin:0}
+ .ds-bulk-retry-controls button{flex:1 1 auto}
+ .ds-job-title{align-items:flex-start}
+ .ds-job-select{flex-wrap:wrap}
+ .ds-job-actions{gap:7px}
+}
