@@ -48,7 +48,7 @@ async function download(id:number,symbol:string,start:string,end:string){
     catch(e){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during fetch');return;}
      if(attempt===4)throw e;
-     const delay=1000*Math(2**(attempt-1));
+     const delay=1000*(2**(attempt-1));
      appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' failed on attempt '+attempt+'; retrying in '+delay+' ms (attempt '+(attempt+1)+'/4): '+String(e).slice(0,300));
      await new Promise(resolve=>setTimeout(resolve,delay));
     }
