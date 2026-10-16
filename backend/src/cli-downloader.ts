@@ -238,10 +238,12 @@ async function runCli(args: string[], signal?: AbortSignal): Promise<{ stdout: s
       (current + chunk.toString('utf8')).slice(-MAX_PROCESS_OUTPUT_CHARS);
 
     const terminate = () => {
-      if (child.exitCode != null || child.killed) return;
+      // child.killed only means a signal was sent; it does not mean the
+      // process has exited. Allow the escalation timer to send SIGKILL.
+      if (child.exitCode != null || child.signalCode != null) return;
       child.kill('SIGTERM');
       killTimeout = setTimeout(() => {
-        if (child.exitCode == null) child.kill('SIGKILL');
+        if (child.exitCode == null && child.signalCode == null) child.kill('SIGKILL');
       }, 2_000);
       killTimeout.unref?.();
     };
