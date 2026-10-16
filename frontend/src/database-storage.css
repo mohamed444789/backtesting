@@ -442,3 +442,12 @@
 .theme-light .ds-coverage-no-gaps{color:#087849}
 @media(max-width:900px){.ds-coverage-scan-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-coverage-scan-controls>button{grid-column:1/-1;justify-self:start}.ds-coverage-report-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.ds-coverage-scan-controls{grid-template-columns:minmax(0,1fr)}.ds-coverage-scan-controls>button{grid-column:1;justify-self:stretch}.ds-coverage-report-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-coverage-gap{align-items:flex-start;flex-direction:column;gap:5px}.ds-coverage-gap>div{gap:5px}.ds-coverage-days-scroll .ds-table{font-size:10px}.ds-coverage-days-scroll .ds-table th,.ds-coverage-days-scroll .ds-table td{padding:8px 6px}}
+
+
+/* Day-only coverage mode: weekends are explicitly ignored; never imply partial days are complete. */
+.coverage-weekend{color:#a8b7c9;background:#1c2939}
+.coverage-has-data{color:#93c5fd;background:#132d46}
+.ds-coverage-missing-dates{margin:0;padding:10px 12px;border:1px solid #52303a;border-radius:7px;background:#21161e;color:#fda4af;font-size:12px;line-height:1.8;overflow-wrap:anywhere}
+.theme-light .coverage-weekend{color:#435970;background:#e9f0f7}
+.theme-light .coverage-has-data{color:#075da8;background:#e0f0ff}
+.theme-light .ds-coverage-missing-dates{background:#fff0f2;border-color:#f3bac3;color:#9f1239}
