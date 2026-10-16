@@ -9,7 +9,7 @@
 .theme-light .atlas-date-trigger{border-color:#cbd5e1;background:#fff;color:#1e293b}
 .theme-light .atlas-date-trigger:hover,.theme-light .atlas-date-trigger[aria-expanded=true]{border-color:#1683c7;background:#f7fbff}
 .theme-light .atlas-date-trigger svg{color:#52677d}
-.atlas-calendar-popover{position:absolute;z-index:10000;top:calc(100% + 7px);left:0;width:318px;max-width:min(318px,calc(100vw - 28px));padding:0;overflow:hidden;border:1px solid rgba(205,205,190,.94);border-radius:12px;background:rgba(255,255,246,.97);color:#202a35;box-shadow:0 12px 35px rgba(0,0,0,.28),0 2px 7px rgba(0,0,0,.12);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);font:13px 'Segoe UI',system-ui,sans-serif;text-align:left}
+.atlas-calendar-popover{position:fixed;z-index:10000;top:8px;left:8px;width:318px;max-width:min(318px,calc(100vw - 28px));padding:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;border:1px solid rgba(205,205,190,.94);border-radius:12px;background:rgba(255,255,246,.97);color:#202a35;box-shadow:0 12px 35px rgba(0,0,0,.28),0 2px 7px rgba(0,0,0,.12);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);font:13px 'Segoe UI',system-ui,sans-serif;text-align:left}
 .atlas-calendar-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 13px 12px;background:linear-gradient(135deg,rgba(248,247,224,.98),rgba(255,255,247,.96));border-bottom:1px solid rgba(120,125,115,.15)}
 .atlas-calendar-summary-text{display:flex;flex-direction:column;gap:4px;min-width:0}
 .atlas-calendar-summary-text>span{font-size:11px;color:#687078;text-transform:none}

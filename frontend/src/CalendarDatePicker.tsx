@@ -1,4 +1,5 @@
-import React,{useEffect,useMemo,useRef,useState}from'react';
+import React,{useEffect,useLayoutEffect,useMemo,useRef,useState}from'react';
+import {createPortal} from 'react-dom';
 import {CalendarDays,ChevronDown,ChevronLeft,ChevronRight} from 'lucide-react';
 import './date-picker.css';
 
@@ -40,6 +41,9 @@ export default function CalendarDatePicker({
   maxDate
 }: CalendarDatePickerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [popoverPosition, setPopoverPosition] = useState<{top:number;left:number;maxHeight:number}|null>(null);
   const selectedDate = parseDate(value);
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<CalendarView>('days');
@@ -56,7 +60,8 @@ export default function CalendarDatePicker({
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !popoverRef.current?.contains(target)) setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
@@ -68,6 +73,51 @@ export default function CalendarDatePicker({
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPopoverPosition(null);
+      return;
+    }
+
+    const positionPopover = () => {
+      const trigger = triggerRef.current;
+      const popover = popoverRef.current;
+      if (!trigger || !popover) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const margin = 8;
+      const gap = 7;
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
+      const popupWidth = popover.offsetWidth || Math.min(318, viewportWidth - margin * 2);
+      const popupHeight = popover.offsetHeight || 360;
+      const belowSpace = Math.max(0, viewportHeight - rect.bottom - gap - margin);
+      const aboveSpace = Math.max(0, rect.top - gap - margin);
+      const placeAbove = belowSpace < Math.min(popupHeight, 260) && aboveSpace > belowSpace;
+      const availableSpace = placeAbove ? aboveSpace : belowSpace;
+      const maxHeight = Math.max(120, Math.min(popupHeight, availableSpace || viewportHeight - margin * 2));
+
+      let top = placeAbove
+        ? rect.top - gap - Math.min(popupHeight, maxHeight)
+        : rect.bottom + gap;
+      top = Math.max(margin, Math.min(top, viewportHeight - margin - Math.min(popupHeight, maxHeight)));
+
+      let left = rect.left;
+      if (left + popupWidth > viewportWidth - margin) left = rect.right - popupWidth;
+      left = Math.max(margin, Math.min(left, viewportWidth - popupWidth - margin));
+
+      setPopoverPosition({top, left, maxHeight});
+    };
+
+    positionPopover();
+    window.addEventListener('resize', positionPopover);
+    window.addEventListener('scroll', positionPopover, true);
+    return () => {
+      window.removeEventListener('resize', positionPopover);
+      window.removeEventListener('scroll', positionPopover, true);
+    };
+  }, [open, view, visibleMonth, yearRangeStart]);
 
   const firstDay = useMemo(() => new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1), [visibleMonth]);
   const calendarDays = useMemo(() => {
@@ -124,6 +174,7 @@ export default function CalendarDatePicker({
     <span className="atlas-date-label">{label}</span>
     <div className="atlas-date-picker" ref={rootRef}>
       <button
+        ref={triggerRef}
         className="atlas-date-trigger"
         type="button"
         aria-label={'Choose ' + label.toLowerCase()}
@@ -142,7 +193,7 @@ export default function CalendarDatePicker({
         <span>{selectedDate ? formatDate(selectedDate, {day: '2-digit', month: 'short', year: 'numeric'}) : 'Select date'}</span>
         <CalendarDays size={17} aria-hidden="true"/>
       </button>
-      {open && <div className="atlas-calendar-popover" role="dialog" aria-label={'Choose ' + label.toLowerCase()}>
+      {open && createPortal(<div ref={popoverRef} className="atlas-calendar-popover" role="dialog" aria-label={'Choose ' + label.toLowerCase()} style={{position:'fixed',top:popoverPosition?.top??8,left:popoverPosition?.left??8,maxHeight:popoverPosition?`${popoverPosition.maxHeight}px`:'calc(100vh - 16px)',overflowY:'auto',visibility:popoverPosition?'visible':'hidden'}}>
         <div className="atlas-calendar-summary">
           <div className="atlas-calendar-summary-text">
             <span>{label}</span>
@@ -227,7 +278,7 @@ export default function CalendarDatePicker({
         <div className="atlas-calendar-footer">
           <button type="button" disabled={dateIsDisabled(new Date())} onClick={() => chooseDate(new Date())}>Today</button>
         </div>
-      </div>}
+      </div>, document.body)}
     </div>
   </div>;
 }
