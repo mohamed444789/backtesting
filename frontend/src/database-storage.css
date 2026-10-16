@@ -261,3 +261,10 @@
 .theme-light .ds-download-search-clear{color:#536b83}
 .theme-light .ds-download-search-clear:hover{color:#16324c}
 @media(max-width:700px){.historical-download-form{grid-template-columns:minmax(0,1fr)}.historical-download-form h3,.historical-download-form>.notice,.historical-download-form>.wide{grid-column:1}}
+
+.historical-console-section{display:flex;flex-direction:column;gap:8px;min-width:0}
+.historical-console-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:2px 1px}
+.historical-console-heading h2{font-size:16px;font-weight:700;margin:0;color:var(--text,#e5edf7)}
+.historical-console-heading p{font-size:11px;color:#8fa3bb;margin:0}
+.theme-light .historical-console-heading h2{color:#162b41}
+.theme-light .historical-console-heading p{color:#536b83}
