@@ -62,7 +62,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    for(let attempt=1;attempt<=4;attempt++){
     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before retry');return;}
     try{
-     const result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',retryCount:2,retryOnEmpty:true,pauseBetweenRetriesMs:1000,failAfterRetryCount:true});
+     const result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',retryCount:15,retryOnEmpty:true,pauseBetweenRetriesMs:1000,failAfterRetryCount:true});
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight API response after cancellation');return;}
      const rows=Array.isArray(result)?result:Array.isArray(result?.data)?result.data:null;
      if(!rows)throw Error('Provider returned an unexpected response for chunk '+chunk.start+' to '+chunk.end);
