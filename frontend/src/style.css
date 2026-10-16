@@ -958,3 +958,9 @@ td{font-size:12px}
     grid-row: 1;
   }
 }
+
+
+/* Sidebar typography: clear, consistent navigation labels. */
+.nav{font-size:14px;font-weight:500;line-height:1.45;letter-spacing:0}
+.nav.active{font-weight:650}
+.nav svg{width:18px;height:18px;flex:0 0 18px}
