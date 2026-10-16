@@ -33,7 +33,6 @@ test('limits chunks to six consecutive trading dates without Saturdays', () => {
   }
 });
 
-
 test('creates one-day chunks so a provider failure is isolated to one date', () => {
   assert.deepEqual(splitDateRange('2026-02-01', '2026-02-06', 1), [
     { start: '2026-02-01', end: '2026-02-01' },
@@ -55,14 +54,14 @@ test('keeps nested fetch timeout details instead of only showing a generic wrapp
   assert.equal(isLikelyNetworkError(details), true);
 });
 
-
-test('retries network and provider server/rate-limit failures indefinitely', async () => {
+test('recognizes network and provider server/rate-limit failures as retryable', async () => {
   const { isRetryableProviderError } = await import('./download-utils.js');
   assert.equal(isRetryableProviderError('connect ETIMEDOUT 192.0.2.1:443'), true);
   assert.equal(isRetryableProviderError('fetch failed'), true);
   assert.equal(isRetryableProviderError('Request failed with status 429'), true);
   assert.equal(isRetryableProviderError('Request failed with status 503'), true);
   assert.equal(isRetryableProviderError('Provider returned no valid M1 candles'), false);
+  assert.equal(isRetryableProviderError('The operation was aborted due to timeout'), true);
 });
 
 test('caps exponential retry backoff at 60 seconds', async () => {

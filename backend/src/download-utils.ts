@@ -80,7 +80,7 @@ export function describeDownloadError(error: unknown): string {
 
 /** Recognize common native-fetch/network failures for clearer job diagnostics. */
 export function isLikelyNetworkError(message: string): boolean {
-  return /(ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|UND_ERR_SOCKET|socket hang up|fetch failed|failed to fetch|network error)/i.test(message);
+  return /(ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|UND_ERR_SOCKET|socket hang up|fetch failed|failed to fetch|network error|timed?\s*out|timeout|abort(?:ed)?error|operation was aborted)/i.test(message);
 }
 
 
