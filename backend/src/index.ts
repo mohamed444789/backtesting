@@ -29,6 +29,7 @@ const coverageNyFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/New
 function shiftCoverageDate(date:string,days:number){const value=new Date(date+'T00:00:00Z');value.setUTCDate(value.getUTCDate()+days);return value.toISOString().slice(0,10)}
 function newYorkCoverageTime(date:string,hour:number,minute:number){const [year,month,day]=date.split('-').map(Number);const desired=Date.UTC(year,month-1,day,hour,minute,0);let guess=desired;for(let i=0;i<4;i++){const parts:any={};for(const part of coverageNyFormatter.formatToParts(new Date(guess)))if(part.type!=='literal')parts[part.type]=part.value;const represented=Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day),Number(parts.hour),Number(parts.minute),Number(parts.second));const delta=desired-represented;if(delta===0)break;guess+=delta}return Math.floor(guess/60000)*60}
 function splitDateRange(start:string,end:string,chunkDays=7){const chunks:{start:string;end:string}[]=[];const last=new Date(end+'T00:00:00Z').getTime();let cursor=new Date(start+'T00:00:00Z').getTime();const dayMs=86400000;while(cursor<=last){const stop=Math.min(last,cursor+(chunkDays-1)*dayMs);chunks.push({start:new Date(cursor).toISOString().slice(0,10),end:new Date(stop).toISOString().slice(0,10)});cursor=stop+dayMs}return chunks}
+function candleTimestampSeconds(rawTime:any){const numeric=typeof rawTime==='number'?rawTime:NaN;const milliseconds=Number.isFinite(numeric)?(Math.abs(numeric)<1e12?numeric*1000:numeric):new Date(rawTime).getTime();return Number.isFinite(milliseconds)?Math.floor(milliseconds/1000):NaN}
 function scheduleDownload(id:number,symbol:string,start:string,end:string,waitForId?:number){const task=(async()=>{if(waitForId!==undefined){const previousTask=downloadTasks.get(waitForId);if(previousTask)await previousTask}if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': restart was superseded before the replacement began');return}await download(id,symbol,start,end)})().finally(()=>{downloadTasks.delete(id)});downloadTasks.set(id,task);return task}
 app.get('/api/downloads',(_q,r)=>r.json(db.prepare('select * from downloads order by id desc').all()));
 app.post('/api/downloads',(q,r)=>{const b=q.body||{},symbol=String(b.symbol||'').toUpperCase(),start=String(b.startDate||''),end=String(b.endDate||'');if(!symbol||!validDateOnly(start)||!validDateOnly(end)||start>end)return r.status(400).json({error:'Instrument and valid start/end dates in YYYY-MM-DD format are required'});const active:any=db.prepare("select id,status from downloads where upper(symbol)=? and start_date=? and end_date=? and status in ('queued','running') order by id desc limit 1").get(symbol,start,end);if(active){appLog('INFO','DOWNLOAD','Duplicate request for '+symbol+' '+start+' to '+end+' reused active job #'+active.id);return r.status(200).json({id:Number(active.id),status:String(active.status),existing:true})}const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress) values(?,?,?,'queued',0)").run(symbol,start,end).lastInsertRowid);appLog('INFO','DOWNLOAD','Queued job #'+id+' for '+symbol+' from '+start+' to '+end);scheduleDownload(id,symbol.toLowerCase(),start,end);r.status(202).json({id,status:'queued',existing:false})});
@@ -48,7 +49,7 @@ async function download(id:number,symbol:string,start:string,end:string){
   const fn=mod.getHistoricalRates||mod.default;
   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before fetching because it was manually restarted');return;}
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
-  const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const rawTime=x.timestamp??x.time;const numeric=typeof rawTime==='number'?rawTime:NaN;const milliseconds=Number.isFinite(numeric)?(Math.abs(numeric)<1e12?numeric*1000:numeric):new Date(rawTime).getTime();const c={time:Math.floor(milliseconds/1000),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(c))inserted+=put.run(symbol.toUpperCase(),c.time,c.open,c.high,c.low,c.close,c.volume).changes}return inserted});
+  const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time);const c={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(c))inserted+=put.run(symbol.toUpperCase(),c.time,c.open,c.high,c.low,c.close,c.volume).changes}return inserted});
   let inputRows=0,insertedRows=0;
   for(let index=0;index<chunks.length;index++){
    const chunk=chunks[index];activeChunk=chunk;if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between chunks because it was manually restarted');return;}
@@ -56,7 +57,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    let result:any;
    for(let attempt=1;attempt<=4;attempt++){
     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before retry because it was manually restarted');return;}
-    try{result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',volume:true});if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight chunk because it was manually restarted');return;}break}
+    try{result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',volume:true,retryCount:2,retryOnEmpty:true,pauseBetweenRetriesMs:1000,failAfterRetryCount:true});if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight chunk because it was manually restarted');return;}break}
     catch(e){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during fetch');return;}
      if(attempt===4)throw e;
@@ -67,20 +68,24 @@ async function download(id:number,symbol:string,start:string,end:string){
    }
    const cs=Array.isArray(result)?result:Array.isArray(result?.data)?result.data:null;
    if(!cs)throw Error('Provider returned an unexpected response for chunk '+chunk.start+' to '+chunk.end);
-   appLog('INFO','FETCH','Job #'+id+': chunk '+(index+1)+'/'+chunks.length+' returned '+cs.length+' candle records');
+   const chunkFrom=Math.floor(new Date(chunk.start+'T00:00:00Z').getTime()/1000),chunkUntil=Math.floor(new Date(shiftCoverageDate(chunk.end,1)+'T00:00:00Z').getTime()/1000);
+   const inRange=cs.filter((x:any)=>{const time=candleTimestampSeconds(x.timestamp??x.time);return time>=chunkFrom&&time<chunkUntil&&valid({time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)})});
+   const inRangeTimes=inRange.map((x:any)=>candleTimestampSeconds(x.timestamp??x.time)).sort((a:number,b:number)=>a-b);
+   appLog(inRange.length?'INFO':'WARN','FETCH','Job #'+id+': chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') returned '+cs.length+' raw records; '+inRange.length+' valid candles inside requested range'+(inRangeTimes.length?' from '+new Date(inRangeTimes[0]*1000).toISOString()+' to '+new Date(inRangeTimes[inRangeTimes.length-1]*1000).toISOString():''));
+   if(!inRange.length)throw Error('Dukascopy returned no valid in-range candles for chunk '+chunk.start+' to '+chunk.end+' (raw response records: '+cs.length+'). Job not marked completed.');
    let chunkInserted=0;
-   for(let i=0;i<cs.length;i+=3000){
-    const batch=cs.slice(i,i+3000);
+   for(let i=0;i<inRange.length;i+=3000){
+    const batch=inRange.slice(i,i+3000);
     chunkInserted+=insertBatch(batch);
     inputRows+=batch.length;
-    const inChunk=cs.length?Math.min(1,(i+batch.length)/cs.length):1;
+    const inChunk=inRange.length?Math.min(1,(i+batch.length)/inRange.length):1;
     const progress=Math.min(99,Math.floor(((index+inChunk)/chunks.length)*100));
     db.prepare('update downloads set progress=? where id=?').run(progress,id);
    }
    insertedRows+=chunkInserted;
    const progress=Math.min(99,Math.floor(((index+1)/chunks.length)*100));
    db.prepare('update downloads set progress=? where id=?').run(progress,id);
-   appLog('INFO','DATABASE','Job #'+id+': finished chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); '+cs.length+' rows processed, '+chunkInserted+' new candles inserted');
+   appLog('INFO','DATABASE','Job #'+id+': finished chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted');
   }
   const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
   appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' weekly chunks; '+inputRows+' rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
