@@ -357,3 +357,14 @@
  .ds-job-select{flex-wrap:wrap}
  .ds-job-actions{gap:7px}
 }
+
+
+/* Destructive actions for unresolved failed download jobs. */
+.ds-delete-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:8px 12px;border:1px solid #7f2937;border-radius:5px;background:#2a141c;color:#fecdd3;font-size:12px;font-weight:650;white-space:nowrap;cursor:pointer}
+.ds-delete-button:hover:not(:disabled){background:#491b27;border-color:#e05267;color:#fff1f2}
+.ds-delete-button:disabled{opacity:.5;cursor:not-allowed}
+.ds-delete-single{min-width:68px}
+.theme-light .ds-delete-button{background:#fff1f2;color:#9f1239;border-color:#f3b5c3}
+.theme-light .ds-delete-button:hover:not(:disabled){background:#ffe0e7;color:#881337;border-color:#e991a5}
+.ds-job-actions .ds-delete-button{margin-left:2px}
+@media(max-width:700px){.ds-job-actions .ds-delete-button{flex:0 1 auto}.ds-bulk-retry-controls .ds-delete-button{flex:1 1 auto}}
