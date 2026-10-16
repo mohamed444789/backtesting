@@ -51,6 +51,8 @@ async function download(id:number,symbol:string,start:string,end:string){
    const from=Math.floor(new Date(date+'T00:00:00Z').getTime()/1000);
    const until=from+86400;
    const count=Number((coveredDate.get(symbol.toUpperCase(),from,until) as any).n||0);
+   // Known full-market holidays have no M1 candles and should not trigger futile retries.
+   if(count===0&&(date.endsWith('-01-01')||date.endsWith('-12-25')))return true;
    // Sunday has a short market session; a weekday should normally have at least 1,000 M1 candles.
    return day===0?count>=1:count>=1000;
   };
