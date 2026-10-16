@@ -563,3 +563,19 @@
  .ds-terminal,.ds-console-output{height:360px!important;font-size:12px;line-height:1.8}
  .ds-console-line{grid-template-columns:68px 45px minmax(0,1fr);font-size:11px}
 }
+
+
+/* User-resizable log panes: drag the bottom-right corner to set a comfortable height. */
+.ds-terminal,.ds-console-output{
+ resize:vertical!important;
+ min-height:180px;
+ max-height:80vh;
+ overflow:auto;
+}
+.ds-terminal:focus-visible,.ds-console-output:focus-visible{
+ outline:2px solid #38bdf8;
+ outline-offset:2px;
+}
+@media(max-width:760px){
+ .ds-terminal,.ds-console-output{max-height:70vh}
+}
