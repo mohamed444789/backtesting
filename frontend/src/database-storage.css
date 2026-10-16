@@ -223,3 +223,17 @@
 .theme-light .ds-data-nav button{color:#536b83}
 .theme-light .ds-data-nav button:hover{background:#eff6fd;color:#1b405f}
 .theme-light .ds-data-nav button.active{background:#e0f1ff;border-color:#afdaff;color:#075da8}
+
+
+/* Download console: show live output first, then manageable status groups and retry actions. */
+.ds-download-filters{margin:2px 0 10px;flex-wrap:wrap}
+.ds-download-filters button{display:inline-flex;align-items:center;gap:6px;font-size:10px;padding:7px 9px}
+.ds-download-filters button em{font-size:9px;font-style:normal;color:inherit;opacity:.78}
+.ds-job-title>span{color:#91a3b8}
+.ds-job-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:6px 0}
+.ds-job-actions strong{margin:0}
+.ds-retry-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 9px;font-size:10px;white-space:nowrap}
+.ds-retry-button:disabled{opacity:.58;cursor:wait}
+.ds-job .ds-error-text{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 0;line-height:1.5}
+.theme-light .ds-job-title>span{color:#536b83}
+@media(max-width:760px){.ds-download-filters{overflow:auto;flex-wrap:nowrap}.ds-job-actions{align-items:flex-start}}
