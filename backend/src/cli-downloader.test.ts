@@ -100,4 +100,31 @@ test('rejects invalid date, instrument and required output paths when building C
     }),
     /Instrument is required/,
   );
+  assert.throws(
+    () => buildDukascopyCliArgs({
+      instrument: 'eurusd',
+      date,
+      outputDirectory: ' ',
+      fileName: 'test',
+    }),
+    /CLI output directory is required/,
+  );
+  assert.throws(
+    () => buildDukascopyCliArgs({
+      instrument: 'eurusd',
+      date,
+      outputDirectory: '/tmp/out',
+      fileName: ' ',
+    }),
+    /CLI file name is required/,
+  );
+  assert.throws(
+    () => buildDukascopyCliArgs({
+      instrument: 'EUR/USD',
+      date,
+      outputDirectory: '/tmp/out',
+      fileName: 'test',
+    }),
+    /only letters and digits/,
+  );
 });
