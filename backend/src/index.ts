@@ -1,4 +1,4 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange}from'./download-utils.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
 const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadTasks=new Map<number,Promise<void>>();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
@@ -28,7 +28,7 @@ function validDateOnly(value:string){if(!/^\d{4}-\d{2}-\d{2}$/.test(value))retur
 const coverageNyFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
 function shiftCoverageDate(date:string,days:number){const value=new Date(date+'T00:00:00Z');value.setUTCDate(value.getUTCDate()+days);return value.toISOString().slice(0,10)}
 function newYorkCoverageTime(date:string,hour:number,minute:number){const [year,month,day]=date.split('-').map(Number);const desired=Date.UTC(year,month-1,day,hour,minute,0);let guess=desired;for(let i=0;i<4;i++){const parts:any={};for(const part of coverageNyFormatter.formatToParts(new Date(guess)))if(part.type!=='literal')parts[part.type]=part.value;const represented=Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day),Number(parts.hour),Number(parts.minute),Number(parts.second));const delta=desired-represented;if(delta===0)break;guess+=delta}return Math.floor(guess/60000)*60}
-function splitDateRange(start:string,end:string,chunkDays=7){const chunks:{start:string;end:string}[]=[];const last=new Date(end+'T00:00:00Z').getTime();let cursor=new Date(start+'T00:00:00Z').getTime();const dayMs=86400000;while(cursor<=last){const stop=Math.min(last,cursor+(chunkDays-1)*dayMs);chunks.push({start:new Date(cursor).toISOString().slice(0,10),end:new Date(stop).toISOString().slice(0,10)});cursor=stop+dayMs}return chunks}
+
 function candleTimestampSeconds(rawTime:any){const numeric=typeof rawTime==='number'?rawTime:(typeof rawTime==='string'&&rawTime.trim()!==''?Number(rawTime):NaN);const milliseconds=Number.isFinite(numeric)?(Math.abs(numeric)<1e12?numeric*1000:numeric):new Date(rawTime).getTime();return Number.isFinite(milliseconds)?Math.floor(milliseconds/1000):NaN}
 function scheduleDownload(id:number,symbol:string,start:string,end:string,waitForId?:number){const task=(async()=>{if(waitForId!==undefined){const previousTask=downloadTasks.get(waitForId);if(previousTask)await previousTask}if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': restart was superseded before the replacement began');return}await download(id,symbol,start,end)})().finally(()=>{downloadTasks.delete(id)});downloadTasks.set(id,task);return task}
 app.get('/api/downloads',(_q,r)=>r.json(db.prepare('select * from downloads order by id desc').all()));
@@ -42,9 +42,9 @@ async function download(id:number,symbol:string,start:string,end:string){
  let activeChunk:{start:string;end:string}|null=null;
  try{
   db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
-  const chunks=splitDateRange(start,end,7);
-  if(!chunks.length)throw Error('No valid date chunks were produced');
-  appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' weekly chunks using the Dukascopy Node API (no volume download)');
+  const chunks=splitDateRange(start,end,5);
+  if(!chunks.length)throw Error('The selected date range contains no weekdays to download; Saturdays and Sundays are skipped');
+  appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' weekday-only chunks using the Dukascopy Node API; Saturdays and Sundays are skipped');
   const mod:any=await import('dukascopy-node');
   const fn=mod.getHistoricalRates||mod.default;
   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
@@ -59,7 +59,8 @@ async function download(id:number,symbol:string,start:string,end:string){
    const chunkFrom=Math.floor(new Date(chunk.start+'T00:00:00Z').getTime()/1000);
    const chunkUntil=Math.floor(new Date(shiftCoverageDate(chunk.end,1)+'T00:00:00Z').getTime()/1000);
    let inRange:any[]=[],lastChunkError:any=null;
-   for(let attempt=1;attempt<=4;attempt++){
+   const maxChunkAttempts=2;
+   for(let attempt=1;attempt<=maxChunkAttempts;attempt++){
     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before retry');return;}
     try{
      const result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',retryCount:15,retryOnEmpty:true,pauseBetweenRetriesMs:1000,failAfterRetryCount:true});
@@ -74,13 +75,13 @@ async function download(id:number,symbol:string,start:string,end:string){
     }catch(e){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during API request');return;}
      lastChunkError=e;
-     if(attempt===4)break;
+     if(attempt===maxChunkAttempts)break;
      const delay=1000*(2**(attempt-1));
-     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' produced no usable in-range data or failed on attempt '+attempt+'/4; retrying in '+delay+' ms: '+String(e).slice(0,350));
+     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' produced no usable in-range data or failed on attempt '+attempt+'/'+maxChunkAttempts+'; retrying whole weekday chunk in '+delay+' ms (next attempt '+(attempt+1)+'/'+maxChunkAttempts+'): '+String(e).slice(0,350));
      await new Promise(resolve=>setTimeout(resolve,delay));
     }
    }
-   if(lastChunkError||!inRange.length)throw Error((lastChunkError instanceof Error?lastChunkError.message:String(lastChunkError||'No valid in-range data'))+' after 4 API attempts for chunk '+chunk.start+' to '+chunk.end);
+   if(lastChunkError||!inRange.length)throw Error((lastChunkError instanceof Error?lastChunkError.message:String(lastChunkError||'No valid in-range data'))+' after '+maxChunkAttempts+' whole-chunk API attempts for weekday chunk '+chunk.start+' to '+chunk.end);
    const chunkTimes=inRange.map((x:any)=>candleTimestampSeconds(x.timestamp??x.time)).sort((a:number,b:number)=>a-b);
    appLog('INFO','FETCH','Job #'+id+': chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') yielded '+inRange.length+' valid in-range candles from '+new Date(chunkTimes[0]*1000).toISOString()+' to '+new Date(chunkTimes[chunkTimes.length-1]*1000).toISOString());
    let chunkInserted=0;
@@ -98,7 +99,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    appLog('INFO','DATABASE','Job #'+id+': finished chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted (duplicates ignored).');
   }
   const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' weekly chunks; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' weekday-only chunks; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
  }catch(e){
   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return;}
   const detail=e instanceof Error?e.message:String(e);
