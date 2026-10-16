@@ -157,6 +157,9 @@ async function download(id:number,symbol:string,start:string,end:string){
   });
 
   let inputRows=0,insertedRows=0,skippedEmptySundays=0;
+  const failedDates:{date:string;error:string}[]=[];
+  let consecutiveDateFailures=0;
+  const maxConsecutiveDateFailures=3;
   const maxDateAttempts=3;
   const interDatePauseMs=350;
   for(let index=0;index<coverage.length;index++){
@@ -164,6 +167,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between dates');return;}
 
    if(chunk.covered){
+    consecutiveDateFailures=0;
     const progress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
     db.prepare('update downloads set progress=? where id=?').run(progress,id);
     appLog('INFO','DATABASE','Job #'+id+': skipped already-covered date '+chunk.start+' ('+(index+1)+'/'+coverage.length+'); no download needed');
@@ -237,9 +241,19 @@ async function download(id:number,symbol:string,start:string,end:string){
 
    if(!success){
     const detail=lastUsefulError||'No provider data returned';
-    const networkNote=isLikelyNetworkError(detail)?' This looks like a provider/network connection failure.':'';
-    throw Error('Failed to download '+date+' after '+maxDateAttempts+' date-level attempts: '+detail+'. Earlier dates are saved in SQLite and will be skipped on retry.'+networkNote);
+    failedDates.push({date,error:detail});
+    consecutiveDateFailures++;
+    appLog('ERROR','FETCH','Job #'+id+': failed to download '+date+' after '+maxDateAttempts+' attempts: '+detail+'. Continuing with later dates; this date will remain unresolved.');
+    const failedProgress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
+    db.prepare('update downloads set progress=? where id=?').run(failedProgress,id);
+    if(consecutiveDateFailures>=maxConsecutiveDateFailures){
+     const recentFailures=failedDates.slice(-maxConsecutiveDateFailures).map(item=>item.date+': '+item.error).join(' | ');
+     throw Error('Paused after '+consecutiveDateFailures+' consecutive date failures to avoid hammering the provider. '+recentFailures+'. Successfully stored dates are preserved; retry the job to skip covered dates and resume.');
+    }
+    await new Promise(resolve=>setTimeout(resolve,1000));
+    continue;
    }
+   consecutiveDateFailures=0;
 
    let chunkInserted=0;
    for(let i=0;i<inRange.length;i+=3000){
@@ -258,6 +272,15 @@ async function download(id:number,symbol:string,start:string,end:string){
    }
    appLog('INFO','DATABASE','Job #'+id+': finished date '+date+' ('+(index+1)+'/'+coverage.length+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted (duplicates ignored).');
    if(index<coverage.length-1&&!cancelledDownloads.has(id))await new Promise(resolve=>setTimeout(resolve,interDatePauseMs));
+  }
+
+  if(failedDates.length){
+   const dates=failedDates.map(item=>item.date);
+   const samples=failedDates.slice(0,3).map(item=>item.date+': '+item.error).join(' | ');
+   const summary=('Downloaded available dates, but '+failedDates.length+' date(s) failed: '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);
+   db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);
+   appLog('WARN','DOWNLOAD','Job #'+id+': partial backfill finished; '+failedDates.length+' date(s) remain unresolved: '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Re-queue this failed job to retry only missing dates.');
+   return;
   }
 
   const recoveredCount=db.transaction(()=>{
