@@ -368,3 +368,13 @@
 .theme-light .ds-delete-button:hover:not(:disabled){background:#ffe0e7;color:#881337;border-color:#e991a5}
 .ds-job-actions .ds-delete-button{margin-left:2px}
 @media(max-width:700px){.ds-job-actions .ds-delete-button{flex:0 1 auto}.ds-bulk-retry-controls .ds-delete-button{flex:1 1 auto}}
+
+
+/* Table Data scrolls internally like the Database Tables list, keeping its header visible. */
+.ds-query-results{max-height:560px;min-height:180px;overflow-x:auto;overflow-y:auto;scrollbar-color:#31465e #0a111b;scrollbar-width:thin;overscroll-behavior:contain}
+.ds-query-results::-webkit-scrollbar{width:9px;height:9px}
+.ds-query-results::-webkit-scrollbar-thumb{background:#31465e;border:2px solid #0a111b;border-radius:10px}
+.ds-query-results::-webkit-scrollbar-track{background:#0a111b}
+.theme-light .ds-query-results{scrollbar-color:#a5b7c9 #f1f5f9}
+.theme-light .ds-query-results::-webkit-scrollbar-thumb{background:#a5b7c9;border-color:#f1f5f9}
+.theme-light .ds-query-results::-webkit-scrollbar-track{background:#f1f5f9}
