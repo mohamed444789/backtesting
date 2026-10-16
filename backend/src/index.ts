@@ -47,53 +47,55 @@ async function download(id:number,symbol:string,start:string,end:string){
   db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
   const chunks=splitDateRange(start,end,7);
   if(!chunks.length)throw Error('No valid date chunks were produced');
-  appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' weekly chunks');
-  const mod:any=await import('dukascopy-node');
-  const fn=mod.getHistoricalRates||mod.default;
-  if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before fetching because it was manually restarted');return;}
+  appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' weekly chunks using Dukascopy CLI');
+  if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before fetching');return;}
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
-  const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time);const c={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(c))inserted+=put.run(symbol.toUpperCase(),c.time,c.open,c.high,c.low,c.close,c.volume).changes}return inserted});
+  const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time);const candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(candle))inserted+=put.run(symbol.toUpperCase(),candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes}return inserted});
   let inputRows=0,insertedRows=0;
   for(let index=0;index<chunks.length;index++){
-   const chunk=chunks[index];activeChunk=chunk;if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between chunks because it was manually restarted');return;}
-   appLog('INFO','FETCH','Job #'+id+': requesting chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+')');
-   let result:any;
-   for(let attempt=1;attempt<=4;attempt++){
-    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before retry because it was manually restarted');return;}
-    try{result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',volume:true,retryCount:2,retryOnEmpty:true,pauseBetweenRetriesMs:1000,failAfterRetryCount:true});if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight chunk because it was manually restarted');return;}break}
-    catch(e){
-     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during fetch');return;}
-     if(attempt===4)throw e;
-     const delay=1000*(2**(attempt-1));
-     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' failed on attempt '+attempt+'; retrying in '+delay+' ms (attempt '+(attempt+1)+'/4): '+String(e).slice(0,300));
-     await new Promise(resolve=>setTimeout(resolve,delay));
+   const chunk=chunks[index];activeChunk=chunk;
+   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between chunks');return;}
+   appLog('INFO','FETCH','Job #'+id+': requesting chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') via CLI');
+   const tempDir=fs.mkdtempSync(path.join(root,'dukascopy-job-'+id+'-'));
+   try{
+    await runDukascopyCli(id,symbol,chunk.start,chunk.end,tempDir);
+    if(cancelledDownloads.has(id)){fs.rmSync(tempDir,{recursive:true,force:true});cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped and temporary files removed');return;}
+    const files=fs.readdirSync(tempDir).filter((name:string)=>name.toLowerCase().endsWith('.csv'));
+    if(files.length!==1)throw Error('Expected exactly one CSV from Dukascopy CLI for '+chunk.start+' to '+chunk.end+' but found '+files.length);
+    const rawFile=path.join(tempDir,files[0]);
+    const rawRows=parseDukascopyCsv(rawFile);
+    const chunkFrom=Math.floor(new Date(chunk.start+'T00:00:00Z').getTime()/1000);
+    const chunkUntil=Math.floor(new Date(shiftCoverageDate(chunk.end,1)+'T00:00:00Z').getTime()/1000);
+    const inRange=rawRows.filter((row:any)=>{const time=candleTimestampSeconds(row.timestamp??row.time);return time>=chunkFrom&&time<chunkUntil&&valid({time,open:Number(row.open),high:Number(row.high),low:Number(row.low),close:Number(row.close),volume:Number(row.volume||0)})});
+    const inRangeTimes=inRange.map((row:any)=>candleTimestampSeconds(row.timestamp??row.time)).sort((a:number,b:number)=>a-b);
+    appLog(inRange.length?'INFO':'WARN','FETCH','Job #'+id+': chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') returned '+rawRows.length+' raw CSV records; '+inRange.length+' valid candles inside requested range'+(inRangeTimes.length?' from '+new Date(inRangeTimes[0]*1000).toISOString()+' to '+new Date(inRangeTimes[inRangeTimes.length-1]*1000).toISOString():''));
+    if(!inRange.length)throw Error('Dukascopy CLI returned no valid in-range candles for chunk '+chunk.start+' to '+chunk.end+' (CSV records: '+rawRows.length+'). Job not marked completed.');
+    let chunkInserted=0;
+    for(let i=0;i<inRange.length;i+=3000){
+     const batch=inRange.slice(i,i+3000);
+     chunkInserted+=insertBatch(batch);
+     inputRows+=batch.length;
+     const inChunk=Math.min(1,(i+batch.length)/inRange.length);
+     const progress=Math.min(99,Math.floor(((index+inChunk)/chunks.length)*100));
+     db.prepare('update downloads set progress=? where id=?').run(progress,id);
     }
-   }
-   const cs=Array.isArray(result)?result:Array.isArray(result?.data)?result.data:null;
-   if(!cs)throw Error('Provider returned an unexpected response for chunk '+chunk.start+' to '+chunk.end);
-   const chunkFrom=Math.floor(new Date(chunk.start+'T00:00:00Z').getTime()/1000),chunkUntil=Math.floor(new Date(shiftCoverageDate(chunk.end,1)+'T00:00:00Z').getTime()/1000);
-   const inRange=cs.filter((x:any)=>{const time=candleTimestampSeconds(x.timestamp??x.time);return time>=chunkFrom&&time<chunkUntil&&valid({time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)})});
-   const inRangeTimes=inRange.map((x:any)=>candleTimestampSeconds(x.timestamp??x.time)).sort((a:number,b:number)=>a-b);
-   appLog(inRange.length?'INFO':'WARN','FETCH','Job #'+id+': chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') returned '+cs.length+' raw records; '+inRange.length+' valid candles inside requested range'+(inRangeTimes.length?' from '+new Date(inRangeTimes[0]*1000).toISOString()+' to '+new Date(inRangeTimes[inRangeTimes.length-1]*1000).toISOString():''));
-   if(!inRange.length)throw Error('Dukascopy returned no valid in-range candles for chunk '+chunk.start+' to '+chunk.end+' (raw response records: '+cs.length+'). Job not marked completed.');
-   let chunkInserted=0;
-   for(let i=0;i<inRange.length;i+=3000){
-    const batch=inRange.slice(i,i+3000);
-    chunkInserted+=insertBatch(batch);
-    inputRows+=batch.length;
-    const inChunk=inRange.length?Math.min(1,(i+batch.length)/inRange.length):1;
-    const progress=Math.min(99,Math.floor(((index+inChunk)/chunks.length)*100));
+    insertedRows+=chunkInserted;
+    const progress=Math.min(99,Math.floor(((index+1)/chunks.length)*100));
     db.prepare('update downloads set progress=? where id=?').run(progress,id);
+    fs.rmSync(tempDir,{recursive:true,force:true});
+    appLog('INFO','DATABASE','Job #'+id+': imported '+inRange.length+' valid rows from '+chunk.start+' to '+chunk.end+'; '+chunkInserted+' new candles inserted, duplicates ignored. Temporary raw CSV deleted after DB insert.');
+   }catch(e){
+    if(cancelledDownloads.has(id)){fs.rmSync(tempDir,{recursive:true,force:true});cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': CLI stopped after cancellation');return;}
+    const preserved=preserveFailedDownloadFiles(tempDir,id,chunk.start,chunk.end);
+    const detail=e instanceof Error?e.message:String(e);
+    appLog('WARN','DOWNLOAD','Job #'+id+': failed-chunk raw files '+(preserved?'preserved at '+preserved:'were not retained because no files were produced'));
+    throw Error(detail+(preserved?'; raw files preserved at '+preserved:''));
    }
-   insertedRows+=chunkInserted;
-   const progress=Math.min(99,Math.floor(((index+1)/chunks.length)*100));
-   db.prepare('update downloads set progress=? where id=?').run(progress,id);
-   appLog('INFO','DATABASE','Job #'+id+': finished chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted');
   }
   const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' weekly chunks; '+inputRows+' rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' weekly chunks; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored). Failed chunk CSV files, if any, are retained under '+path.join(root,'download-failures')+'.'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
  }catch(e){
-  if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after manual restart');return;}
+  if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return;}
   const detail=e instanceof Error?e.message:String(e);
   const range=activeChunk?' [failed chunk '+activeChunk.start+' to '+activeChunk.end+']':'';
   const message=(detail+range).slice(0,800);
