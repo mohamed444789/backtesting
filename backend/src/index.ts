@@ -1,6 +1,6 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange}from'./download-utils.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError,isLikelyNetworkError}from'./download-utils.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
-const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadTasks=new Map<number,Promise<void>>();let nextLogId=1;
+const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
 appLog('INFO','API','Atlas backend process initialized');
 app.use((q,r,next)=>{const started=Date.now();if(q.path.startsWith('/api/')&&!q.path.startsWith('/api/logs')&&['POST','PUT','PATCH','DELETE'].includes(q.method)){r.on('finish',()=>appLog(r.statusCode>=400?'WARN':'INFO','HTTP',q.method+' '+q.path+' → '+r.statusCode+' ('+(Date.now()-started)+' ms)'))}next()});
@@ -70,7 +70,24 @@ function shiftCoverageDate(date:string,days:number){const value=new Date(date+'T
 function newYorkCoverageTime(date:string,hour:number,minute:number){const [year,month,day]=date.split('-').map(Number);const desired=Date.UTC(year,month-1,day,hour,minute,0);let guess=desired;for(let i=0;i<4;i++){const parts:any={};for(const part of coverageNyFormatter.formatToParts(new Date(guess)))if(part.type!=='literal')parts[part.type]=part.value;const represented=Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day),Number(parts.hour),Number(parts.minute),Number(parts.second));const delta=desired-represented;if(delta===0)break;guess+=delta}return Math.floor(guess/60000)*60}
 
 function candleTimestampSeconds(rawTime:any){const numeric=typeof rawTime==='number'?rawTime:(typeof rawTime==='string'&&rawTime.trim()!==''?Number(rawTime):NaN);const milliseconds=Number.isFinite(numeric)?(Math.abs(numeric)<1e12?numeric*1000:numeric):new Date(rawTime).getTime();return Number.isFinite(milliseconds)?Math.floor(milliseconds/1000):NaN}
-function scheduleDownload(id:number,symbol:string,start:string,end:string,waitForId?:number){const task=(async()=>{if(waitForId!==undefined){const previousTask=downloadTasks.get(waitForId);if(previousTask)await previousTask}if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': restart was superseded before the replacement began');return}await download(id,symbol,start,end)})().finally(()=>{downloadTasks.delete(id)});downloadTasks.set(id,task);return task}
+function scheduleDownload(id:number,symbol:string,start:string,end:string,waitForId?:number){
+ const task=downloadQueueTail.then(async()=>{
+  if(waitForId!==undefined){
+   const previousTask=downloadTasks.get(waitForId);
+   if(previousTask)await previousTask;
+  }
+  if(cancelledDownloads.has(id)){
+   cancelledDownloads.delete(id);
+   appLog('INFO','DOWNLOAD','Job #'+id+': restart was superseded before the replacement began');
+   return;
+  }
+  appLog('INFO','DOWNLOAD','Job #'+id+': worker started; downloads run one at a time to reduce provider timeouts');
+  await download(id,symbol,start,end);
+ }).finally(()=>{downloadTasks.delete(id)});
+ downloadQueueTail=task.then(()=>undefined,()=>undefined);
+ downloadTasks.set(id,task);
+ return task;
+}
 app.get('/api/downloads',(_q,r)=>r.json(db.prepare('select * from downloads order by id desc').all()));
 app.post('/api/downloads',(q,r)=>{const b=q.body||{},symbol=String(b.symbol||'').toUpperCase(),start=String(b.startDate||''),end=String(b.endDate||'');if(!symbol||!validDateOnly(start)||!validDateOnly(end)||start>end)return r.status(400).json({error:'Instrument and valid start/end dates in YYYY-MM-DD format are required'});const active:any=db.prepare("select id,status from downloads where upper(symbol)=? and start_date=? and end_date=? and status in ('queued','running') order by id desc limit 1").get(symbol,start,end);if(active){appLog('INFO','DOWNLOAD','Duplicate request for '+symbol+' '+start+' to '+end+' reused active job #'+active.id);return r.status(200).json({id:Number(active.id),status:String(active.status),existing:true})}const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress) values(?,?,?,'queued',0)").run(symbol,start,end).lastInsertRowid);appLog('INFO','DOWNLOAD','Queued job #'+id+' for '+symbol+' from '+start+' to '+end);scheduleDownload(id,symbol.toLowerCase(),start,end);r.status(202).json({id,status:'queued',existing:false})});
 app.post('/api/downloads/delete-failed',(q,r)=>{const raw=Array.isArray(q.body?.ids)?q.body.ids:[];const ids=[...new Set(raw.map(Number).filter((id:number)=>Number.isSafeInteger(id)&&id>0))];if(!ids.length)return r.status(400).json({error:'Select at least one failed job to delete'});if(ids.length>250)return r.status(400).json({error:'Delete at most 250 jobs at a time'});const findJob=db.prepare('select * from downloads where id=?');const hasActiveDescendant=db.prepare("with recursive descendants(id) as (select id from downloads where retry_of=? union all select d.id from downloads d join descendants x on d.retry_of=x.id) select id from downloads where id in (select id from descendants) and status in ('queued','running') limit 1");const candidates=ids.map(id=>findJob.get(id) as any).filter(job=>job&&job.status==='failed'&&!job.recovered_by&&!hasActiveDescendant.get(Number(job.id)));if(!candidates.length)return r.status(409).json({error:'No selected jobs are eligible for deletion. Only unresolved failed jobs without active retries can be deleted.'});const removed=db.transaction(()=>{const del=db.prepare("delete from downloads where id=? and status='failed' and recovered_by is null");return candidates.filter(job=>del.run(Number(job.id)).changes>0).map(job=>Number(job.id))})();appLog('WARN','DOWNLOAD','Deleted '+removed.length+' unresolved failed download job(s): '+removed.map(id=>'#'+id).join(', '));r.json({deleted:removed,skipped:ids.length-removed.length})});
@@ -82,104 +99,175 @@ async function download(id:number,symbol:string,start:string,end:string){
  let activeChunk:{start:string;end:string}|null=null;
  try{
   db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
-  const chunks=splitDateRange(start,end,6);
-  if(!chunks.length)throw Error('The selected date range contains no trading dates after Saturdays are skipped');
-  const coveredDate=db.prepare('select count(*) as n from candles where symbol=? and time>=? and time<?');
-  const isDateCovered=(date:string)=>{
-   const day=new Date(date+'T00:00:00Z').getUTCDay();
-   if(day===6)return true;
-   const from=Math.floor(new Date(date+'T00:00:00Z').getTime()/1000);
-   const until=from+86400;
-   const count=Number((coveredDate.get(symbol.toUpperCase(),from,until) as any).n||0);
-   // Known full-market holidays have no M1 candles and should not trigger futile retries.
-   if(count===0&&(date.endsWith('-01-01')||date.endsWith('-12-25')))return true;
-   // Sunday has a short market session; a weekday should normally have at least 1,000 M1 candles.
-   return day===0?count>=1:count>=1000;
-  };
-  const coveredChunks=chunks.map(chunk=>({...chunk,covered:(()=>{
-   let cursor=new Date(chunk.start+'T00:00:00Z').getTime();
-   const last=new Date(chunk.end+'T00:00:00Z').getTime();
-   while(cursor<=last){
-    const date=new Date(cursor).toISOString().slice(0,10);
-    if(!isDateCovered(date))return false;
-    cursor+=86400000;
-   }
-   return true;
-  })()}));
-  const missingChunks=coveredChunks.filter(chunk=>!chunk.covered);
-  appLog('INFO','DATABASE','Job #'+id+': checked existing SQLite candles for '+start+' to '+end+'; '+(chunks.length-missingChunks.length)+' of '+chunks.length+' chunks already covered, '+missingChunks.length+' need fetching');
-  if(!missingChunks.length){
+
+  // Process each day independently. A failed artifact must not make the
+  // downloader discard or repeat a multi-day request.
+  const requestedChunks=splitDateRange(start,end,1);
+  const todayUtc=new Date().toISOString().slice(0,10);
+  const chunks=requestedChunks.filter(chunk=>chunk.start<=todayUtc);
+  const futureDatesIgnored=requestedChunks.length-chunks.length;
+
+  if(!chunks.length){
    db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
-   appLog('INFO','DOWNLOAD','Job #'+id+': completed immediately; all requested trading dates are already covered in SQLite. No provider request was made.');
+   appLog('INFO','DOWNLOAD','Job #'+id+': completed without a provider request; there are no past/current trading dates in the selected range. '+futureDatesIgnored+' future date(s) were ignored and Saturdays are excluded.');
    return;
   }
+
+  const symbolUpper=symbol.toUpperCase();
+  const rangeFrom=Math.floor(new Date(start+'T00:00:00Z').getTime()/1000);
+  const rangeUntil=Math.floor(new Date(shiftCoverageDate(end,1)+'T00:00:00Z').getTime()/1000);
+  const storedRows=db.prepare("select strftime('%Y-%m-%d',time,'unixepoch') as date,count(*) as n from candles where symbol=? and price_type='bid' and time>=? and time<? group by strftime('%Y-%m-%d',time,'unixepoch')").all(symbolUpper,rangeFrom,rangeUntil) as any[];
+  const storedByDate=new Map<string,number>(storedRows.map((row:any)=>[String(row.date),Number(row.n||0)] as [string,number]));
+
+  const isDateCovered=(date:string)=>{
+   const weekday=new Date(date+'T00:00:00Z').getUTCDay();
+   if(weekday===6)return true;
+   const stored=storedByDate.get(date)||0;
+   if(stored===0&&coverageMarketClosure(date)==='closed')return true;
+   // Sunday may contain only a short FX session; a normal weekday should
+   // have at least 1,000 M1 bid candles to be considered complete.
+   return weekday===0?stored>=1:stored>=1000;
+  };
+
+  const coverage=chunks.map(chunk=>({...chunk,covered:isDateCovered(chunk.start)}));
+  const missing=coverage.filter(chunk=>!chunk.covered);
+  const alreadyCovered=coverage.length-missing.length;
+  appLog('INFO','DATABASE','Job #'+id+': checked SQLite for '+start+' to '+end+'; '+alreadyCovered+'/'+coverage.length+' past/current trading dates already covered, '+missing.length+' need fetching'+(futureDatesIgnored?'; '+futureDatesIgnored+' future date(s) ignored':''));
+
+  if(!missing.length){
+   db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
+   appLog('INFO','DOWNLOAD','Job #'+id+': completed immediately; all eligible dates are already covered in SQLite. No provider request was made.');
+   return;
+  }
+
   const mod:any=await import('dukascopy-node');
   const fn=mod.getHistoricalRates||mod.default;
   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before fetching');return;}
+
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
-  const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time);const candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(candle))inserted+=put.run(symbol.toUpperCase(),candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes}return inserted});
-  let inputRows=0,insertedRows=0;
-  for(let index=0;index<chunks.length;index++){
-   const chunk=chunks[index];activeChunk=chunk;
-   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between chunks');return;}
-   const coverage=coveredChunks[index];
-   if(coverage.covered){
-    const progress=Math.min(99,Math.floor(((index+1)/chunks.length)*100));
+  const insertBatch=db.transaction((arr:any[])=>{
+   let inserted=0;
+   for(const x of arr){
+    const time=candleTimestampSeconds(x.timestamp??x.time);
+    const candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};
+    if(valid(candle))inserted+=put.run(symbolUpper,candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes;
+   }
+   return inserted;
+  });
+
+  let inputRows=0,insertedRows=0,skippedEmptySundays=0;
+  const maxDateAttempts=2;
+  for(let index=0;index<coverage.length;index++){
+   const chunk=coverage[index];activeChunk=chunk;
+   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between dates');return;}
+
+   if(chunk.covered){
+    const progress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
     db.prepare('update downloads set progress=? where id=?').run(progress,id);
-    appLog('INFO','DATABASE','Job #'+id+': skipped already-covered chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); no download needed');
+    appLog('INFO','DATABASE','Job #'+id+': skipped already-covered date '+chunk.start+' ('+(index+1)+'/'+coverage.length+'); no download needed');
     continue;
    }
-   appLog('INFO','FETCH','Job #'+id+': requesting missing-data chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') via Node API');
-   const chunkFrom=Math.floor(new Date(chunk.start+'T00:00:00Z').getTime()/1000);
-   const chunkUntil=Math.floor(new Date(shiftCoverageDate(chunk.end,1)+'T00:00:00Z').getTime()/1000);
-   let inRange:any[]=[],lastChunkError:any=null;
-   const maxChunkAttempts=2;
-   for(let attempt=1;attempt<=maxChunkAttempts;attempt++){
-    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before retry');return;}
+
+   const date=chunk.start;
+   const dayOfWeek=new Date(date+'T00:00:00Z').getUTCDay();
+   const chunkFrom=Math.floor(new Date(date+'T00:00:00Z').getTime()/1000);
+   const chunkUntil=chunkFrom+86400;
+   let inRange:any[]=[];
+   let success=false;
+   let lastUsefulError='';
+
+   appLog('INFO','FETCH','Job #'+id+': requesting '+date+' ('+(index+1)+'/'+coverage.length+') via Dukascopy JSON API');
+
+   for(let attempt=1;attempt<=maxDateAttempts;attempt++){
+    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date retry');return;}
     try{
-     const result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',retryCount:15,retryOnEmpty:true,pauseBetweenRetriesMs:1000,failAfterRetryCount:true});
+     const result=await fn({
+      instrument:symbol,
+      dates:{from:new Date(date+'T00:00:00Z'),to:new Date(date+'T23:59:00Z')},
+      timeframe:'m1',
+      format:'json',
+      priceType:'bid',
+      batchSize:1,
+      pauseBetweenBatchesMs:250,
+      retryCount:2,
+      retryOnEmpty:dayOfWeek!==0,
+      pauseBetweenRetriesMs:1200,
+      failAfterRetryCount:true
+     });
+
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight API response after cancellation');return;}
      const rows=Array.isArray(result)?result:Array.isArray(result?.data)?result.data:null;
-     if(!rows)throw Error('Provider returned an unexpected response for chunk '+chunk.start+' to '+chunk.end);
-     if(rows.length===0)throw Error('Dukascopy returned an empty response for chunk '+chunk.start+' to '+chunk.end);
-     inRange=rows.filter((x:any)=>{const time=candleTimestampSeconds(x.timestamp??x.time);return time>=chunkFrom&&time<chunkUntil&&valid({time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)})});
-     if(!inRange.length)throw Error('Provider returned '+rows.length+' records but no valid candles inside requested range '+chunk.start+' to '+chunk.end);
-     lastChunkError=null;
+     if(!rows)throw Error('Dukascopy returned an unexpected response for '+date);
+     inRange=rows.filter((x:any)=>{
+      const time=candleTimestampSeconds(x.timestamp??x.time);
+      return time>=chunkFrom&&time<chunkUntil&&valid({time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)});
+     });
+
+     if(!inRange.length&&dayOfWeek!==0){
+      throw Error('Provider returned no valid M1 candles for '+date+' (response rows: '+rows.length+')');
+     }
+     if(!inRange.length&&dayOfWeek===0){
+      skippedEmptySundays++;
+      appLog('INFO','FETCH','Job #'+id+': '+date+' returned no Sunday-session M1 candles; treated as no-session date instead of a download failure');
+     }
+     success=true;
      break;
     }catch(e){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during API request');return;}
-     lastChunkError=e;
-     if(attempt===maxChunkAttempts)break;
-     const delay=1000*(2**(attempt-1));
-     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' produced no usable in-range data or failed on attempt '+attempt+'/'+maxChunkAttempts+'; retrying whole trading-day chunk in '+delay+' ms (next attempt '+(attempt+1)+'/'+maxChunkAttempts+'): '+String(e).slice(0,350));
+     const detail=describeDownloadError(e);
+     const isGeneric=/^(unknown error|fetch failed|failed to fetch|error)$/i.test(detail.trim());
+     if(!lastUsefulError||(!isGeneric&&(/unknown error|fetch failed|failed to fetch/i.test(lastUsefulError)||detail.length>lastUsefulError.length))){
+      lastUsefulError=detail;
+     }
+     if(dayOfWeek===0&&!isLikelyNetworkError(detail)&&/(empty dataset|status 404|no data|not found)/i.test(detail)){
+      skippedEmptySundays++;
+      inRange=[];
+      success=true;
+      appLog('INFO','FETCH','Job #'+id+': '+date+' has no Sunday-session artifact; it is ignored as an expected empty FX session');
+      break;
+     }
+     if(attempt===maxDateAttempts)break;
+     const delay=1500*Math.pow(2,attempt-1);
+     appLog('WARN','FETCH','Job #'+id+': '+date+' failed on attempt '+attempt+'/'+maxDateAttempts+'; retrying only this date in '+delay+' ms: '+detail.slice(0,450));
      await new Promise(resolve=>setTimeout(resolve,delay));
     }
    }
-   if(lastChunkError||!inRange.length)throw Error((lastChunkError instanceof Error?lastChunkError.message:String(lastChunkError||'No valid in-range data'))+' after '+maxChunkAttempts+' whole-chunk API attempts for trading-day chunk '+chunk.start+' to '+chunk.end);
-   const chunkTimes=inRange.map((x:any)=>candleTimestampSeconds(x.timestamp??x.time)).sort((a:number,b:number)=>a-b);
-   appLog('INFO','FETCH','Job #'+id+': chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') yielded '+inRange.length+' valid in-range candles from '+new Date(chunkTimes[0]*1000).toISOString()+' to '+new Date(chunkTimes[chunkTimes.length-1]*1000).toISOString());
+
+   if(!success){
+    const detail=lastUsefulError||'No provider data returned';
+    const networkNote=isLikelyNetworkError(detail)?' This looks like a provider/network connection failure.':'';
+    throw Error('Failed to download '+date+' after '+maxDateAttempts+' date-level attempts: '+detail+'. Earlier dates are saved in SQLite and will be skipped on retry.'+networkNote);
+   }
+
    let chunkInserted=0;
    for(let i=0;i<inRange.length;i+=3000){
     const batch=inRange.slice(i,i+3000);
     chunkInserted+=insertBatch(batch);
     inputRows+=batch.length;
-    const inChunk=Math.min(1,(i+batch.length)/inRange.length);
-    const progress=Math.min(99,Math.floor(((index+inChunk)/chunks.length)*100));
-    db.prepare('update downloads set progress=? where id=?').run(progress,id);
    }
    insertedRows+=chunkInserted;
-   const progress=Math.min(99,Math.floor(((index+1)/chunks.length)*100));
+
+   const progress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
    db.prepare('update downloads set progress=? where id=?').run(progress,id);
-   appLog('INFO','DATABASE','Job #'+id+': finished chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted (duplicates ignored).');
+
+   if(inRange.length){
+    const chunkTimes=inRange.map((x:any)=>candleTimestampSeconds(x.timestamp??x.time)).sort((a:number,b:number)=>a-b);
+    appLog('INFO','FETCH','Job #'+id+': '+date+' yielded '+inRange.length+' valid candles from '+new Date(chunkTimes[0]*1000).toISOString()+' to '+new Date(chunkTimes[chunkTimes.length-1]*1000).toISOString());
+   }
+   appLog('INFO','DATABASE','Job #'+id+': finished date '+date+' ('+(index+1)+'/'+coverage.length+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted (duplicates ignored).');
   }
-  const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' trading-day chunks; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+
+  const recoveredCount=db.transaction(()=>{
+   db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
+   return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes;
+  })();
+  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+coverage.length+' eligible trading dates; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?(' Ignored '+futureDatesIgnored+' future date(s).'):'')+(skippedEmptySundays?(' '+skippedEmptySundays+' Sunday date(s) had no session candles.'):'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
  }catch(e){
   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return;}
-  const detail=e instanceof Error?e.message:String(e);
-  const range=activeChunk?' [failed chunk '+activeChunk.start+' to '+activeChunk.end+']':'';
-  const message=(detail+range).slice(0,800);
+  const detail=describeDownloadError(e);
+  const range=activeChunk?' [failed date '+activeChunk.start+']':'';
+  const message=(detail+range).slice(0,1000);
   db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);
   appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message);
  }

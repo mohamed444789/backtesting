@@ -32,3 +32,25 @@ test('limits chunks to six consecutive trading dates without Saturdays', () => {
     assert.ok((last - first) / 86400000 < 6);
   }
 });
+
+
+test('creates one-day chunks so a provider failure is isolated to one date', () => {
+  assert.deepEqual(splitDateRange('2026-02-01', '2026-02-06', 1), [
+    { start: '2026-02-01', end: '2026-02-01' },
+    { start: '2026-02-02', end: '2026-02-02' },
+    { start: '2026-02-03', end: '2026-02-03' },
+    { start: '2026-02-04', end: '2026-02-04' },
+    { start: '2026-02-05', end: '2026-02-05' },
+    { start: '2026-02-06', end: '2026-02-06' }
+  ]);
+});
+
+test('keeps nested fetch timeout details instead of only showing a generic wrapper', async () => {
+  const { describeDownloadError, isLikelyNetworkError } = await import('./download-utils.js');
+  const cause = Object.assign(new Error('connect ETIMEDOUT 194.8.15.180:443'), { code: 'ETIMEDOUT' });
+  const error = Object.assign(new Error('fetch failed'), { cause });
+  const details = describeDownloadError(error);
+  assert.match(details, /ETIMEDOUT/);
+  assert.match(details, /194\.8\.15\.180:443/);
+  assert.equal(isLikelyNetworkError(details), true);
+});

@@ -44,3 +44,41 @@ export function splitDateRange(start: string, end: string, maxTradingDaysPerChun
 
   return chunks;
 }
+
+
+/** Preserve useful detail from fetch errors and wrapped/cause errors. */
+export function describeDownloadError(error: unknown): string {
+  const parts: string[] = [];
+  const seen = new Set<unknown>();
+  const visit = (value: unknown, depth: number) => {
+    if (value == null || depth > 4 || seen.has(value)) return;
+    if (typeof value === 'string') {
+      if (value.trim()) parts.push(value.trim());
+      return;
+    }
+    if (typeof value !== 'object') {
+      parts.push(String(value));
+      return;
+    }
+    seen.add(value);
+    const item = value as {
+      message?: unknown; code?: unknown; errno?: unknown; address?: unknown;
+      port?: unknown; cause?: unknown; errors?: unknown; name?: unknown;
+    };
+    if (item.cause) visit(item.cause, depth + 1);
+    if (Array.isArray(item.errors)) item.errors.forEach(nested => visit(nested, depth + 1));
+    if (item.code) parts.push(String(item.code));
+    if (item.errno && item.errno !== item.code) parts.push(String(item.errno));
+    if (item.address) parts.push('address ' + String(item.address) + (item.port ? ':' + String(item.port) : ''));
+    if (item.message) parts.push(String(item.message));
+    else if (item.name) parts.push(String(item.name));
+  };
+  visit(error, 0);
+  const details = [...new Set(parts.filter(Boolean))];
+  return (details.length ? details.join(' | ') : String(error || 'Unknown error')).slice(0, 700);
+}
+
+/** Recognize common native-fetch/network failures for clearer job diagnostics. */
+export function isLikelyNetworkError(message: string): boolean {
+  return /(ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|UND_ERR_SOCKET|socket hang up|fetch failed|failed to fetch|network error)/i.test(message);
+}
