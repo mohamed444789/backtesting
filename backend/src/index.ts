@@ -1,4 +1,4 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError}from'./download-utils.js';import{fetchDateCandles,buildDukascopyM1Config}from'./downloader.js';import{downloadDateCandlesViaCli}from'./cli-downloader.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError}from'./download-utils.js';import{downloadDateCandlesViaCli}from'./cli-downloader.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};type DownloaderMode='api'|'cli';
 const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadAbortControllers=new Map<number,AbortController>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
@@ -311,30 +311,7 @@ async function download(id:number,symbol:string,start:string,end:string,download
      }
      success=true;
     }else{
-     const fetched=await fetchDateCandles({
-      date,
-      allowEmpty:dayOfWeek===0,
-      maxAttempts:1,
-      requestTimeoutMs:30000,
-      signal:downloadAbortControllers.get(id)?.signal,
-      isCancelled:()=>cancelledDownloads.has(id),
-      onAttempt:(attempt)=>{attemptsUsed=attempt},
-      onRetry:({attempt,maxAttempts,delayMs,detail,retryable})=>{
-       appLog('WARN','FETCH','Job #'+id+': '+date+' '+(retryable?'transient provider/network failure':'unusable provider response')+' on attempt '+attempt+'/'+maxAttempts+'; retrying in '+Math.round(delayMs/1000)+'s: '+detail.slice(0,450));
-      },
-      request:async()=>fn(buildDukascopyM1Config(symbol,date,path.join(root,'dukascopy-cache')))
-     });
-     if(cancelledDownloads.has(id)){
-      cancelledDownloads.delete(id);
-      appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight API response after cancellation');
-      return;
-     }
-     inRange=fetched.candles;
-     if(fetched.empty){
-      skippedEmptySundays++;
-      appLog('INFO','FETCH','Job #'+id+': '+date+' had no Sunday-session M1 candles; treated as an expected empty session');
-     }
-     success=true;
+     throw Error('Unexpected API worker path; API mode should use the main-branch range downloader');
     }
    }catch(e){
     if(cancelledDownloads.has(id)){
