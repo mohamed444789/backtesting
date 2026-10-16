@@ -42,9 +42,9 @@ async function download(id:number,symbol:string,start:string,end:string){
  let activeChunk:{start:string;end:string}|null=null;
  try{
   db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
-  const chunks=splitDateRange(start,end,5);
-  if(!chunks.length)throw Error('The selected date range contains no weekdays to download; Saturdays and Sundays are skipped');
-  appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' weekday-only chunks using the Dukascopy Node API; Saturdays and Sundays are skipped');
+  const chunks=splitDateRange(start,end,6);
+  if(!chunks.length)throw Error('The selected date range contains no trading dates after Saturdays are skipped');
+  appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' trading-day chunks using the Dukascopy Node API; Saturdays are skipped and Sunday sessions are preserved');
   const mod:any=await import('dukascopy-node');
   const fn=mod.getHistoricalRates||mod.default;
   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
@@ -77,11 +77,11 @@ async function download(id:number,symbol:string,start:string,end:string){
      lastChunkError=e;
      if(attempt===maxChunkAttempts)break;
      const delay=1000*(2**(attempt-1));
-     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' produced no usable in-range data or failed on attempt '+attempt+'/'+maxChunkAttempts+'; retrying whole weekday chunk in '+delay+' ms (next attempt '+(attempt+1)+'/'+maxChunkAttempts+'): '+String(e).slice(0,350));
+     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' produced no usable in-range data or failed on attempt '+attempt+'/'+maxChunkAttempts+'; retrying whole trading-day chunk in '+delay+' ms (next attempt '+(attempt+1)+'/'+maxChunkAttempts+'): '+String(e).slice(0,350));
      await new Promise(resolve=>setTimeout(resolve,delay));
     }
    }
-   if(lastChunkError||!inRange.length)throw Error((lastChunkError instanceof Error?lastChunkError.message:String(lastChunkError||'No valid in-range data'))+' after '+maxChunkAttempts+' whole-chunk API attempts for weekday chunk '+chunk.start+' to '+chunk.end);
+   if(lastChunkError||!inRange.length)throw Error((lastChunkError instanceof Error?lastChunkError.message:String(lastChunkError||'No valid in-range data'))+' after '+maxChunkAttempts+' whole-chunk API attempts for trading-day chunk '+chunk.start+' to '+chunk.end);
    const chunkTimes=inRange.map((x:any)=>candleTimestampSeconds(x.timestamp??x.time)).sort((a:number,b:number)=>a-b);
    appLog('INFO','FETCH','Job #'+id+': chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') yielded '+inRange.length+' valid in-range candles from '+new Date(chunkTimes[0]*1000).toISOString()+' to '+new Date(chunkTimes[chunkTimes.length-1]*1000).toISOString());
    let chunkInserted=0;
@@ -99,7 +99,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    appLog('INFO','DATABASE','Job #'+id+': finished chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted (duplicates ignored).');
   }
   const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' weekday-only chunks; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+chunks.length+' trading-day chunks; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
  }catch(e){
   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return;}
   const detail=e instanceof Error?e.message:String(e);
