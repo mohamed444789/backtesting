@@ -157,7 +157,8 @@ async function download(id:number,symbol:string,start:string,end:string){
   });
 
   let inputRows=0,insertedRows=0,skippedEmptySundays=0;
-  const maxDateAttempts=2;
+  const maxDateAttempts=3;
+  const interDatePauseMs=350;
   for(let index=0;index<coverage.length;index++){
    const chunk=coverage[index];activeChunk=chunk;
    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between dates');return;}
@@ -190,9 +191,9 @@ async function download(id:number,symbol:string,start:string,end:string){
       priceType:'bid',
       batchSize:1,
       pauseBetweenBatchesMs:250,
-      retryCount:2,
-      retryOnEmpty:dayOfWeek!==0,
-      pauseBetweenRetriesMs:1200,
+      retryCount:0,
+      retryOnEmpty:false,
+      pauseBetweenRetriesMs:0,
       failAfterRetryCount:true
      });
 
@@ -256,6 +257,7 @@ async function download(id:number,symbol:string,start:string,end:string){
     appLog('INFO','FETCH','Job #'+id+': '+date+' yielded '+inRange.length+' valid candles from '+new Date(chunkTimes[0]*1000).toISOString()+' to '+new Date(chunkTimes[chunkTimes.length-1]*1000).toISOString());
    }
    appLog('INFO','DATABASE','Job #'+id+': finished date '+date+' ('+(index+1)+'/'+coverage.length+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted (duplicates ignored).');
+   if(index<coverage.length-1&&!cancelledDownloads.has(id))await new Promise(resolve=>setTimeout(resolve,interDatePauseMs));
   }
 
   const recoveredCount=db.transaction(()=>{
