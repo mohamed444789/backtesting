@@ -60,12 +60,11 @@ test('rejects CSV files with unexpected headers and malformed quoting', () => {
   assert.throws(() => parseCsvRecords('timestamp,open\n"unfinished'), /unterminated quoted field/);
 });
 
-test('CLI arguments select one UTC M1 bid day as CSV with retries and cache', () => {
+test('CLI arguments select one UTC M1 bid day as disposable CSV with retries', () => {
   const args = buildDukascopyCliArgs({
     instrument: 'EURUSD',
     date,
     outputDirectory: '/data/staging',
-    cacheFolderPath: '/data/dukascopy-cache',
     fileName: 'job-1',
   });
 
@@ -77,7 +76,6 @@ test('CLI arguments select one UTC M1 bid day as CSV with retries and cache', ()
   assert.ok(args.includes(date));
   assert.ok(args.includes('2026-10-17'));
   assert.ok(args.includes('/data/staging'));
-  assert.ok(args.includes('/data/dukascopy-cache'));
   assert.ok(args.includes('15'));
   assert.ok(args.includes('2000'));
   assert.ok(args.includes('--no-fail-after-retries'));
@@ -89,7 +87,6 @@ test('rejects invalid date, instrument and required output paths when building C
       instrument: 'eurusd',
       date: '2026-02-31',
       outputDirectory: '/tmp/out',
-      cacheFolderPath: '/tmp/cache',
       fileName: 'test',
     }),
     /Invalid CLI download date/,
@@ -99,7 +96,6 @@ test('rejects invalid date, instrument and required output paths when building C
       instrument: ' ',
       date,
       outputDirectory: '/tmp/out',
-      cacheFolderPath: '/tmp/cache',
       fileName: 'test',
     }),
     /Instrument is required/,
