@@ -378,3 +378,67 @@
 .theme-light .ds-query-results{scrollbar-color:#a5b7c9 #f1f5f9}
 .theme-light .ds-query-results::-webkit-scrollbar-thumb{background:#a5b7c9;border-color:#f1f5f9}
 .theme-light .ds-query-results::-webkit-scrollbar-track{background:#f1f5f9}
+
+
+/* Market-data completeness scanner */
+.ds-coverage-scan-controls{display:grid;grid-template-columns:minmax(160px,1fr) minmax(160px,1fr) auto;gap:12px;align-items:end;margin:14px 0 8px}
+.ds-coverage-scan-controls>label{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0;color:#9eb1c7;font-size:12px;font-weight:600}
+.ds-coverage-scan-controls>label input{width:100%;min-width:0;min-height:40px;margin:0;padding:9px 11px;font-size:13px}
+.ds-coverage-scan-controls>button{min-height:40px;white-space:nowrap}
+.ds-coverage-report{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.ds-coverage-report-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ds-coverage-report-summary>div{display:flex;flex-direction:column;gap:6px;min-width:0;padding:11px 12px;border:1px solid #25384d;border-radius:8px;background:#0a1420}
+.ds-coverage-report-summary span{font-size:11px;line-height:1.35;color:#91a6bd}
+.ds-coverage-report-summary b{font-size:18px;line-height:1.2;color:#e9f4ff;overflow-wrap:anywhere}
+.coverage-warn{color:#fb7185!important}
+.coverage-ok{color:#34d399!important}
+.ds-coverage-assumptions,.ds-coverage-outside{margin:0;padding:10px 12px;border-radius:7px;font-size:12px;line-height:1.55}
+.ds-coverage-assumptions{color:#a7bad0;background:#122132;border:1px solid #263b51}
+.ds-coverage-outside{color:#fcd9a1;background:#2a2114;border:1px solid #6a4a20}
+.ds-coverage-report-section{min-width:0;border:1px solid #25364a;border-radius:9px;padding:12px}
+.ds-coverage-report-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.ds-coverage-report-heading>b{font-size:13px;color:#e5effa}
+.ds-coverage-report-heading>span{font-size:11px;color:#91a6bd}
+.ds-coverage-days-scroll{max-height:300px;overflow:auto;overscroll-behavior:contain;border:1px solid #1e2e41;border-radius:6px;scrollbar-color:#31465e #0a111b;scrollbar-width:thin}
+.ds-coverage-days-scroll::-webkit-scrollbar,.ds-coverage-gaps-list::-webkit-scrollbar{width:9px;height:9px}
+.ds-coverage-days-scroll::-webkit-scrollbar-thumb,.ds-coverage-gaps-list::-webkit-scrollbar-thumb{background:#31465e;border:2px solid #0a111b;border-radius:10px}
+.ds-coverage-days-scroll::-webkit-scrollbar-track,.ds-coverage-gaps-list::-webkit-scrollbar-track{background:#0a111b}
+.ds-coverage-days-scroll .ds-table{font-size:12px}
+.ds-coverage-days-scroll .ds-table th{top:0;z-index:2}
+.ds-coverage-days-scroll .ds-table th,.ds-coverage-days-scroll .ds-table td{padding:9px 10px}
+.ds-coverage-status{display:inline-flex;align-items:center;white-space:nowrap;border-radius:20px;padding:3px 7px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.coverage-complete{color:#6ee7b7;background:#123328}
+.coverage-partial{color:#fcd34d;background:#382b13}
+.coverage-missing{color:#fda4af;background:#3b1721}
+.coverage-closed{color:#a8b7c9;background:#1c2939}
+.ds-coverage-gaps-list{display:flex;flex-direction:column;max-height:300px;overflow:auto;overscroll-behavior:contain}
+.ds-coverage-gap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid #223246}
+.ds-coverage-gap:last-child{border-bottom:0}
+.ds-coverage-gap>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.ds-coverage-gap b{font-size:12px;color:#dbe8f5;font-weight:600}
+.ds-coverage-gap span{font-size:11px;color:#859ab2}
+.ds-coverage-gap>strong{flex:0 0 auto;font-size:12px;color:#fb8a98}
+.ds-coverage-no-gaps{margin:0;padding:14px 8px;font-size:12px;line-height:1.5;color:#71e2b7}
+.theme-light .ds-coverage-scan-controls>label{color:#40566e}
+.theme-light .ds-coverage-report-summary>div{background:#f5f9fd;border-color:#d7e2ee}
+.theme-light .ds-coverage-report-summary span{color:#536b83}
+.theme-light .ds-coverage-report-summary b{color:#142b42}
+.theme-light .ds-coverage-assumptions{background:#edf5fc;color:#3e5871;border-color:#d1e1ef}
+.theme-light .ds-coverage-outside{background:#fff7e8;color:#8a4b0a;border-color:#f0d6a5}
+.theme-light .ds-coverage-report-section{border-color:#d7e2ee}
+.theme-light .ds-coverage-report-heading>b{color:#142b42}
+.theme-light .ds-coverage-report-heading>span{color:#536b83}
+.theme-light .ds-coverage-days-scroll{border-color:#d7e2ee;scrollbar-color:#a5b7c9 #f1f5f9}
+.theme-light .ds-coverage-days-scroll::-webkit-scrollbar-thumb,.theme-light .ds-coverage-gaps-list::-webkit-scrollbar-thumb{background:#a5b7c9;border-color:#f1f5f9}
+.theme-light .ds-coverage-days-scroll::-webkit-scrollbar-track,.theme-light .ds-coverage-gaps-list::-webkit-scrollbar-track{background:#f1f5f9}
+.theme-light .coverage-complete{color:#087849;background:#e6f8ef}
+.theme-light .coverage-partial{color:#854d0e;background:#fef3c7}
+.theme-light .coverage-missing{color:#9f1239;background:#ffe4e8}
+.theme-light .coverage-closed{color:#435970;background:#e9f0f7}
+.theme-light .ds-coverage-gap{border-color:#e2e8f0}
+.theme-light .ds-coverage-gap b{color:#1c3045}
+.theme-light .ds-coverage-gap span{color:#536b83}
+.theme-light .ds-coverage-gap>strong{color:#be123c}
+.theme-light .ds-coverage-no-gaps{color:#087849}
+@media(max-width:900px){.ds-coverage-scan-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-coverage-scan-controls>button{grid-column:1/-1;justify-self:start}.ds-coverage-report-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.ds-coverage-scan-controls{grid-template-columns:minmax(0,1fr)}.ds-coverage-scan-controls>button{grid-column:1;justify-self:stretch}.ds-coverage-report-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-coverage-gap{align-items:flex-start;flex-direction:column;gap:5px}.ds-coverage-gap>div{gap:5px}.ds-coverage-days-scroll .ds-table{font-size:10px}.ds-coverage-days-scroll .ds-table th,.ds-coverage-days-scroll .ds-table td{padding:8px 6px}}
