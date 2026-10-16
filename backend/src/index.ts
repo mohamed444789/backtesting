@@ -42,12 +42,15 @@ async function download(id:number,symbol:string,start:string,end:string){
    const chunk=chunks[index];activeChunk=chunk;if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between chunks because it was manually restarted');return;}
    appLog('INFO','FETCH','Job #'+id+': requesting chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+')');
    let result:any;
-   for(let attempt=1;attempt<=2;attempt++){
+   for(let attempt=1;attempt<=4;attempt++){
+    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before retry because it was manually restarted');return;}
     try{result=await fn({instrument:symbol,dates:{from:new Date(chunk.start+'T00:00:00Z'),to:new Date(chunk.end+'T23:59:00Z')},timeframe:'m1',format:'json',priceType:'bid',volume:true});if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded in-flight chunk because it was manually restarted');return;}break}
     catch(e){
-     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during fetch');return;}if(attempt===2)throw e;
-     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' failed on attempt 1; retrying once: '+String(e).slice(0,300));
-     await new Promise(resolve=>setTimeout(resolve,800));
+     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped after cancellation during fetch');return;}
+     if(attempt===4)throw e;
+     const delay=1000*Math(2**(attempt-1));
+     appLog('WARN','FETCH','Job #'+id+': chunk '+chunk.start+' to '+chunk.end+' failed on attempt '+attempt+'; retrying in '+delay+' ms (attempt '+(attempt+1)+'/4): '+String(e).slice(0,300));
+     await new Promise(resolve=>setTimeout(resolve,delay));
     }
    }
    const cs=Array.isArray(result)?result:Array.isArray(result?.data)?result.data:null;
