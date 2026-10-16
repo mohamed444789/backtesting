@@ -185,7 +185,7 @@ export default function CalendarDatePicker({
                 key={dateValue}
                 type="button"
                 role="gridcell"
-                aria-label={formatDate(date, {dateStyle: 'full'})}
+                aria-label={formatDate(date, {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}
                 aria-pressed={isSelected}
                 disabled={disabled}
                 className={[
