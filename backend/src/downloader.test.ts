@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DownloadCancelledError, fetchDateCandles } from './downloader.js';
+import { DownloadCancelledError, buildDukascopyM1Config, fetchDateCandles } from './downloader.js';
 
 const date = '2026-10-16';
 const start = Date.parse(date + 'T00:00:00.000Z');
@@ -144,31 +144,31 @@ test('retries empty weekday responses and succeeds when candles become available
 });
 
 
-test('provider configuration mirrors the documented M1 cache and retry policy', () => {
-  // This is a contract test for the options passed by the download worker.
-  // It is intentionally documentation-backed; the integration request remains
-  // inside index.ts where the SQLite and cancellation dependencies live.
-  const options = {
-    timeframe: 'm1',
-    priceType: 'bid',
-    format: 'json',
-    utcOffset: 0,
-    volumes: true,
-    volumeUnits: 'millions',
-    ignoreFlats: false,
-    batchSize: 1,
-    pauseBetweenBatchesMs: 1000,
-    useCache: true,
-    retryCount: 5,
-    retryOnEmpty: true,
-    failAfterRetryCount: true,
-    pauseBetweenRetriesMs: 250,
-  };
-  assert.equal(options.timeframe, 'm1');
-  assert.equal(options.priceType, 'bid');
-  assert.equal(options.format, 'json');
-  assert.equal(options.retryCount, 5);
-  assert.equal(options.retryOnEmpty, true);
-  assert.equal(options.useCache, true);
-  assert.equal(options.batchSize, 1);
+test('builds the documented single-day M1 config with persistent cache and bounded retries', () => {
+  const config = buildDukascopyM1Config('EURUSD', date, '/data/dukascopy-cache');
+
+  assert.equal(config.instrument, 'eurusd');
+  assert.equal(config.timeframe, 'm1');
+  assert.equal(config.priceType, 'bid');
+  assert.equal(config.format, 'json');
+  assert.equal(config.utcOffset, 0);
+  assert.equal(config.volumes, true);
+  assert.equal(config.volumeUnits, 'millions');
+  assert.equal(config.ignoreFlats, false);
+  assert.equal(config.batchSize, 1);
+  assert.equal(config.pauseBetweenBatchesMs, 1000);
+  assert.equal(config.useCache, true);
+  assert.equal(config.cacheFolderPath, '/data/dukascopy-cache');
+  assert.equal(config.retryCount, 5);
+  assert.equal(config.retryOnEmpty, true);
+  assert.equal(config.failAfterRetryCount, true);
+  assert.equal(config.pauseBetweenRetriesMs, 250);
+  assert.equal(config.dates.from.toISOString(), date + 'T00:00:00.000Z');
+  assert.equal(config.dates.to.toISOString(), '2026-10-17T00:00:00.000Z');
+  assert.equal(config.dates.to.getTime() - config.dates.from.getTime(), 86_400_000);
+});
+
+test('rejects an empty instrument or cache path', () => {
+  assert.throws(() => buildDukascopyM1Config('', date, '/cache'), /Instrument is required/);
+  assert.throws(() => buildDukascopyM1Config('eurusd', date, ''), /Cache folder path is required/);
 });

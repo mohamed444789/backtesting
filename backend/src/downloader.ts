@@ -65,6 +65,42 @@ function utcDayStartSeconds(date: string): number {
   return Math.floor(milliseconds / 1000);
 }
 
+export function buildDukascopyM1Config(
+  instrument: string,
+  date: string,
+  cacheFolderPath: string,
+) {
+  if (!instrument.trim()) throw new Error('Instrument is required');
+  if (!cacheFolderPath.trim()) throw new Error('Cache folder path is required');
+
+  const fromMs = utcDayStartSeconds(date) * 1000;
+  return {
+    instrument: instrument.toLowerCase(),
+    dates: {
+      from: new Date(fromMs),
+      // The library filters the end as an exclusive boundary.
+      to: new Date(fromMs + 86_400_000),
+    },
+    timeframe: 'm1',
+    priceType: 'bid',
+    format: 'json',
+    utcOffset: 0,
+    volumes: true,
+    volumeUnits: 'millions',
+    // Fill missing minutes with flat candles when the provider has no tick
+    // change; this keeps replay/coverage sessions continuous.
+    ignoreFlats: false,
+    batchSize: 1,
+    pauseBetweenBatchesMs: 1000,
+    useCache: true,
+    cacheFolderPath,
+    retryCount: 5,
+    retryOnEmpty: true,
+    failAfterRetryCount: true,
+    pauseBetweenRetriesMs: 250,
+  } as const;
+}
+
 function timestampSeconds(rawTime: unknown): number {
   if (rawTime instanceof Date) {
     const milliseconds = rawTime.getTime();
