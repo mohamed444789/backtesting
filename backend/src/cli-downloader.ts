@@ -163,6 +163,7 @@ export interface DukascopyCliArgs {
 export function buildDukascopyCliArgs(options: DukascopyCliArgs): string[] {
   const instrument = options.instrument.trim().toLowerCase();
   if (!instrument) throw new Error('Instrument is required');
+  if (!/^[a-z0-9]+$/.test(instrument)) throw new Error('Instrument must contain only letters and digits');
   if (!options.outputDirectory.trim()) throw new Error('CLI output directory is required');
   if (!options.fileName.trim()) throw new Error('CLI file name is required');
 
