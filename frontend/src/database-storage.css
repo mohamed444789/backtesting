@@ -457,3 +457,15 @@
 .ds-history-range:focus{border-color:#299fe6;box-shadow:0 0 0 2px #299fe622}
 .theme-light .ds-history-range{border-color:#c9d7e5;background:#fff;color:#152a40}
 @media(max-width:420px){.ds-history-range{min-width:94px;max-width:106px;font-size:9px;padding-left:7px;padding-right:18px}}
+
+/* Quick date presets for historical candle downloads */
+.historical-download-presets{grid-column:1/-1;display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0;margin:0 0 2px}
+.historical-download-presets>span{font-size:12px;font-weight:600;color:#8fa4bc;margin-right:3px;white-space:nowrap}
+.historical-download-presets button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:6px 10px;border:1px solid #2a3b50;border-radius:6px;background:#0b1420;color:#aabbd0;font-size:12px;font-weight:600;line-height:1.25;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.historical-download-presets button:hover{border-color:#357ca8;background:#10243a;color:#e7f6ff}
+.historical-download-presets button.active{border-color:#218bca;background:#102f49;color:#85d2ff;box-shadow:inset 0 0 0 1px #218bca35}
+.theme-light .historical-download-presets>span{color:#536b83}
+.theme-light .historical-download-presets button{border-color:#cbd9e7;background:#fff;color:#425a72}
+.theme-light .historical-download-presets button:hover{border-color:#83b8df;background:#f2f8fd;color:#123b5b}
+.theme-light .historical-download-presets button.active{border-color:#1683c7;background:#e5f4ff;color:#075d98;box-shadow:inset 0 0 0 1px #1683c735}
+@media(max-width:700px){.historical-download-presets{gap:6px}.historical-download-presets>span{width:100%;margin:0 0 2px}.historical-download-presets button{flex:1 0 auto;min-height:36px;padding:7px 9px}}
