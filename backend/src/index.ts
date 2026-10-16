@@ -202,12 +202,6 @@ async function download(id:number,symbol:string,start:string,end:string,download
    return;
   }
 
-  let fn:any;
-  if(downloader==='api'){
-   const mod:any=await import('dukascopy-node');
-   fn=mod.getHistoricalRates||mod.default;
-   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
-  }
   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before fetching');return;}
 
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
@@ -220,6 +214,47 @@ async function download(id:number,symbol:string,start:string,end:string,download
    }
    return inserted;
   });
+
+  if(downloader==='api'){
+   // Match the original main-branch downloader: one getHistoricalRates call
+   // over the entire selected range, rather than constructing per-day API jobs.
+   activeChunk={start:chunks[0].start,end:chunks[chunks.length-1].end};
+   const mod:any=await import('dukascopy-node');
+   const fn=mod.getHistoricalRates||mod.default;
+   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
+   const apiStart=chunks[0].start;
+   const apiEnd=chunks[chunks.length-1].end;
+   appLog('INFO','FETCH','Job #'+id+': requesting full range '+apiStart+' to '+apiEnd+' via main-branch Direct API downloader');
+   const result:any=await fn({
+    instrument:symbol.toLowerCase(),
+    dates:{from:new Date(apiStart+'T00:00:00Z'),to:new Date(apiEnd+'T23:59:00Z')},
+    timeframe:'m1',
+    format:'json',
+    priceType:'bid',
+    volume:true
+   });
+   if(cancelledDownloads.has(id)){
+    cancelledDownloads.delete(id);
+    appLog('INFO','DOWNLOAD','Job #'+id+': discarded main-branch API response after cancellation');
+    return;
+   }
+   const cs:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
+   if(!cs.length)throw Error('Main-branch Dukascopy downloader returned no candles for '+apiStart+' to '+apiEnd);
+   let apiInputRows=0,apiInsertedRows=0;
+   for(let i=0;i<cs.length;i+=3000){
+    const batch=cs.slice(i,i+3000);
+    apiInsertedRows+=insertBatch(batch);
+    apiInputRows+=batch.length;
+    const progress=Math.min(99,Math.round(((i+batch.length)/Math.max(1,cs.length))*100));
+    db.prepare('update downloads set progress=? where id=?').run(progress,id);
+   }
+   const recoveredCount=db.transaction(()=>{
+    db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
+    return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes;
+   })();
+   appLog('INFO','DOWNLOAD','Job #'+id+': completed using main-branch downloader. '+apiInputRows+' valid rows processed and '+apiInsertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?(' Ignored '+futureDatesIgnored+' future date(s).'):'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+   return;
+  }
 
   let inputRows=0,insertedRows=0,skippedEmptySundays=0;
   const failedDates:{date:string;error:string}[]=[];
