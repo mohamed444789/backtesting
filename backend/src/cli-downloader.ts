@@ -263,7 +263,7 @@ async function runCli(args: string[], signal?: AbortSignal): Promise<{ stdout: s
     child.stdout!.on('data', (chunk: Buffer) => { stdout = appendBounded(stdout, chunk); });
     child.stderr!.on('data', (chunk: Buffer) => { stderr = appendBounded(stderr, chunk); });
     child.on('error', error => {
-      finish(new Error('Could not start the Dukascopy CLI via npx: ' + error.message));
+      finish(new Error('Could not start the installed Dukascopy CLI: ' + error.message));
     });
     child.on('close', code => {
       if (aborted || signal?.aborted) {
