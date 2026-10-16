@@ -11,12 +11,7 @@
 
 /* Overview now follows the reference's four fixed desktop rows:
    1 metrics, 2 storage analysis, 3 table/schema/sample, 4 logs/download logs. */
-.app:has(.ds-page) aside{width:170px;padding:20px 10px}
-.app:has(.ds-page) main{margin-left:170px}
-.app:has(.ds-page) main>header{padding:0 20px}
-.app:has(.ds-page) .content{max-width:none;padding:22px 18px;margin:0}
-.app:has(.ds-page) aside .logo{gap:9px;padding:0 7px 22px;letter-spacing:1.5px}
-.app:has(.ds-page) aside .nav{gap:8px;padding:11px 9px;font-size:11px}
+/* Shared app-shell sizing stays controlled by style.css on every page. */
 .ds-overview-grid{grid-template-columns:1.12fr 1.13fr 1fr;align-items:stretch}
 .ds-inspector-grid{grid-template-columns:1.08fr .98fr 1.12fr;align-items:stretch}
 .ds-console-grid{grid-template-columns:1.17fr .83fr;align-items:stretch}
@@ -99,8 +94,8 @@
 .theme-light .ds-log-line .message{color:#dbe7f5}
 .theme-light .ds-terminal-empty{color:#93a7bd}
 @media(min-width:1250px){.ds-overview-grid{grid-template-columns:1.12fr 1.13fr 1fr}.ds-inspector-grid{grid-template-columns:1.08fr .98fr 1.12fr}.ds-console-grid{grid-template-columns:1.17fr .83fr}}
-@media(max-width:1249px){.app:has(.ds-page) aside{width:190px}.app:has(.ds-page) main{margin-left:190px}.ds-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-overview-grid>.ds-card:last-child{grid-column:1/-1}.ds-inspector-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-inspector-grid>.ds-card:first-child{grid-row:span 2}.ds-console-grid{grid-template-columns:1fr}.ds-log-header{flex-wrap:wrap}.ds-log-controls{justify-content:flex-start;flex-wrap:wrap}}
-@media(max-width:760px){.app:has(.ds-page) aside{width:62px;padding:15px 5px}.app:has(.ds-page) main{margin-left:62px}.app:has(.ds-page) aside .logo span,.app:has(.ds-page) aside .local,.app:has(.ds-page) aside .navtitle,.app:has(.ds-page) aside .nav:not(.active){font-size:0}.app:has(.ds-page) aside .logo{padding:0 0 18px;justify-content:center}.app:has(.ds-page) aside .nav{justify-content:center;font-size:0;gap:0;padding:12px 3px}.app:has(.ds-page) .content{padding:14px 10px}.app:has(.ds-page) main>header{padding:0 10px}.ds-overview-grid,.ds-inspector-grid,.ds-console-grid{grid-template-columns:1fr}.ds-overview-grid>.ds-card:last-child{grid-column:auto}.ds-inspector-grid>.ds-card:first-child{grid-row:auto}.ds-log-header{flex-wrap:wrap}.ds-log-header>.ds-card-title{min-width:0}.ds-log-controls{width:100%;flex-wrap:wrap}.ds-log-controls .ds-search{flex:1}.ds-metrics{gap:7px}.ds-metric-top>label{font-size:10px}.ds-metric strong{font-size:17px}.ds-metric-foot{font-size:9px}.ds-storage-donut{flex-wrap:wrap}.ds-legend{min-width:100%}}
+@media(max-width:1249px){.ds-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-overview-grid>.ds-card:last-child{grid-column:1/-1}.ds-inspector-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-inspector-grid>.ds-card:first-child{grid-row:span 2}.ds-console-grid{grid-template-columns:1fr}.ds-log-header{flex-wrap:wrap}.ds-log-controls{justify-content:flex-start;flex-wrap:wrap}}
+@media(max-width:760px){.ds-overview-grid,.ds-inspector-grid,.ds-console-grid{grid-template-columns:1fr}.ds-overview-grid>.ds-card:last-child{grid-column:auto}.ds-inspector-grid>.ds-card:first-child{grid-row:auto}.ds-log-header{flex-wrap:wrap}.ds-log-header>.ds-card-title{min-width:0}.ds-log-controls{width:100%;flex-wrap:wrap}.ds-log-controls .ds-search{flex:1}.ds-metrics{gap:7px}.ds-metric-top>label{font-size:10px}.ds-metric strong{font-size:17px}.ds-metric-foot{font-size:9px}.ds-storage-donut{flex-wrap:wrap}.ds-legend{min-width:100%}}
 
 /* Ring segments: SQLite, WAL, other used filesystem space, then available space. */
 .ds-donut{background:conic-gradient(#25a8ff 0 calc(var(--ds-db,0)*1%),#8b5cf6 calc(var(--ds-db,0)*1%) calc((var(--ds-db,0) + var(--ds-wal,0))*1%),#f59e0b calc((var(--ds-db,0) + var(--ds-wal,0))*1%) calc(var(--ds-used,0)*1%),#22c55e calc(var(--ds-used,0)*1%) 100%)}
