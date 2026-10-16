@@ -582,3 +582,9 @@
 
 .ds-coverage-status.coverage-market-closed{color:#a8b7c9;background:#1c2939}
 .ds-coverage-status.coverage-holiday-review{color:#fcd34d;background:#382b13}
+
+.ds-coverage-report-summary{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}
+.ds-coverage-status.coverage-future{color:#93c5fd;background:#132d46}
+.ds-coverage-status.coverage-today-in-progress{color:#fcd34d;background:#382b13}
+.theme-light .ds-coverage-status.coverage-future{color:#075da8;background:#e0f0ff}
+.theme-light .ds-coverage-status.coverage-today-in-progress{color:#854d0e;background:#fef3c7}
