@@ -269,8 +269,6 @@ async function download(id:number,symbol:string,start:string,end:string){
     await new Promise(resolve=>setTimeout(resolve,1000));
     continue;
    }
-   consecutiveDateFailures=0;
-
    let chunkInserted=0;
    for(let i=0;i<inRange.length;i+=3000){
     const batch=inRange.slice(i,i+3000);
@@ -278,6 +276,25 @@ async function download(id:number,symbol:string,start:string,end:string){
     inputRows+=batch.length;
    }
    insertedRows+=chunkInserted;
+
+   let sessionComplete=true;
+   if(inRange.length&&date<todayUtc&&!isDateCovered(date)){
+    const expected=expectedUtcMinuteTimestamps(date,symbolUpper);
+    const from=Math.floor(new Date(date+'T00:00:00Z').getTime()/1000),until=from+86400;
+    const storedRows=storedForDate.all(symbolUpper,from,until) as {time:number}[];
+    const storedMinutes=new Set<number>(storedRows.map(row=>Math.floor(Number(row.time)/60)*60));
+    const missingMinutes=expected.filter(timestamp=>!storedMinutes.has(timestamp)).length;
+    const detail='Provider returned '+inRange.length+' valid candle(s), but '+missingMinutes+' expected session minute(s) are still missing after merging into SQLite.';
+    failedDates.push({date,error:detail});
+    consecutiveDateFailures++;
+    sessionComplete=false;
+    appLog('WARN','FETCH','Job #'+id+': '+date+' was stored, but its historical session is still incomplete: '+missingMinutes+' expected minute(s) missing. This date will remain unresolved and can be retried.');
+    if(consecutiveDateFailures>=maxConsecutiveDateFailures){
+     const recentFailures=failedDates.slice(-maxConsecutiveDateFailures).map(item=>item.date+': '+item.error).join(' | ');
+     throw Error('Paused after '+consecutiveDateFailures+' consecutive incomplete/failed dates to avoid hammering the provider. '+recentFailures+'. Stored candles are preserved; retry the job to resume.');
+    }
+   }
+   if(sessionComplete)consecutiveDateFailures=0;
 
    const progress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
    db.prepare('update downloads set progress=? where id=?').run(progress,id);
