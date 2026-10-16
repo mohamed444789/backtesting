@@ -10,6 +10,7 @@ export interface CliCandleDownloadOptions {
   dataRoot: string;
   cacheFolderPath: string;
   signal?: AbortSignal;
+  allowEmpty?: boolean;
 }
 
 export interface CliCandleDownloadResult {
@@ -315,7 +316,7 @@ export async function downloadDateCandlesViaCli(
     await runCli(args, options.signal);
     const csv = await fs.readFile(csvPath, 'utf8');
     const candles = parseDukascopyCliCsv(csv, options.date);
-    if (!candles.length) {
+    if (!candles.length && !options.allowEmpty) {
       throw new Error(
         'Dukascopy CLI produced no valid M1 candles for ' + options.date +
         '; staged CSV retained at ' + csvPath,
