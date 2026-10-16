@@ -190,7 +190,7 @@ export default function CalendarDatePicker({
           setOpen(current => !current);
         }}
       >
-        <span>{selectedDate ? formatDate(selectedDate, {day: '2-digit', month: 'short', year: 'numeric'}) : 'Select date'}</span>
+        <span>{selectedDate ? (String(selectedDate.getDate()).padStart(2, '0') + '.' + String(selectedDate.getMonth() + 1).padStart(2, '0') + '.' + String(selectedDate.getFullYear())) : 'Select date'}</span>
         <CalendarDays size={17} aria-hidden="true"/>
       </button>
       {open && createPortal(<div ref={popoverRef} className="atlas-calendar-popover" role="dialog" aria-label={'Choose ' + label.toLowerCase()} style={{position:'fixed',top:popoverPosition?.top??8,left:popoverPosition?.left??8,maxHeight:popoverPosition?`${popoverPosition.maxHeight}px`:'calc(100vh - 16px)',overflowY:'auto',visibility:popoverPosition?'visible':'hidden'}}>
