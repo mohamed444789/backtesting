@@ -244,3 +244,20 @@
 .historical-data-tabs button{display:flex;align-items:center;gap:7px}
 .ds-embedded{min-width:0}
 .ds-embedded>.ds-error{margin-top:0}
+
+
+/* Historical Data form and shared download console stack vertically; no duplicate queue panel. */
+.historical-data-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:stretch}
+.historical-data-layout>.panel,.historical-data-layout>.ds-embedded{width:100%;min-width:0;margin:0}
+.historical-download-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;align-content:start}
+.historical-download-form h3,.historical-download-form>.notice,.historical-download-form>.wide{grid-column:1/-1}
+.historical-download-form>label{min-width:0}
+.ds-download-search{margin:8px 0 12px;min-height:34px}
+.ds-download-search input{flex:1;min-width:0}
+.ds-download-search-clear{border:0;background:transparent;color:#94a8bf;cursor:pointer;font-size:18px;line-height:1;padding:2px 4px}
+.ds-download-search-clear:hover{color:#f4f8fd}
+.ds-embedded .ds-download-page{grid-template-columns:minmax(0,1fr)}
+.ds-embedded .ds-download-page>.ds-card{margin:0}
+.theme-light .ds-download-search-clear{color:#536b83}
+.theme-light .ds-download-search-clear:hover{color:#16324c}
+@media(max-width:700px){.historical-download-form{grid-template-columns:minmax(0,1fr)}.historical-download-form h3,.historical-download-form>.notice,.historical-download-form>.wide{grid-column:1}}
