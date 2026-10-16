@@ -87,8 +87,8 @@ export function isLikelyNetworkError(message: string): boolean {
 /** Retry transport, rate-limit and server errors; malformed/empty payloads are bounded. */
 export function isRetryableProviderError(message: string): boolean {
   return isLikelyNetworkError(message) ||
-    /(?:http(?: response)?|status(?: code)?)\s*[:=]?\s*(?:429|500|502|503|504|5\d\d)\b/i.test(message) ||
-    /\b(?:429|500|502|503|504)\b.*(?:rate|limit|server|temporar|request)/i.test(message);
+    /(?:http(?: response)?|status(?: code)?)\s*[:=]?\s*(?:202|408|425|429|500|502|503|504|5\d\d)\b/i.test(message) ||
+    /\b(?:202|408|425|429|500|502|503|504)\b.*(?:accepted|timeout|temporar|rate|limit|server|request)/i.test(message);
 }
 
 /** Exponential backoff capped at one minute. */

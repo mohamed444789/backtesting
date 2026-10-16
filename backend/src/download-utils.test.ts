@@ -60,6 +60,8 @@ test('recognizes network and provider server/rate-limit failures as retryable', 
   assert.equal(isRetryableProviderError('fetch failed'), true);
   assert.equal(isRetryableProviderError('Request failed with status 429'), true);
   assert.equal(isRetryableProviderError('Request failed with status 503'), true);
+  assert.equal(isRetryableProviderError('Request failed with status 202'), true);
+  assert.equal(isRetryableProviderError('Request failed with status 408'), true);
   assert.equal(isRetryableProviderError('Provider returned no valid M1 candles'), false);
   assert.equal(isRetryableProviderError('The operation was aborted due to timeout'), true);
 });

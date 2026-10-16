@@ -220,21 +220,19 @@ async function download(id:number,symbol:string,start:string,end:string){
      },
      request:async()=>fn({
       instrument:symbol,
-      dates:{from:new Date(date+'T00:00:00Z'),to:new Date(date+'T23:59:00Z')},
+      dates:{from:new Date(date+'T00:00:00Z'),to:new Date(new Date(date+'T00:00:00Z').getTime()+86400000)},
       timeframe:'m1',
       format:'json',
       priceType:'bid',
       batchSize:1,
       pauseBetweenBatchesMs:250,
-      // Dukascopy can return HTTP 200 with an empty hourly artifact.
-      // Retry those at the artifact level rather than re-running the whole day.
-      retryCount:4,
+      // Use the legacy binary datafeed endpoint until the Jetta API accepts
+      // these candle requests reliably. Retry at the artifact level first.
+      retryCount:2,
       retryOnEmpty:true,
       pauseBetweenRetriesMs:1000,
       failAfterRetryCount:true,
       ignoreFlats:false,
-      // Keep cache disabled during downloads so a future provider recovery is
-      // never hidden behind an artifact cached from an earlier empty response.
       useCache:false
      })
     });
