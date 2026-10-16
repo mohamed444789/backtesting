@@ -122,3 +122,25 @@ test('rejects malformed dates rather than allowing JavaScript date rollover', as
     /Invalid download date/,
   );
 });
+
+
+test('does not retry a malformed empty day at the outer layer', async () => {
+  let calls = 0;
+
+  await assert.rejects(
+    fetchDateCandles({
+      date,
+      maxAttempts: 6,
+      request: async () => {
+        calls++;
+        return [];
+      },
+      sleep: async () => {
+        assert.fail('A non-retryable empty-day error should not back off and repeat');
+      },
+    }),
+    /Provider returned no valid M1 candles/,
+  );
+
+  assert.equal(calls, 1);
+});

@@ -221,7 +221,7 @@ export async function fetchDateCandles(options: FetchDateOptions): Promise<Fetch
       }
 
       lastError = error;
-      if (attempt >= maxAttempts) break;
+      if (attempt >= maxAttempts || !isRetryableProviderError(detail)) break;
 
       const delayMs = getDownloadRetryDelay(attempt);
       options.onRetry?.({

@@ -226,12 +226,16 @@ async function download(id:number,symbol:string,start:string,end:string){
       priceType:'bid',
       batchSize:1,
       pauseBetweenBatchesMs:250,
-      retryCount:0,
-      retryOnEmpty:false,
-      pauseBetweenRetriesMs:0,
+      // Dukascopy can return HTTP 200 with an empty hourly artifact.
+      // Retry those at the artifact level rather than re-running the whole day.
+      retryCount:4,
+      retryOnEmpty:true,
+      pauseBetweenRetriesMs:1000,
       failAfterRetryCount:true,
-      useCache:true,
-      cacheFolderPath:path.join(root,'dukascopy-cache')
+      ignoreFlats:false,
+      // Keep cache disabled during downloads so a future provider recovery is
+      // never hidden behind an artifact cached from an earlier empty response.
+      useCache:false
      })
     });
 
