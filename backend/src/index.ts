@@ -1,4 +1,4 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError,isLikelyNetworkError}from'./download-utils.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError,isLikelyNetworkError,isRetryableProviderError,getDownloadRetryDelay}from'./download-utils.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
 const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
@@ -160,7 +160,7 @@ async function download(id:number,symbol:string,start:string,end:string){
   const failedDates:{date:string;error:string}[]=[];
   let consecutiveDateFailures=0;
   const maxConsecutiveDateFailures=3;
-  const maxDateAttempts=3;
+  const maxNonNetworkAttempts=5;
   const interDatePauseMs=350;
   for(let index=0;index<coverage.length;index++){
    const chunk=coverage[index];activeChunk=chunk;
@@ -184,7 +184,9 @@ async function download(id:number,symbol:string,start:string,end:string){
 
    appLog('INFO','FETCH','Job #'+id+': requesting '+date+' ('+(index+1)+'/'+coverage.length+') via Dukascopy JSON API');
 
-   for(let attempt=1;attempt<=maxDateAttempts;attempt++){
+   let attempt=0,nonNetworkAttempts=0,retryableAttempts=0;
+   while(!success){
+    attempt++;
     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date retry');return;}
     try{
      const result=await fn({
@@ -225,17 +227,44 @@ async function download(id:number,symbol:string,start:string,end:string){
      if(!lastUsefulError||(!isGeneric&&(/unknown error|fetch failed|failed to fetch/i.test(lastUsefulError)||detail.length>lastUsefulError.length))){
       lastUsefulError=detail;
      }
-     if(dayOfWeek===0&&!isLikelyNetworkError(detail)&&/(empty dataset|status 404|no data|not found)/i.test(detail)){
+     if(dayOfWeek===0&&!isLikelyNetworkError(detail)&&/(empty dataset|status 404|no data|not found|no valid M1 candles)/i.test(detail)){
       skippedEmptySundays++;
       inRange=[];
       success=true;
       appLog('INFO','FETCH','Job #'+id+': '+date+' has no Sunday-session artifact; it is ignored as an expected empty FX session');
       break;
      }
-     if(attempt===maxDateAttempts)break;
-     const delay=1500*Math.pow(2,attempt-1);
-     appLog('WARN','FETCH','Job #'+id+': '+date+' failed on attempt '+attempt+'/'+maxDateAttempts+'; retrying only this date in '+delay+' ms: '+detail.slice(0,450));
-     await new Promise(resolve=>setTimeout(resolve,delay));
+
+     if(isRetryableProviderError(detail)){
+      retryableAttempts++;
+      const delay=getDownloadRetryDelay(retryableAttempts);
+      if(retryableAttempts<=5||retryableAttempts%5===0){
+       appLog('WARN','FETCH','Job #'+id+': '+date+' transient provider/network error on attempt '+attempt+' (retry '+retryableAttempts+'); retrying this date in '+Math.round(delay/1000)+'s, up to 60s backoff: '+detail.slice(0,450));
+      }
+      let remaining=delay;
+      while(remaining>0&&!cancelledDownloads.has(id)){
+       const pause=Math.min(1000,remaining);
+       await new Promise(resolve=>setTimeout(resolve,pause));
+       remaining-=pause;
+      }
+      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped during retry backoff');return;}
+      continue;
+     }
+
+     nonNetworkAttempts++;
+     if(nonNetworkAttempts>=maxNonNetworkAttempts){
+      appLog('ERROR','FETCH','Job #'+id+': '+date+' returned an empty/malformed-data error '+nonNetworkAttempts+' times; leaving this date unresolved: '+detail.slice(0,450));
+      break;
+     }
+     const delay=getDownloadRetryDelay(nonNetworkAttempts);
+     appLog('WARN','FETCH','Job #'+id+': '+date+' returned unusable data on attempt '+nonNetworkAttempts+'/'+maxNonNetworkAttempts+'; retrying in '+Math.round(delay/1000)+'s: '+detail.slice(0,450));
+     let remaining=delay;
+     while(remaining>0&&!cancelledDownloads.has(id)){
+      const pause=Math.min(1000,remaining);
+      await new Promise(resolve=>setTimeout(resolve,pause));
+      remaining-=pause;
+     }
+     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped during retry backoff');return;}
     }
    }
 
@@ -243,7 +272,7 @@ async function download(id:number,symbol:string,start:string,end:string){
     const detail=lastUsefulError||'No provider data returned';
     failedDates.push({date,error:detail});
     consecutiveDateFailures++;
-    appLog('ERROR','FETCH','Job #'+id+': failed to download '+date+' after '+maxDateAttempts+' attempts: '+detail+'. Continuing with later dates; this date will remain unresolved.');
+    appLog('ERROR','FETCH','Job #'+id+': failed to download '+date+' after '+attempt+' attempts: '+detail+'. Continuing with later dates; this date will remain unresolved.');
     const failedProgress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
     db.prepare('update downloads set progress=? where id=?').run(failedProgress,id);
     if(consecutiveDateFailures>=maxConsecutiveDateFailures){

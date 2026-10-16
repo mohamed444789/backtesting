@@ -82,3 +82,17 @@ export function describeDownloadError(error: unknown): string {
 export function isLikelyNetworkError(message: string): boolean {
   return /(ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|ENETUNREACH|EHOSTUNREACH|UND_ERR_SOCKET|socket hang up|fetch failed|failed to fetch|network error)/i.test(message);
 }
+
+
+/** Retry transport, rate-limit and server errors; malformed/empty payloads are bounded. */
+export function isRetryableProviderError(message: string): boolean {
+  return isLikelyNetworkError(message) ||
+    /(?:http(?: response)?|status(?: code)?)\s*[:=]?\s*(?:429|500|502|503|504|5\d\d)\b/i.test(message) ||
+    /\b(?:429|500|502|503|504)\b.*(?:rate|limit|server|temporar|request)/i.test(message);
+}
+
+/** Exponential backoff capped at one minute. */
+export function getDownloadRetryDelay(attempt: number): number {
+  const safeAttempt = Number.isFinite(attempt) ? Math.max(1, Math.floor(attempt)) : 1;
+  return Math.min(60_000, 1_500 * Math.pow(2, Math.min(safeAttempt - 1, 6)));
+}

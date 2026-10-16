@@ -54,3 +54,20 @@ test('keeps nested fetch timeout details instead of only showing a generic wrapp
   assert.match(details, /194\.8\.15\.180:443/);
   assert.equal(isLikelyNetworkError(details), true);
 });
+
+
+test('retries network and provider server/rate-limit failures indefinitely', async () => {
+  const { isRetryableProviderError } = await import('./download-utils.js');
+  assert.equal(isRetryableProviderError('connect ETIMEDOUT 192.0.2.1:443'), true);
+  assert.equal(isRetryableProviderError('fetch failed'), true);
+  assert.equal(isRetryableProviderError('Request failed with status 429'), true);
+  assert.equal(isRetryableProviderError('Request failed with status 503'), true);
+  assert.equal(isRetryableProviderError('Provider returned no valid M1 candles'), false);
+});
+
+test('caps exponential retry backoff at 60 seconds', async () => {
+  const { getDownloadRetryDelay } = await import('./download-utils.js');
+  assert.equal(getDownloadRetryDelay(1), 1500);
+  assert.equal(getDownloadRetryDelay(2), 3000);
+  assert.equal(getDownloadRetryDelay(20), 60000);
+});
