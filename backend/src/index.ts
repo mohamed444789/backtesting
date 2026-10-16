@@ -256,7 +256,6 @@ async function download(id:number,symbol:string,start:string,end:string,download
       instrument:symbol,
       date,
       dataRoot:root,
-      cacheFolderPath:path.join(root,'dukascopy-cache'),
       signal:downloadAbortControllers.get(id)?.signal,
       allowEmpty:dayOfWeek===0
      });
@@ -401,7 +400,7 @@ async function download(id:number,symbol:string,start:string,end:string,download
   if(downloadAbortControllers.get(id)===abortController)downloadAbortControllers.delete(id);
  }
 }
-app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}const interruptedDownloads=db.prepare("select id,symbol,start_date,end_date,status from downloads where status in ('queued','running') order by id").all() as any[];
+app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}const interruptedDownloads=db.prepare("select id,symbol,start_date,end_date,status,downloader from downloads where status in ('queued','running') order by id").all() as any[];
 let recoveryWaitFor:number|undefined;
 for(const job of interruptedDownloads){
  const id=Number(job.id);
