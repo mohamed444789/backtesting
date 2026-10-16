@@ -44,7 +44,33 @@ async function download(id:number,symbol:string,start:string,end:string){
   db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
   const chunks=splitDateRange(start,end,6);
   if(!chunks.length)throw Error('The selected date range contains no trading dates after Saturdays are skipped');
-  appLog('INFO','DOWNLOAD','Job #'+id+': starting '+symbol.toUpperCase()+' M1 Bid fetch for '+start+' to '+end+' in '+chunks.length+' trading-day chunks using the Dukascopy Node API; Saturdays are skipped and Sunday sessions are preserved');
+  const coveredDate=db.prepare('select count(*) as n from candles where symbol=? and time>=? and time<?');
+  const isDateCovered=(date:string)=>{
+   const day=new Date(date+'T00:00:00Z').getUTCDay();
+   if(day===6)return true;
+   const from=Math.floor(new Date(date+'T00:00:00Z').getTime()/1000);
+   const until=from+86400;
+   const count=Number((coveredDate.get(symbol.toUpperCase(),from,until) as any).n||0);
+   // Sunday has a short market session; a weekday should normally have at least 1,000 M1 candles.
+   return day===0?count>=1:count>=1000;
+  };
+  const coveredChunks=chunks.map(chunk=>({...chunk,covered:(()=>{
+   let cursor=new Date(chunk.start+'T00:00:00Z').getTime();
+   const last=new Date(chunk.end+'T00:00:00Z').getTime();
+   while(cursor<=last){
+    const date=new Date(cursor).toISOString().slice(0,10);
+    if(!isDateCovered(date))return false;
+    cursor+=86400000;
+   }
+   return true;
+  })()}));
+  const missingChunks=coveredChunks.filter(chunk=>!chunk.covered);
+  appLog('INFO','DATABASE','Job #'+id+': checked existing SQLite candles for '+start+' to '+end+'; '+(chunks.length-missingChunks.length)+' of '+chunks.length+' chunks already covered, '+missingChunks.length+' need fetching');
+  if(!missingChunks.length){
+   db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
+   appLog('INFO','DOWNLOAD','Job #'+id+': completed immediately; all requested trading dates are already covered in SQLite. No provider request was made.');
+   return;
+  }
   const mod:any=await import('dukascopy-node');
   const fn=mod.getHistoricalRates||mod.default;
   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
@@ -55,7 +81,14 @@ async function download(id:number,symbol:string,start:string,end:string){
   for(let index=0;index<chunks.length;index++){
    const chunk=chunks[index];activeChunk=chunk;
    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between chunks');return;}
-   appLog('INFO','FETCH','Job #'+id+': requesting chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') via Node API');
+   const coverage=coveredChunks[index];
+   if(coverage.covered){
+    const progress=Math.min(99,Math.floor(((index+1)/chunks.length)*100));
+    db.prepare('update downloads set progress=? where id=?').run(progress,id);
+    appLog('INFO','DATABASE','Job #'+id+': skipped already-covered chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+'); no download needed');
+    continue;
+   }
+   appLog('INFO','FETCH','Job #'+id+': requesting missing-data chunk '+(index+1)+'/'+chunks.length+' ('+chunk.start+' to '+chunk.end+') via Node API');
    const chunkFrom=Math.floor(new Date(chunk.start+'T00:00:00Z').getTime()/1000);
    const chunkUntil=Math.floor(new Date(shiftCoverageDate(chunk.end,1)+'T00:00:00Z').getTime()/1000);
    let inRange:any[]=[],lastChunkError:any=null;
