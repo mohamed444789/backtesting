@@ -124,23 +124,21 @@ test('rejects malformed dates rather than allowing JavaScript date rollover', as
 });
 
 
-test('does not retry a malformed empty day at the outer layer', async () => {
+test('retries empty weekday responses and succeeds when candles become available', async () => {
   let calls = 0;
+  const delays: number[] = [];
 
-  await assert.rejects(
-    fetchDateCandles({
-      date,
-      maxAttempts: 6,
-      request: async () => {
-        calls++;
-        return [];
-      },
-      sleep: async () => {
-        assert.fail('A non-retryable empty-day error should not back off and repeat');
-      },
-    }),
-    /Provider returned no valid M1 candles/,
-  );
+  const result = await fetchDateCandles({
+    date,
+    maxAttempts: 4,
+    request: async () => {
+      calls++;
+      return calls < 3 ? [] : [row(0)];
+    },
+    sleep: async milliseconds => { delays.push(milliseconds); },
+  });
 
-  assert.equal(calls, 1);
+  assert.equal(calls, 3);
+  assert.equal(result.candles.length, 1);
+  assert.deepEqual(delays, [1500, 3000]);
 });

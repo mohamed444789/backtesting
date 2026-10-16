@@ -226,11 +226,11 @@ async function download(id:number,symbol:string,start:string,end:string){
       priceType:'bid',
       batchSize:1,
       pauseBetweenBatchesMs:250,
-      // Use the legacy binary datafeed endpoint until the Jetta API accepts
-      // these candle requests reliably. Retry at the artifact level first.
-      retryCount:2,
-      retryOnEmpty:true,
-      pauseBetweenRetriesMs:1000,
+      // Keep provider retries in the wrapper so every failed HTTP response
+      // can be logged with its status, URL, and response-body preview.
+      retryCount:0,
+      retryOnEmpty:false,
+      pauseBetweenRetriesMs:0,
       failAfterRetryCount:true,
       ignoreFlats:false,
       useCache:false

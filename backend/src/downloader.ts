@@ -158,12 +158,35 @@ async function withProviderFetchTimeout<T>(
   externalSignal?: AbortSignal,
 ): Promise<T> {
   const originalFetch = globalThis.fetch;
-  const wrappedFetch: typeof fetch = (input, init) => {
+  const wrappedFetch: typeof fetch = async (input, init) => {
     const signals: AbortSignal[] = [AbortSignal.timeout(timeoutMs)];
     if (externalSignal) signals.push(externalSignal);
     if (init?.signal) signals.push(init.signal as AbortSignal);
     const signal = signals.length === 1 ? signals[0] : AbortSignal.any(signals);
-    return originalFetch(input, { ...init, signal });
+    const response = await originalFetch(input, { ...init, signal });
+
+    // Dukascopy-node otherwise discards non-200 bodies and often reports only
+    // "Unknown error". Preserve enough response context to diagnose 202/403/429
+    // and upstream gateway errors without logging an unbounded response body.
+    if (response.status !== 200) {
+      const requestUrl = typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+      const bodyPreview = await response.clone().text().catch(() => '');
+      const details = [
+        'Request failed with status ' + response.status + (response.statusText ? ' ' + response.statusText : ''),
+        'url=' + requestUrl,
+        'content-type=' + (response.headers.get('content-type') || 'unknown'),
+        response.headers.get('retry-after') ? 'retry-after=' + response.headers.get('retry-after') : '',
+        response.headers.get('location') ? 'location=' + response.headers.get('location') : '',
+        'body=' + (bodyPreview.trim().slice(0, 400) || '<empty>'),
+      ].filter(Boolean);
+      throw new Error(details.join(' | '));
+    }
+
+    return response;
   };
 
   globalThis.fetch = wrappedFetch;
@@ -215,13 +238,15 @@ export async function fetchDateCandles(options: FetchDateOptions): Promise<Fetch
       if (
         options.allowEmpty &&
         !isLikelyNetworkError(detail) &&
-        /empty dataset|status(?:\s*code)?\s*[:=]?\s*404|no data|not found|no valid m1 candles/i.test(detail)
+        /empty dataset|http\s*[:=]?\s*404|status(?:\s*code)?\s*[:=]?\s*404|no data|not found|no valid m1 candles/i.test(detail)
       ) {
         return { candles: [], attempts: attempt, empty: true };
       }
 
       lastError = error;
-      if (attempt >= maxAttempts || !isRetryableProviderError(detail)) break;
+      const emptyPayload = /provider returned no valid m1 candles|request returned an empty dataset|empty data(?:set)?(?: response)?/i.test(detail);
+      const retryable = isRetryableProviderError(detail) || emptyPayload;
+      if (attempt >= maxAttempts || !retryable) break;
 
       const delayMs = getDownloadRetryDelay(attempt);
       options.onRetry?.({
@@ -229,7 +254,7 @@ export async function fetchDateCandles(options: FetchDateOptions): Promise<Fetch
         maxAttempts,
         delayMs,
         detail,
-        retryable: isRetryableProviderError(detail),
+        retryable,
       });
       await waitForRetry(delayMs, options);
     }
