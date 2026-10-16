@@ -247,7 +247,7 @@ async function download(id:number,symbol:string,start:string,end:string){
     const detail=lastUsefulError||'No provider data returned';
     failedDates.push({date,error:detail});
     consecutiveDateFailures++;
-    appLog('ERROR','FETCH','Job #'+id+': failed to download '+date+' after '+attemptsUsed+' attempts: '+detail+'. Continuing with later dates; this date will remain unresolved.');
+    appLog('ERROR','FETCH','Job #'+id+': failed to download '+date+' after '+attemptsUsed+' outer attempt(s); provider fetch retries are included in the error detail: '+detail+'. Continuing with later dates; this date will remain unresolved.');
     const failedProgress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
     db.prepare('update downloads set progress=? where id=?').run(failedProgress,id);
     if(consecutiveDateFailures>=maxConsecutiveDateFailures){
