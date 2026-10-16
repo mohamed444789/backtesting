@@ -30,13 +30,16 @@ function utcDayHasOpenMarket(startMs:number,endMs:number){
 }
 async function download(id:number,symbol:string,start:string,end:string){
   const pair=symbol.toUpperCase(),failures:string[]=[];
+  const log=(event:string,details:Record<string,unknown>={})=>console.log('[historical-download]',JSON.stringify({id,symbol:pair,event,...details}));
   try{
+    log('started',{startDate:start,endDate:end,maxAttempts:MAX_DAY_ATTEMPTS});
     db.prepare("update downloads set status='running',progress=0,error=NULL where id=?").run(id);
     const mod:any=await import('dukascopy-node'),fn=mod.getHistoricalRates||mod.default;
     if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
     const first=Date.parse(start+'T00:00:00Z'),last=Date.parse(end+'T00:00:00Z');
     if(!Number.isFinite(first)||!Number.isFinite(last)||first>last)throw Error('Invalid UTC date range');
     const totalDays=Math.floor((last-first)/86400000)+1;
+    log('range-validated',{totalDays});
     const hasCandles=db.prepare('select 1 from candles where symbol=? and time>=? and time<? limit 1');
     const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume,price_type) values(?,?,?,?,?,?,?,?)');
     const saveDay=(rows:any[],dayStart:number,dayEnd:number)=>db.transaction((batch:any[])=>{
@@ -51,18 +54,22 @@ async function download(id:number,symbol:string,start:string,end:string){
     for(let n=0;n<totalDays;n++){
       const dayStart=first+n*86400000,dayEnd=dayStart+86400000,day=new Date(dayStart).toISOString().slice(0,10);
       if(!utcDayHasOpenMarket(dayStart,dayEnd)){
+        log('day-skipped-market-closed',{day});
         db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
         continue;
       }
       if(hasCandles.get(pair,Math.floor(dayStart/1000),Math.floor(dayEnd/1000))){
+        log('day-skipped-existing-data',{day});
         db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
         continue;
       }
       let saved=false,lastError='No candles returned for an open-market period';
       for(let attempt=1;attempt<=MAX_DAY_ATTEMPTS;attempt++){
         try{
+          log('day-attempt',{day,attempt,maxAttempts:MAX_DAY_ATTEMPTS});
           const result=await fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd-60000)},timeframe:'m1',format:'json',priceType:'bid',volume:true});
           const rows=Array.isArray(result)?result:result?.data||[];
+          log('provider-response',{day,attempt,returnedRows:rows.length});
           const relevant=rows.filter((x:any)=>{
             const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();
             return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms);
@@ -70,14 +77,17 @@ async function download(id:number,symbol:string,start:string,end:string){
           if(relevant.length===0)throw Error('No candles returned for an open-market period');
           saveDay(relevant,dayStart,dayEnd);
           saved=true;
+          log('day-saved',{day,attempt,eligibleRows:relevant.length});
           break;
-        }catch(e){lastError=String(e).slice(0,300);if(attempt<MAX_DAY_ATTEMPTS)await sleep(RETRY_DELAY_MS*attempt);}
+        }catch(e){lastError=String(e).slice(0,300);log('day-attempt-failed',{day,attempt,maxAttempts:MAX_DAY_ATTEMPTS,error:lastError,retrying:attempt<MAX_DAY_ATTEMPTS});if(attempt<MAX_DAY_ATTEMPTS)await sleep(RETRY_DELAY_MS*attempt);}
       }
-      if(!saved)failures.push(day+': '+lastError);
+      if(!saved){failures.push(day+': '+lastError);log('day-abandoned',{day,attempts:MAX_DAY_ATTEMPTS,error:lastError});}
       db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
     }
     db.prepare("update downloads set status='completed',progress=100,error=? where id=?").run(failures.length?('Skipped after '+MAX_DAY_ATTEMPTS+' attempts: '+failures.join('; ')).slice(0,800):null,id);
+    log('finished',{totalDays,failedDays:failures.length,failedDates:failures.map(x=>x.split(':')[0])});
   }catch(e){
+    log('download-failed',{error:String(e).slice(0,800)});
     db.prepare("update downloads set status='failed',error=? where id=?").run(String(e).slice(0,800),id);
   }
 }
