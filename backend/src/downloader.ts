@@ -97,7 +97,9 @@ export function buildDukascopyM1Config(
     retryCount: 5,
     retryOnEmpty: true,
     failAfterRetryCount: true,
-    pauseBetweenRetriesMs: 250,
+    // 202 Accepted responses have no Location header to poll; leave enough
+    // time for the provider to finish any queued response before retrying.
+    pauseBetweenRetriesMs: 2000,
   } as const;
 }
 
@@ -194,12 +196,21 @@ async function withProviderFetchTimeout<T>(
   externalSignal?: AbortSignal,
 ): Promise<T> {
   const originalFetch = globalThis.fetch;
+  const attemptDiagnostics: string[] = [];
   const wrappedFetch: typeof fetch = async (input, init) => {
     const signals: AbortSignal[] = [AbortSignal.timeout(timeoutMs)];
     if (externalSignal) signals.push(externalSignal);
     if (init?.signal) signals.push(init.signal as AbortSignal);
     const signal = signals.length === 1 ? signals[0] : AbortSignal.any(signals);
-    const response = await originalFetch(input, { ...init, signal });
+    let response: Response;
+    try {
+      response = await originalFetch(input, { ...init, signal });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      attemptDiagnostics.push('network error: ' + message.slice(0, 140));
+      throw error;
+    }
+    attemptDiagnostics.push('HTTP ' + response.status);
 
     // Dukascopy-node otherwise discards non-200 bodies and often reports only
     // "Unknown error". Preserve enough response context to diagnose 202/403/429
@@ -217,6 +228,9 @@ async function withProviderFetchTimeout<T>(
         'content-type=' + (response.headers.get('content-type') || 'unknown'),
         response.headers.get('retry-after') ? 'retry-after=' + response.headers.get('retry-after') : '',
         response.headers.get('location') ? 'location=' + response.headers.get('location') : '',
+        ...['server', 'via', 'x-cache', 'x-request-id', 'cf-ray', 'x-amz-cf-id']
+          .map(name => response.headers.get(name) ? name + '=' + response.headers.get(name) : '')
+          .filter(Boolean),
         'body=' + (bodyPreview.trim().slice(0, 400) || '<empty>'),
       ].filter(Boolean);
       throw new Error(details.join(' | '));
@@ -228,6 +242,13 @@ async function withProviderFetchTimeout<T>(
   globalThis.fetch = wrappedFetch;
   try {
     return await request();
+  } catch (error) {
+    if (attemptDiagnostics.length > 1) {
+      const message = error instanceof Error ? error.message : String(error);
+      const sequence = attemptDiagnostics.slice(-8).join(' -> ').slice(0, 600);
+      throw new Error(message + ' | provider fetch attempts=' + attemptDiagnostics.length + '; sequence=' + sequence);
+    }
+    throw error;
   } finally {
     if (globalThis.fetch === wrappedFetch) globalThis.fetch = originalFetch;
   }
