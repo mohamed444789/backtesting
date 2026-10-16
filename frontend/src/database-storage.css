@@ -174,3 +174,32 @@
 @media(min-width:1250px){.ds-console-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(max-width:1249px){.ds-table-page{grid-template-columns:1fr}.ds-table-list-card .ds-table-scroll{max-height:320px}.ds-data-inspector .ds-table-scroll{max-height:430px}.ds-query-results{max-height:540px}}
 @media(max-width:760px){.ds-data-toolbar{align-items:stretch}.ds-sort-picker{flex:1 1 145px}.ds-sort-direction{align-self:end}.ds-data-title{align-items:flex-start}.ds-data-inspector .ds-pagination>span:first-child{flex:1 1 100%;margin:0}}
+
+/* Requested vertical flow: table inventory above its selected-table inspector. */
+.ds-table-page{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:stretch}
+.ds-table-list-card,.ds-data-inspector{width:100%;min-width:0}
+.ds-table-list-card .ds-table-scroll{max-height:320px}
+.ds-data-inspector .ds-table-scroll{max-height:440px}
+.ds-query-results{max-height:560px}
+/* Download Console: jobs first, recent process output directly beneath them. */
+.ds-download-page{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:stretch}
+.ds-download-page>.ds-card{width:100%;min-width:0;margin:0}
+.ds-download-page>.ds-card .ds-terminal{height:300px}
+.ds-download-page .ds-card-title>b{font-weight:700}
+.ds-coverage-card{margin:0 0 12px;display:flex;flex-direction:column;gap:4px}
+.ds-coverage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ds-coverage-head .ds-card-title{margin-bottom:6px}
+.ds-coverage-instrument{display:flex;align-items:center;gap:9px;color:#99adc3;font-size:10px;font-weight:500}
+.ds-coverage-instrument select{min-width:125px;border:1px solid #2a3c51;border-radius:6px;background:#0b1420;color:#e5edf7;padding:8px 10px;font-size:11px}
+.ds-coverage-instrument select:focus{outline:none;border-color:#299fe6;box-shadow:0 0 0 2px #299fe622}
+.ds-coverage-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ds-coverage-stats>div{min-width:0;padding:10px 12px;border:1px solid #213246;border-radius:7px;background:#0b1420;display:flex;flex-direction:column;gap:6px}
+.ds-coverage-stats span{font-size:10px;font-weight:400;color:#91a6bd}
+.ds-coverage-stats b{font-size:12px;font-weight:750;color:#edf6ff;overflow-wrap:anywhere}
+.ds-coverage-card>.ds-muted{margin:3px 0 0}
+.theme-light .ds-coverage-instrument{color:#53677e}
+.theme-light .ds-coverage-instrument select{background:#fff;color:#152a40;border-color:#c8d7e6}
+.theme-light .ds-coverage-stats>div{background:#f5f9fd;border-color:#d7e2ee}
+.theme-light .ds-coverage-stats span{color:#526880}
+.theme-light .ds-coverage-stats b{color:#142b42}
+@media(max-width:760px){.ds-coverage-head{align-items:flex-start}.ds-coverage-instrument{width:100%;justify-content:space-between}.ds-coverage-instrument select{flex:1}.ds-coverage-stats{grid-template-columns:1fr}.ds-table-list-card .ds-table-scroll{max-height:300px}.ds-download-page>.ds-card .ds-terminal{height:280px}}
