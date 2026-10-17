@@ -266,7 +266,8 @@ async function download(id:number,symbol:string,start:string,end:string,download
       timeframe:'m1',
       format:'json',
       priceType:'bid',
-      volume:true
+      volumes:true,
+      volumeUnits:'millions'
      });
      if(cancelledDownloads.has(id)){
       cancelledDownloads.delete(id);
