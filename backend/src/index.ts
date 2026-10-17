@@ -216,106 +216,81 @@ async function download(id:number,symbol:string,start:string,end:string,download
   });
 
   if(downloader==='api'){
-   // Fetch one range per seven-calendar-day window. A failed week does not
-   // discard successful weeks; retry jobs skip dates already complete in SQLite.
+   // Fetch each date independently, matching the single-day CLI behavior.
+   // No volume options are passed; successfully inserted dates remain in SQLite.
    const mod:any=await import('dukascopy-node');
    const fn=mod.getHistoricalRates||mod.default;
    if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
 
-   const apiWeeks:Array<{start:string;end:string;dates:typeof coverage}>=[];
-   let currentApiDates:typeof coverage=[];
-   for(const day of coverage){
-    const firstDate=currentApiDates[0]?.start;
-    const elapsedDays=firstDate
-     ? Math.floor((Date.parse(day.start+'T00:00:00Z')-Date.parse(firstDate+'T00:00:00Z'))/86400000)
-     : 0;
-    if(currentApiDates.length&&elapsedDays>=7){
-     apiWeeks.push({start:currentApiDates[0].start,end:currentApiDates[currentApiDates.length-1].end,dates:currentApiDates});
-     currentApiDates=[];
-    }
-    currentApiDates.push(day);
-   }
-   if(currentApiDates.length){
-    apiWeeks.push({start:currentApiDates[0].start,end:currentApiDates[currentApiDates.length-1].end,dates:currentApiDates});
-   }
-
    let apiInputRows=0,apiInsertedRows=0,processedApiDates=0;
    const apiFailedDates:{date:string;error:string}[]=[];
-   for(let weekIndex=0;weekIndex<apiWeeks.length;weekIndex++){
-    const week=apiWeeks[weekIndex];
-    activeChunk={start:week.start,end:week.end};
-    const weekMissing=week.dates.filter(day=>!day.covered);
-    if(!weekMissing.length){
-     processedApiDates+=week.dates.length;
-     const progress=Math.min(99,Math.floor((processedApiDates/coverage.length)*100));
-     db.prepare('update downloads set progress=? where id=?').run(progress,id);
-     appLog('INFO','DATABASE','Job #'+id+': skipped covered API week '+week.start+' to '+week.end+'; no request needed');
-     continue;
-    }
+   for(let index=0;index<coverage.length;index++){
+    const day=coverage[index];
+    activeChunk=day;
     if(cancelledDownloads.has(id)){
      cancelledDownloads.delete(id);
-     appLog('INFO','DOWNLOAD','Job #'+id+': stopped before API week '+week.start+' to '+week.end);
+     appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date '+day.start);
      return;
+    }
+    if(day.covered){
+     processedApiDates++;
+     const progress=Math.min(99,Math.floor((processedApiDates/coverage.length)*100));
+     db.prepare('update downloads set progress=? where id=?').run(progress,id);
+     appLog('INFO','DATABASE','Job #'+id+': skipped already-covered date '+day.start);
+     continue;
     }
 
     try{
-     appLog('INFO','FETCH','Job #'+id+': requesting API week '+week.start+' to '+week.end+' ('+(weekIndex+1)+'/'+apiWeeks.length+'); '+weekMissing.length+' date(s) need coverage');
+     appLog('INFO','FETCH','Job #'+id+': requesting API date '+day.start+' ('+(index+1)+'/'+coverage.length+')');
      const result:any=await fn({
       instrument:symbol.toLowerCase(),
-      dates:{from:new Date(week.start+'T00:00:00Z'),to:new Date(week.end+'T23:59:00Z')},
+      dates:{from:new Date(day.start+'T00:00:00Z'),to:new Date(day.end+'T23:59:00Z')},
       timeframe:'m1',
       format:'json',
       priceType:'bid'
      });
      if(cancelledDownloads.has(id)){
       cancelledDownloads.delete(id);
-      appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for week '+week.start+' to '+week.end+' after cancellation');
+      appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for '+day.start+' after cancellation');
       return;
      }
-     const cs:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
-     if(!cs.length)throw Error('Dukascopy API returned no candles for week '+week.start+' to '+week.end);
+     const candles:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
+     if(!candles.length)throw Error('Dukascopy API returned no candles for '+day.start);
 
-     let weekInserted=0;
-     for(let i=0;i<cs.length;i+=3000){
-      const batch=cs.slice(i,i+3000);
-      weekInserted+=insertBatch(batch);
-      apiInputRows+=batch.length;
+     const inserted=insertBatch(candles);
+     apiInputRows+=candles.length;
+     apiInsertedRows+=inserted;
+
+     if(day.start<todayUtc&&!isDateCovered(day.start)){
+      const detail='API returned '+candles.length+' candles for '+day.start+', but expected session coverage is still incomplete after inserting into SQLite.';
+      apiFailedDates.push({date:day.start,error:detail});
+      appLog('WARN','FETCH','Job #'+id+': '+day.start+' remains incomplete after import');
+     }else{
+      appLog('INFO','DATABASE','Job #'+id+': stored '+candles.length+' candles for '+day.start+'; '+inserted+' new candles inserted');
      }
-     apiInsertedRows+=weekInserted;
-
-     for(const day of weekMissing){
-      // Do not grade today's session as incomplete; it is still in progress.
-      if(day.start<todayUtc&&!isDateCovered(day.start)){
-       const detail='API week '+week.start+' to '+week.end+' returned candles, but expected session coverage is still incomplete after merging into SQLite.';
-       apiFailedDates.push({date:day.start,error:detail});
-       appLog('WARN','FETCH','Job #'+id+': API week stored, but '+day.start+' still has missing expected session minutes; date will remain unresolved');
-      }
-     }
-
-     appLog('INFO','DATABASE','Job #'+id+': stored API week '+week.start+' to '+week.end+'; '+cs.length+' rows processed, '+weekInserted+' new candles inserted (duplicates ignored)');
-    }catch(e){
+    }catch(error){
      if(cancelledDownloads.has(id)){
       cancelledDownloads.delete(id);
-      appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for week '+week.start+' to '+week.end);
+      appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for '+day.start);
       return;
      }
-     const detail=describeDownloadError(e);
-     for(const day of weekMissing)apiFailedDates.push({date:day.start,error:detail});
-     appLog('ERROR','FETCH','Job #'+id+': API week '+week.start+' to '+week.end+' failed: '+detail+'. Later weeks will still be attempted.');
+     const detail=describeDownloadError(error);
+     apiFailedDates.push({date:day.start,error:detail});
+     appLog('ERROR','FETCH','Job #'+id+': API download failed for '+day.start+': '+detail);
     }
 
-    processedApiDates+=week.dates.length;
+    processedApiDates++;
     const progress=Math.min(99,Math.floor((processedApiDates/coverage.length)*100));
     db.prepare('update downloads set progress=? where id=?').run(progress,id);
-    if(weekIndex<apiWeeks.length-1&&!cancelledDownloads.has(id))await new Promise(resolve=>setTimeout(resolve,350));
+    if(index<coverage.length-1&&!cancelledDownloads.has(id))await new Promise(resolve=>setTimeout(resolve,350));
    }
 
    if(apiFailedDates.length){
     const dates=apiFailedDates.map(item=>item.date);
     const samples=apiFailedDates.slice(0,3).map(item=>item.date+': '+item.error).join(' | ');
-    const summary=('Downloaded available weekly chunks, but '+apiFailedDates.length+' date(s) remain unresolved: '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);
+    const summary=('Download finished with '+apiFailedDates.length+' unresolved date(s): '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);
     db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);
-    appLog('WARN','DOWNLOAD','Job #'+id+': weekly API backfill finished with '+apiFailedDates.length+' unresolved date(s): '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Re-queue this failed job to retry missing weeks.');
+    appLog('WARN','DOWNLOAD','Job #'+id+': per-date API download finished with '+apiFailedDates.length+' unresolved date(s); successful dates remain saved');
     return;
    }
 
@@ -323,7 +298,7 @@ async function download(id:number,symbol:string,start:string,end:string,download
     db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
     return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes;
    })();
-   appLog('INFO','DOWNLOAD','Job #'+id+': completed using weekly Direct API chunks. '+apiInputRows+' rows processed and '+apiInsertedRows+' new candles inserted (duplicates ignored). '+apiWeeks.length+' weekly request window(s).'+(futureDatesIgnored?(' Ignored '+futureDatesIgnored+' future date(s).'):'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+   appLog('INFO','DOWNLOAD','Job #'+id+': completed using per-date Direct API requests. '+apiInputRows+' rows processed and '+apiInsertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?(' Ignored '+futureDatesIgnored+' future date(s).'):'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
    return;
   }
 
