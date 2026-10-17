@@ -1,5 +1,5 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError}from'./download-utils.js';import{downloadDateCandlesViaCli}from'./cli-downloader.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
-type AppLog={id:number;time:string;level:string;scope:string;message:string};type DownloaderMode='api'|'cli';
+import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError}from'./download-utils.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+type AppLog={id:number;time:string;level:string;scope:string;message:string};
 const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadAbortControllers=new Map<number,AbortController>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
 appLog('INFO','API','Atlas backend process initialized');
@@ -70,7 +70,7 @@ function shiftCoverageDate(date:string,days:number){const value=new Date(date+'T
 function newYorkCoverageTime(date:string,hour:number,minute:number){const [year,month,day]=date.split('-').map(Number);const desired=Date.UTC(year,month-1,day,hour,minute,0);let guess=desired;for(let i=0;i<4;i++){const parts:any={};for(const part of coverageNyFormatter.formatToParts(new Date(guess)))if(part.type!=='literal')parts[part.type]=part.value;const represented=Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day),Number(parts.hour),Number(parts.minute),Number(parts.second));const delta=desired-represented;if(delta===0)break;guess+=delta}return Math.floor(guess/60000)*60}
 
 function candleTimestampSeconds(rawTime:any){const numeric=typeof rawTime==='number'?rawTime:(typeof rawTime==='string'&&rawTime.trim()!==''?Number(rawTime):NaN);const milliseconds=Number.isFinite(numeric)?(Math.abs(numeric)<1e12?numeric*1000:numeric):new Date(rawTime).getTime();return Number.isFinite(milliseconds)?Math.floor(milliseconds/1000):NaN}
-function scheduleDownload(id:number,symbol:string,start:string,end:string,waitForId?:number,downloader:DownloaderMode='api'){
+function scheduleDownload(id:number,symbol:string,start:string,end:string,waitForId?:number){
  const task=downloadQueueTail.then(async()=>{
   if(waitForId!==undefined){
    const previousTask=downloadTasks.get(waitForId);
@@ -81,8 +81,8 @@ function scheduleDownload(id:number,symbol:string,start:string,end:string,waitFo
    appLog('INFO','DOWNLOAD','Job #'+id+': restart was superseded before the replacement began');
    return;
   }
-  appLog('INFO','DOWNLOAD','Job #'+id+': worker started via '+downloader+' downloader; downloads run one at a time to reduce provider timeouts');
-  await download(id,symbol,start,end,downloader);
+  appLog('INFO','DOWNLOAD','Job #'+id+': worker started via Direct API; downloads run one at a time to reduce provider timeouts');
+  await download(id,symbol,start,end);
  }).finally(()=>{downloadTasks.delete(id)});
  downloadQueueTail=task.then(()=>undefined,()=>undefined);
  downloadTasks.set(id,task);
@@ -90,16 +90,14 @@ function scheduleDownload(id:number,symbol:string,start:string,end:string,waitFo
 }
 app.get('/api/downloads',(_q,r)=>r.json(db.prepare('select * from downloads order by id desc').all()));
 app.post('/api/downloads',(q,r)=>{
- const b=q.body||{},symbol=String(b.symbol||'').toUpperCase(),start=String(b.startDate||''),end=String(b.endDate||''),requestedDownloader=String(b.downloader||'api').toLowerCase();
+ const b=q.body||{},symbol=String(b.symbol||'').toUpperCase(),start=String(b.startDate||''),end=String(b.endDate||'');
  if(!symbol||!validDateOnly(start)||!validDateOnly(end)||start>end)return r.status(400).json({error:'Instrument and valid start/end dates in YYYY-MM-DD format are required'});
- if(requestedDownloader!=='api'&&requestedDownloader!=='cli')return r.status(400).json({error:'Downloader must be api or cli'});
- const downloader=requestedDownloader as DownloaderMode;
- const active:any=db.prepare("select id,status from downloads where upper(symbol)=? and start_date=? and end_date=? and downloader=? and status in ('queued','running') order by id desc limit 1").get(symbol,start,end,downloader);
- if(active){appLog('INFO','DOWNLOAD','Duplicate '+downloader+' request for '+symbol+' '+start+' to '+end+' reused active job #'+active.id);return r.status(200).json({id:Number(active.id),status:String(active.status),existing:true,downloader})}
- const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'queued',0,?)").run(symbol,start,end,downloader).lastInsertRowid);
- appLog('INFO','DOWNLOAD','Queued '+downloader+' job #'+id+' for '+symbol+' from '+start+' to '+end);
- scheduleDownload(id,symbol.toLowerCase(),start,end,undefined,downloader);
- r.status(202).json({id,status:'queued',existing:false,downloader});
+ const active:any=db.prepare("select id,status from downloads where upper(symbol)=? and start_date=? and end_date=? and status in ('queued','running') order by id desc limit 1").get(symbol,start,end);
+ if(active){appLog('INFO','DOWNLOAD','Duplicate Direct API request for '+symbol+' '+start+' to '+end+' reused active job #'+active.id);return r.status(200).json({id:Number(active.id),status:String(active.status),existing:true,downloader:'api'})}
+ const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'queued',0,'api')").run(symbol,start,end).lastInsertRowid);
+ appLog('INFO','DOWNLOAD','Queued Direct API job #'+id+' for '+symbol+' from '+start+' to '+end);
+ scheduleDownload(id,symbol.toLowerCase(),start,end);
+ r.status(202).json({id,status:'queued',existing:false,downloader:'api'});
 });
 app.post('/api/downloads/delete-failed',(q,r)=>{const raw=Array.isArray(q.body?.ids)?q.body.ids:[];const ids=[...new Set(raw.map(Number).filter((id:number)=>Number.isSafeInteger(id)&&id>0))];if(!ids.length)return r.status(400).json({error:'Select at least one failed job to delete'});if(ids.length>250)return r.status(400).json({error:'Delete at most 250 jobs at a time'});const findJob=db.prepare('select * from downloads where id=?');const hasActiveDescendant=db.prepare("with recursive descendants(id) as (select id from downloads where retry_of=? union all select d.id from downloads d join descendants x on d.retry_of=x.id) select id from downloads where id in (select id from descendants) and status in ('queued','running') limit 1");const candidates=ids.map(id=>findJob.get(id) as any).filter(job=>job&&job.status==='failed'&&!job.recovered_by&&!hasActiveDescendant.get(Number(job.id)));if(!candidates.length)return r.status(409).json({error:'No selected jobs are eligible for deletion. Only unresolved failed jobs without active retries can be deleted.'});const removed=db.transaction(()=>{const del=db.prepare("delete from downloads where id=? and status='failed' and recovered_by is null");return candidates.filter(job=>del.run(Number(job.id)).changes>0).map(job=>Number(job.id))})();appLog('WARN','DOWNLOAD','Deleted '+removed.length+' unresolved failed download job(s): '+removed.map(id=>'#'+id).join(', '));r.json({deleted:removed,skipped:ids.length-removed.length})});
 app.delete('/api/downloads/:id',(q,r)=>{const id=Number(q.params.id),job=db.prepare('select id,status,recovered_by from downloads where id=?').get(id) as any;if(!job)return r.status(404).json({error:'Download job not found'});if(job.status!=='failed'||job.recovered_by)return r.status(409).json({error:'Only unresolved failed jobs can be deleted'});const active=db.prepare("with recursive descendants(id) as (select id from downloads where retry_of=? union all select d.id from downloads d join descendants x on d.retry_of=x.id) select id from downloads where id in (select id from descendants) and status in ('queued','running') limit 1").get(id) as any;if(active)return r.status(409).json({error:'This job has an active retry (#'+active.id+'); stop or finish that retry before deleting this failure.'});db.prepare("delete from downloads where id=? and status='failed' and recovered_by is null").run(id);appLog('WARN','DOWNLOAD','Deleted unresolved failed download job #'+id);r.json({id,deleted:true})});
@@ -110,13 +108,12 @@ app.post('/api/downloads/retry-failed',(q,r)=>{
  const candidates=ids.map(id=>db.prepare('select * from downloads where id=?').get(id) as any).filter(job=>job&&job.status==='failed'&&!job.recovered_by);
  if(!candidates.length)return r.status(409).json({error:'No selected jobs remain eligible for retry'});
  const created=db.transaction(()=>candidates.map(previous=>{
-  const downloader=(String(previous.downloader||'api')==='cli'?'cli':'api') as DownloaderMode;
-  const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,?)").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id),downloader).lastInsertRowid);
-  return{id,retryOf:Number(previous.id),symbol:String(previous.symbol),start:String(previous.start_date),end:String(previous.end_date),downloader};
+  const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,'api')").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id)).lastInsertRowid);
+  return{id,retryOf:Number(previous.id),symbol:String(previous.symbol),start:String(previous.start_date),end:String(previous.end_date),downloader:'api'};
  }))();
  let waitFor:number|undefined;
- for(const job of created){scheduleDownload(job.id,job.symbol.toLowerCase(),job.start,job.end,waitFor,job.downloader);waitFor=job.id}
- appLog('INFO','DOWNLOAD','Bulk retry queued '+created.length+' failed job(s) with their original downloader: '+created.map(job=>'#'+job.retryOf+' → #'+job.id+' ('+job.downloader+')').join(', '));
+ for(const job of created){scheduleDownload(job.id,job.symbol.toLowerCase(),job.start,job.end,waitFor);waitFor=job.id}
+ appLog('INFO','DOWNLOAD','Bulk retry queued '+created.length+' failed Direct API job(s): '+created.map(job=>'#'+job.retryOf+' → #'+job.id).join(', '));
  r.status(202).json({jobs:created.map(({id,retryOf,symbol,start,end,downloader})=>({id,retryOf,symbol,start_date:start,end_date:end,status:'queued',downloader})),skipped:ids.length-candidates.length});
 });
 app.post('/api/downloads/:id/stop',(q,r)=>{const id=Number(q.params.id),job=db.prepare('select id,status from downloads where id=?').get(id) as any;if(!job)return r.status(404).json({error:'Download job not found'});if(!['queued','running'].includes(String(job.status)))return r.status(409).json({error:'Only queued or running jobs can be stopped'});cancelledDownloads.add(id);downloadAbortControllers.get(id)?.abort();db.prepare("update downloads set status='cancelled',error='Stopped manually by user.' where id=?").run(id);appLog('WARN','DOWNLOAD','Stop requested for job #'+id+'; the current API request will be discarded when it returns and no further chunks will start');r.status(202).json({id,status:'cancelled',inFlight:downloadTasks.has(id)})});
@@ -127,12 +124,11 @@ app.post('/api/downloads/:id/retry',(q,r)=>{
  const canRetry=['failed','queued','running'].includes(String(previous.status));
  if(!canRetry)return r.status(409).json({error:'Only failed, queued, or running jobs can be retried/restarted'});
  const restarting=['queued','running'].includes(String(previous.status));
- const downloader=(String(previous.downloader||'api')==='cli'?'cli':'api') as DownloaderMode;
- const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,?)").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id),downloader).lastInsertRowid);
+ const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,'api')").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id)).lastInsertRowid);
  if(restarting){cancelledDownloads.add(Number(previous.id));downloadAbortControllers.get(Number(previous.id))?.abort();db.prepare("update downloads set status='restarted',error=? where id=?").run('Restart requested; the current API request will be discarded when it returns. Replacement job #'+id+' will then start this date range from the beginning.',Number(previous.id))}
- appLog(restarting?'WARN':'INFO','DOWNLOAD',(restarting?'Restart':'Retry')+' requested for job #'+previous.id+' via '+downloader+' downloader; created job #'+id+' for '+previous.symbol+' '+previous.start_date+' to '+previous.end_date+(restarting?'; replacement waits for the old worker to stop':''));
- scheduleDownload(id,String(previous.symbol).toLowerCase(),String(previous.start_date),String(previous.end_date),restarting?Number(previous.id):undefined,downloader);
- r.status(202).json({id,status:'queued',retryOf:Number(previous.id),restarted:restarting,waitingFor:restarting?Number(previous.id):undefined,downloader});
+ appLog(restarting?'WARN':'INFO','DOWNLOAD',(restarting?'Restart':'Retry')+' requested for Direct API job #'+previous.id+'; created job #'+id+' for '+previous.symbol+' '+previous.start_date+' to '+previous.end_date+(restarting?'; replacement waits for the old worker to stop':''));
+ scheduleDownload(id,String(previous.symbol).toLowerCase(),String(previous.start_date),String(previous.end_date),restarting?Number(previous.id):undefined);
+ r.status(202).json({id,status:'queued',retryOf:Number(previous.id),restarted:restarting,waitingFor:restarting?Number(previous.id):undefined,downloader:'api'});
 });
 
 function expectedUtcMinuteTimestamps(date:string,symbol:string):number[]{
@@ -152,318 +148,86 @@ function expectedUtcMinuteTimestamps(date:string,symbol:string):number[]{
  return [...expected].sort((a,b)=>a-b);
 }
 
-async function download(id:number,symbol:string,start:string,end:string,downloader:DownloaderMode='api'){
+function marketClock(epochMs:number){
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(epochMs));
+ return Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value])) as Record<string,string>;
+}
+function forexMarketOpen(epochMs:number){
+ const t=marketClock(epochMs),day=t.weekday,h=Number(t.hour),m=Number(t.minute),afterOpen=h>17||(h===17&&m>=0),beforeClose=h<17;
+ if(day==='Sat')return false;if(day==='Sun')return afterOpen;if(day==='Fri')return beforeClose;return true;
+}
+function utcDayHasOpenMarket(startMs:number,endMs:number){for(let t=startMs;t<endMs;t+=3600000)if(forexMarketOpen(t))return true;return false}
+const MAX_API_DAY_ATTEMPTS=3,API_RETRY_DELAY_MS=1000;
+const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
+async function download(id:number,symbol:string,start:string,end:string){
  let activeChunk:{start:string;end:string}|null=null;
  const abortController=new AbortController();downloadAbortControllers.set(id,abortController);
  try{
   db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
-
-  // Process each day independently. A failed artifact must not make the
-  // downloader discard or repeat a multi-day request.
-  const requestedChunks=splitDateRange(start,end,1);
-  const todayUtc=new Date().toISOString().slice(0,10);
-  const chunks=requestedChunks.filter(chunk=>chunk.start<=todayUtc);
-  const futureDatesIgnored=requestedChunks.length-chunks.length;
-
-  if(!chunks.length){
-   db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
-   appLog('INFO','DOWNLOAD','Job #'+id+': completed without a provider request; there are no past/current trading dates in the selected range. '+futureDatesIgnored+' future date(s) were ignored and Saturdays are excluded.');
-   return;
-  }
-
+  const requestedChunks=splitDateRange(start,end,1),todayUtc=new Date().toISOString().slice(0,10),chunks=requestedChunks.filter(chunk=>chunk.start<=todayUtc),futureDatesIgnored=requestedChunks.length-chunks.length;
+  if(!chunks.length){db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);appLog('INFO','DOWNLOAD','Job #'+id+': no past/current dates to fetch; '+futureDatesIgnored+' future date(s) ignored.');return}
   const symbolUpper=symbol.toUpperCase();
   const storedForDate=db.prepare("select time from candles where symbol=? and price_type='bid' and time>=? and time<? order by time");
   const isDateCovered=(date:string)=>{
-   const weekday=new Date(date+'T00:00:00Z').getUTCDay();
-   if(weekday===6)return true;
-   const closure=coverageMarketClosure(date);
-   if(closure==='closed')return true;
-   const expected=expectedUtcMinuteTimestamps(date,symbolUpper);
-   if(!expected.length)return true;
-   const from=Math.floor(new Date(date+'T00:00:00Z').getTime()/1000),until=from+86400;
+   const weekday=new Date(date+'T00:00:00Z').getUTCDay();if(weekday===6)return true;
+   if(coverageMarketClosure(date)==='closed')return true;
+   const expected=expectedUtcMinuteTimestamps(date,symbolUpper);if(!expected.length)return true;
+   const from=Math.floor(Date.parse(date+'T00:00:00Z')/1000),until=from+86400;
    const rows=storedForDate.all(symbolUpper,from,until) as {time:number}[];
    const stored=new Set<number>(rows.map(row=>Math.floor(Number(row.time)/60)*60));
-   let present=0;
-   for(const timestamp of expected)if(stored.has(timestamp))present++;
-   // Early-close dates vary by instrument and calendar; accept a materially
-   // populated session rather than forcing an endless series of retries.
-   if(closure==='reduced-hours')return present>=Math.ceil(expected.length*0.4);
+   let present=0;for(const timestamp of expected)if(stored.has(timestamp))present++;
+   if(coverageMarketClosure(date)==='reduced-hours')return present>=Math.ceil(expected.length*0.4);
    return present===expected.length;
   };
-
   const coverage=chunks.map(chunk=>({...chunk,covered:isDateCovered(chunk.start)}));
-  const missing=coverage.filter(chunk=>!chunk.covered);
-  const alreadyCovered=coverage.length-missing.length;
-  appLog('INFO','DATABASE','Job #'+id+': checked SQLite for '+start+' to '+end+'; '+alreadyCovered+'/'+coverage.length+' past/current trading dates already covered, '+missing.length+' need fetching'+(futureDatesIgnored?'; '+futureDatesIgnored+' future date(s) ignored':''));
-
-  if(!missing.length){
-   db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
-   appLog('INFO','DOWNLOAD','Job #'+id+': completed immediately; all eligible dates are already covered in SQLite. No provider request was made.');
-   return;
-  }
-
-  if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before fetching');return;}
-
+  appLog('INFO','DATABASE','Job #'+id+': checked SQLite for '+start+' to '+end+'; '+coverage.filter(x=>x.covered).length+'/'+coverage.length+' dates already covered, '+coverage.filter(x=>!x.covered).length+' need fetching'+(futureDatesIgnored?'; '+futureDatesIgnored+' future date(s) ignored':''));
+  if(coverage.every(x=>x.covered)){db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);appLog('INFO','DOWNLOAD','Job #'+id+': all eligible dates already covered in SQLite; no API request made.');return}
+  const mod:any=await import('dukascopy-node'),fn=mod.getHistoricalRates||mod.default;
+  if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
-  const insertBatch=db.transaction((arr:any[])=>{
-   let inserted=0;
-   for(const x of arr){
-    const time=candleTimestampSeconds(x.timestamp??x.time);
-    const candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};
-    if(valid(candle))inserted+=put.run(symbolUpper,candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes;
-   }
-   return inserted;
-  });
-
-  if(downloader==='api'){
-   // Fetch each date independently, matching the single-day CLI behavior.
-   // No volume options are passed; successfully inserted dates remain in SQLite.
-   const mod:any=await import('dukascopy-node');
-   const fn=mod.getHistoricalRates||mod.default;
-   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
-
-   let apiInputRows=0,apiInsertedRows=0,processedApiDates=0;
-   const apiFailedDates:{date:string;error:string}[]=[];
-   for(let index=0;index<coverage.length;index++){
-    const day=coverage[index];
-    activeChunk=day;
-    if(cancelledDownloads.has(id)){
-     cancelledDownloads.delete(id);
-     appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date '+day.start);
-     return;
-    }
-    if(day.covered){
-     processedApiDates++;
-     const progress=Math.min(99,Math.floor((processedApiDates/coverage.length)*100));
-     db.prepare('update downloads set progress=? where id=?').run(progress,id);
-     appLog('INFO','DATABASE','Job #'+id+': skipped already-covered date '+day.start);
-     continue;
-    }
-
-    try{
-     appLog('INFO','FETCH','Job #'+id+': requesting API date '+day.start+' ('+(index+1)+'/'+coverage.length+')');
-     const result:any=await fn({
-      instrument:symbol.toLowerCase(),
-      dates:{from:new Date(day.start+'T00:00:00Z'),to:new Date(day.end+'T23:59:00Z')},
-      timeframe:'m1',
-      format:'json',
-      priceType:'bid'
-     });
-     if(cancelledDownloads.has(id)){
-      cancelledDownloads.delete(id);
-      appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for '+day.start+' after cancellation');
-      return;
-     }
-     const candles:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
-     if(!candles.length)throw Error('Dukascopy API returned no candles for '+day.start);
-
-     const inserted=insertBatch(candles);
-     apiInputRows+=candles.length;
-     apiInsertedRows+=inserted;
-
-     if(day.start<todayUtc&&!isDateCovered(day.start)){
-      const detail='API returned '+candles.length+' candles for '+day.start+', but expected session coverage is still incomplete after inserting into SQLite.';
-      apiFailedDates.push({date:day.start,error:detail});
-      appLog('WARN','FETCH','Job #'+id+': '+day.start+' remains incomplete after import');
-     }else{
-      appLog('INFO','DATABASE','Job #'+id+': stored '+candles.length+' candles for '+day.start+'; '+inserted+' new candles inserted');
-     }
-    }catch(error){
-     if(cancelledDownloads.has(id)){
-      cancelledDownloads.delete(id);
-      appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for '+day.start);
-      return;
-     }
-     const detail=describeDownloadError(error);
-     apiFailedDates.push({date:day.start,error:detail});
-     appLog('ERROR','FETCH','Job #'+id+': API download failed for '+day.start+': '+detail);
-    }
-
-    processedApiDates++;
-    const progress=Math.min(99,Math.floor((processedApiDates/coverage.length)*100));
-    db.prepare('update downloads set progress=? where id=?').run(progress,id);
-    if(index<coverage.length-1&&!cancelledDownloads.has(id))await new Promise(resolve=>setTimeout(resolve,350));
-   }
-
-   if(apiFailedDates.length){
-    const dates=apiFailedDates.map(item=>item.date);
-    const samples=apiFailedDates.slice(0,3).map(item=>item.date+': '+item.error).join(' | ');
-    const summary=('Download finished with '+apiFailedDates.length+' unresolved date(s): '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);
-    db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);
-    appLog('WARN','DOWNLOAD','Job #'+id+': per-date API download finished with '+apiFailedDates.length+' unresolved date(s); successful dates remain saved');
-    return;
-   }
-
-   const recoveredCount=db.transaction(()=>{
-    db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
-    return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes;
-   })();
-   appLog('INFO','DOWNLOAD','Job #'+id+': completed using per-date Direct API requests. '+apiInputRows+' rows processed and '+apiInsertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?(' Ignored '+futureDatesIgnored+' future date(s).'):'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
-   return;
-  }
-
-  let inputRows=0,insertedRows=0,skippedEmptySundays=0;
-  const failedDates:{date:string;error:string}[]=[];
-  let consecutiveDateFailures=0;
-  const maxConsecutiveDateFailures=3;
-  const maxNonNetworkAttempts=5;
-  const interDatePauseMs=350;
+  const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time),candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(candle))inserted+=put.run(symbolUpper,candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes}return inserted});
+  let inputRows=0,insertedRows=0,processed=0,skippedClosed=0;const failedDates:{date:string;error:string}[]=[];
   for(let index=0;index<coverage.length;index++){
-   const chunk=coverage[index];activeChunk=chunk;
-   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped between dates');return;}
-
-   if(chunk.covered){
-    consecutiveDateFailures=0;
-    const progress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
-    db.prepare('update downloads set progress=? where id=?').run(progress,id);
-    appLog('INFO','DATABASE','Job #'+id+': skipped already-covered date '+chunk.start+' ('+(index+1)+'/'+coverage.length+'); no download needed');
-    continue;
-   }
-
-   const date=chunk.start;
-   const dayOfWeek=new Date(date+'T00:00:00Z').getUTCDay();
-   let inRange:any[]=[];
-   let success=false;
-   let lastUsefulError='';
-   let attemptsUsed=0;
-   let cliCleanup:(()=>Promise<void>)|null=null;
-
-   appLog('INFO','FETCH','Job #'+id+': requesting '+date+' ('+(index+1)+'/'+coverage.length+') via '+downloader+' downloader');
-
-   try{
-    if(downloader==='cli'){
-     const cliResult=await downloadDateCandlesViaCli({
-      jobId:id,
-      instrument:symbol,
-      date,
-      dataRoot:root,
-      signal:downloadAbortControllers.get(id)?.signal,
-      allowEmpty:dayOfWeek===0
-     });
-     if(cancelledDownloads.has(id)){
-      cancelledDownloads.delete(id);
-      appLog('INFO','DOWNLOAD','Job #'+id+': staged CLI response discarded after cancellation; temporary CSV retained at '+cliResult.csvPath);
-      return;
-     }
-     inRange=cliResult.candles;
-     cliCleanup=cliResult.cleanup;
-     if(!inRange.length&&dayOfWeek===0){
-      await cliCleanup();
-      cliCleanup=null;
-      skippedEmptySundays++;
-      appLog('INFO','FETCH','Job #'+id+': '+date+' had no Sunday-session M1 candles from CLI; staged empty CSV removed');
-     }else{
-      appLog('INFO','FETCH','Job #'+id+': CLI CSV returned '+inRange.length+' valid M1 candles for '+date);
-     }
-     success=true;
-    }else{
-     throw Error('Unexpected API worker path; API mode should use the main-branch range downloader');
-    }
-   }catch(e){
-    if(cancelledDownloads.has(id)){
-     cancelledDownloads.delete(id);
-     appLog('INFO','DOWNLOAD','Job #'+id+': stopped during provider request or retry backoff');
-     return;
-    }
-    lastUsefulError=describeDownloadError(e);
-   }
-
-   if(!success){
-    const detail=lastUsefulError||'No provider data returned';
-    failedDates.push({date,error:detail});
-    consecutiveDateFailures++;
-    appLog('ERROR','FETCH','Job #'+id+': '+downloader+' downloader failed for '+date+' ('+(downloader==='cli'?'CLI process/CSV validation':attemptsUsed+' API outer attempt(s)')+'): '+detail+'. Continuing with later dates; this date will remain unresolved.');
-    const failedProgress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
-    db.prepare('update downloads set progress=? where id=?').run(failedProgress,id);
-    if(consecutiveDateFailures>=maxConsecutiveDateFailures){
-     const recentFailures=failedDates.slice(-maxConsecutiveDateFailures).map(item=>item.date+': '+item.error).join(' | ');
-     throw Error('Paused after '+consecutiveDateFailures+' consecutive date failures to avoid hammering the provider. '+recentFailures+'. Successfully stored dates are preserved; retry the job to skip covered dates and resume.');
-    }
-    await new Promise(resolve=>setTimeout(resolve,1000));
-    continue;
-   }
-   let chunkInserted=0;
-   for(let i=0;i<inRange.length;i+=3000){
-    const batch=inRange.slice(i,i+3000);
-    chunkInserted+=insertBatch(batch);
-    inputRows+=batch.length;
-   }
-   insertedRows+=chunkInserted;
-
-   // A CLI CSV is disposable only after the SQLite insert transaction above succeeds.
-   // If insertion throws, keep the staged file so it can be inspected/recovered.
-   if(cliCleanup){
-    const cleanup=cliCleanup;
+   const day=coverage[index];activeChunk=day;
+   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date '+day.start);return}
+   if(day.covered){processed++;db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.floor(processed/coverage.length*100)),id);appLog('INFO','DATABASE','Job #'+id+': skipped already-covered date '+day.start);continue}
+   const dayStart=Date.parse(day.start+'T00:00:00Z'),dayEnd=dayStart+86400000;
+   if(!utcDayHasOpenMarket(dayStart,dayEnd)){skippedClosed++;processed++;db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.floor(processed/coverage.length*100)),id);appLog('INFO','FETCH','Job #'+id+': skipped '+day.start+' because the market is closed for this UTC date');continue}
+   let saved=false,lastError='No candles returned for an open-market period';
+   for(let attempt=1;attempt<=MAX_API_DAY_ATTEMPTS;attempt++){
     try{
-     await cleanup();
-     appLog('INFO','FETCH','Job #'+id+': removed staged CLI CSV for '+date+' after database insertion committed ('+chunkInserted+' new rows; duplicates ignored).');
-    }catch(cleanupError){
-     appLog('WARN','FETCH','Job #'+id+': candles are committed for '+date+', but CLI staging cleanup failed: '+describeDownloadError(cleanupError));
-    }
-    cliCleanup=null;
-   }
-
-   let sessionComplete=true;
-   if(inRange.length&&date<todayUtc&&!isDateCovered(date)){
-    const expected=expectedUtcMinuteTimestamps(date,symbolUpper);
-    const from=Math.floor(new Date(date+'T00:00:00Z').getTime()/1000),until=from+86400;
-    const storedRows=storedForDate.all(symbolUpper,from,until) as {time:number}[];
-    const storedMinutes=new Set<number>(storedRows.map(row=>Math.floor(Number(row.time)/60)*60));
-    const missingMinutes=expected.filter(timestamp=>!storedMinutes.has(timestamp)).length;
-    const detail='Provider returned '+inRange.length+' valid candle(s), but '+missingMinutes+' expected session minute(s) are still missing after merging into SQLite.';
-    failedDates.push({date,error:detail});
-    consecutiveDateFailures++;
-    sessionComplete=false;
-    appLog('WARN','FETCH','Job #'+id+': '+date+' was stored, but its historical session is still incomplete: '+missingMinutes+' expected minute(s) missing. This date will remain unresolved and can be retried.');
-    if(consecutiveDateFailures>=maxConsecutiveDateFailures){
-     const recentFailures=failedDates.slice(-maxConsecutiveDateFailures).map(item=>item.date+': '+item.error).join(' | ');
-     throw Error('Paused after '+consecutiveDateFailures+' consecutive incomplete/failed dates to avoid hammering the provider. '+recentFailures+'. Stored candles are preserved; retry the job to resume.');
+     appLog('INFO','FETCH','Job #'+id+': requesting API date '+day.start+' ('+(index+1)+'/'+coverage.length+'), attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS);
+     const result:any=await fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd-60000)},timeframe:'m1',format:'json',priceType:'bid',volume:true});
+     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for '+day.start+' after cancellation');return}
+     const rows:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
+     const relevant=rows.filter((x:any)=>{const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms)});
+     appLog('INFO','FETCH','Job #'+id+': API returned '+rows.length+' row(s), '+relevant.length+' within the requested market session for '+day.start);
+     if(!relevant.length)throw Error('No candles returned for an open-market period');
+     const inserted=insertBatch(relevant);inputRows+=relevant.length;insertedRows+=inserted;
+     if(day.start<todayUtc&&!isDateCovered(day.start))throw Error('API returned '+relevant.length+' candles but expected session coverage remains incomplete after import');
+     saved=true;appLog('INFO','DATABASE','Job #'+id+': stored '+relevant.length+' candles for '+day.start+'; '+inserted+' new candles inserted');break;
+    }catch(error){
+     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for '+day.start);return}
+     lastError=describeDownloadError(error);appLog(attempt<MAX_API_DAY_ATTEMPTS?'WARN':'ERROR','FETCH','Job #'+id+': API attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS+' failed for '+day.start+': '+lastError+(attempt<MAX_API_DAY_ATTEMPTS?'; retrying':''));
+     if(attempt<MAX_API_DAY_ATTEMPTS)await sleep(API_RETRY_DELAY_MS*attempt);
     }
    }
-   if(sessionComplete)consecutiveDateFailures=0;
-
-   const progress=Math.min(99,Math.floor(((index+1)/coverage.length)*100));
-   db.prepare('update downloads set progress=? where id=?').run(progress,id);
-
-   if(inRange.length){
-    const chunkTimes=inRange.map((x:any)=>candleTimestampSeconds(x.timestamp??x.time)).sort((a:number,b:number)=>a-b);
-    appLog('INFO','FETCH','Job #'+id+': '+date+' yielded '+inRange.length+' valid candles from '+new Date(chunkTimes[0]*1000).toISOString()+' to '+new Date(chunkTimes[chunkTimes.length-1]*1000).toISOString());
-   }
-   appLog('INFO','DATABASE','Job #'+id+': finished date '+date+' ('+(index+1)+'/'+coverage.length+'); '+inRange.length+' valid rows processed, '+chunkInserted+' new candles inserted (duplicates ignored).');
-   if(index<coverage.length-1&&!cancelledDownloads.has(id))await new Promise(resolve=>setTimeout(resolve,interDatePauseMs));
+   if(!saved)failedDates.push({date:day.start,error:lastError});
+   processed++;db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.floor(processed/coverage.length*100)),id);
+   if(index<coverage.length-1&&!cancelledDownloads.has(id))await sleep(350);
   }
-
-  if(failedDates.length){
-   const dates=failedDates.map(item=>item.date);
-   const samples=failedDates.slice(0,3).map(item=>item.date+': '+item.error).join(' | ');
-   const summary=('Downloaded available dates, but '+failedDates.length+' date(s) failed: '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);
-   db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);
-   appLog('WARN','DOWNLOAD','Job #'+id+': partial backfill finished; '+failedDates.length+' date(s) remain unresolved: '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Re-queue this failed job to retry only missing dates.');
-   return;
-  }
-
-  const recoveredCount=db.transaction(()=>{
-   db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
-   return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on d.id=a.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes;
-  })();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed. '+coverage.length+' eligible trading dates; '+inputRows+' valid rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?(' Ignored '+futureDatesIgnored+' future date(s).'):'')+(skippedEmptySundays?(' '+skippedEmptySundays+' Sunday date(s) had no session candles.'):'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
- }catch(e){
-  if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return;}
-  const detail=describeDownloadError(e);
-  const range=activeChunk?' [failed date '+activeChunk.start+']':'';
-  const message=(detail+range).slice(0,1000);
-  db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);
-  appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message);
- }finally{
-  if(downloadAbortControllers.get(id)===abortController)downloadAbortControllers.delete(id);
- }
+  if(failedDates.length){const dates=failedDates.map(x=>x.date),samples=failedDates.slice(0,3).map(x=>x.date+': '+x.error).join(' | '),summary=('Download finished with '+failedDates.length+' unresolved date(s): '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);appLog('WARN','DOWNLOAD','Job #'+id+': '+failedDates.length+' date(s) remain unresolved after '+MAX_API_DAY_ATTEMPTS+' API attempts each; successful dates remain saved');return}
+  const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on a.id=d.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
+  appLog('INFO','DOWNLOAD','Job #'+id+': completed using Direct API. '+inputRows+' rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?' Ignored '+futureDatesIgnored+' future date(s).':'')+(skippedClosed?' Skipped '+skippedClosed+' market-closed date(s).':'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+ }catch(e){if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return}const detail=describeDownloadError(e),range=activeChunk?' [failed date '+activeChunk.start+']':'',message=(detail+range).slice(0,1000);db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message)}
+ finally{if(downloadAbortControllers.get(id)===abortController)downloadAbortControllers.delete(id)}
 }
 app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}const interruptedDownloads=db.prepare("select id,symbol,start_date,end_date,status,downloader from downloads where status in ('queued','running') order by id").all() as any[];
 let recoveryWaitFor:number|undefined;
 for(const job of interruptedDownloads){
  const id=Number(job.id);
  appLog('WARN','DOWNLOAD','Recovering persisted '+String(job.status)+' job #'+id+' after backend restart; replaying its date range from the beginning (existing candles are deduplicated).');
- scheduleDownload(id,String(job.symbol).toLowerCase(),String(job.start_date),String(job.end_date),recoveryWaitFor,String(job.downloader||'api')==='cli'?'cli':'api');
+ scheduleDownload(id,String(job.symbol).toLowerCase(),String(job.start_date),String(job.end_date),recoveryWaitFor);
  recoveryWaitFor=id;
 }
 app.listen(port,'0.0.0.0',()=>console.log('MH Forex Replay listening on '+port));
