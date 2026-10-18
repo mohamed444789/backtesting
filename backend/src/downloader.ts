@@ -218,6 +218,45 @@ export function buildDukascopyM1Config(
   } as const;
 }
 
+/**
+ * Configuration for dukascopy-node 1.46.4, which still fetches the legacy
+ * datafeed.com LZMA-compressed .bi5 candles and decodes them to JSON rows.
+ * This is used only after the v1.50 JSON API returns an HTTP 202 challenge.
+ */
+export function buildDukascopyLegacyM1Config(
+  instrument: string,
+  date: string,
+  cacheFolderPath: string,
+) {
+  if (!instrument.trim()) throw new Error('Instrument is required');
+  if (!cacheFolderPath.trim()) throw new Error('Cache folder path is required');
+
+  const fromMs = utcDayStartSeconds(date) * 1000;
+  return {
+    instrument: instrument.toLowerCase(),
+    dates: {
+      from: new Date(fromMs),
+      to: new Date(fromMs + 86_400_000),
+    },
+    timeframe: 'm1',
+    priceType: 'bid',
+    format: 'json',
+    utcOffset: 0,
+    volumes: true,
+    volumeUnits: 'millions',
+    ignoreFlats: false,
+    batchSize: 1,
+    pauseBetweenBatchesMs: 1000,
+    useCache: true,
+    cacheFolderPath,
+    // Keep this short because the calling job already applies its own
+    // per-day error handling; a WAF challenge is not fixed by repetition.
+    retryCount: 2,
+    retryOnEmpty: true,
+    pauseBetweenRetriesMs: 1000,
+  } as const;
+}
+
 function timestampSeconds(rawTime: unknown): number {
   if (rawTime instanceof Date) {
     const milliseconds = rawTime.getTime();
