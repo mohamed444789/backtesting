@@ -96,11 +96,18 @@ export async function withDukascopyResponseDiagnostics<T>(
   request: () => Promise<T>,
 ): Promise<T> {
   const originalFetch = globalThis.fetch;
-  let lastNon200: DukascopyResponseDiagnostic | null = null;
-  let challenge: DukascopyResponseDiagnostic | null = null;
+  // Store diagnostics on a mutable object so TypeScript accounts for updates
+  // made by the asynchronous fetch wrapper before the outer catch runs.
+  const responseState: {
+    lastNon200: DukascopyResponseDiagnostic | null;
+    challenge: DukascopyResponseDiagnostic | null;
+  } = {
+    lastNon200: null,
+    challenge: null,
+  };
 
   const wrappedFetch: typeof fetch = async (input, init) => {
-    if (challenge) {
+    if (responseState.challenge) {
       throw new Error('DUKASCOPY_WAF_CHALLENGE_ALREADY_DETECTED');
     }
 
@@ -123,8 +130,8 @@ export async function withDukascopyResponseDiagnostics<T>(
       cloudFrontId: response.headers.get('x-amz-cf-id') || response.headers.get('x-amz-cf-pop'),
     };
 
-    if (response.status !== 200) lastNon200 = diagnostic;
-    if (diagnostic.wafAction?.toLowerCase() === 'challenge') challenge = diagnostic;
+    if (response.status !== 200) responseState.lastNon200 = diagnostic;
+    if (diagnostic.wafAction?.toLowerCase() === 'challenge') responseState.challenge = diagnostic;
     return response;
   };
 
@@ -132,6 +139,7 @@ export async function withDukascopyResponseDiagnostics<T>(
   try {
     return await request();
   } catch (error) {
+    const { challenge, lastNon200 } = responseState;
     if (challenge) throw new DukascopyUpstreamResponseError(challenge);
     if (lastNon200?.status === 202) throw new DukascopyUpstreamResponseError(lastNon200);
     if (lastNon200) {
