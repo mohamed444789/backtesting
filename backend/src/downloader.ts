@@ -145,7 +145,11 @@ export async function withDukascopyResponseDiagnostics<T>(
     const { challenge, lastNon200 } = responseState;
     if (challenge) throw new DukascopyUpstreamResponseError(challenge);
     if (lastNon200?.status === 202) throw new DukascopyUpstreamResponseError(lastNon200);
-    if (lastNon200) throw new DukascopyUpstreamResponseError(lastNon200);
+    if (lastNon200) {
+      throw new Error(
+        describeDownloadError(error) + ' | provider HTTP response=' + JSON.stringify(lastNon200),
+      );
+    }
     throw error;
   } finally {
     if (globalThis.fetch === wrappedFetch) globalThis.fetch = originalFetch;
