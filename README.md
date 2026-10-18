@@ -77,12 +77,13 @@ so do not mix sources with different volume units for the same symbol.
 
 ## Simple day-by-day Python downloader
 
-The **Simple Python Downloader** menu links to `frontend/public/simple_downloader.py`. It uses only Python's standard library, fetches one legacy Dukascopy BID M1 file per calendar date, and posts that day's candles to the existing local `/api/import/candles` endpoint. It deliberately does not create Atlas download jobs. HTTP errors stop the script immediately; there are no automatic retries. The script validates that all rows were accepted before continuing and reports whether the error came from Dukascopy or Atlas. It opts into `replaceExisting=true`: accepted candles for overlapping timestamps are updated from Dukascopy, which can repair rows imported by an older buggy script. In replacement mode the API refuses the whole day's file if any row fails validation; ordinary CSV imports still leave existing candles untouched.
+The **Simple Python Downloader** menu links to `frontend/public/dukascopy_m1.py`. It downloads one legacy Dukascopy BID M1 file at a time and imports it through `/api/import/candles`. It checks the app's modeled minute coverage and re-fetches incomplete dates; existing candle timestamps on fetched dates are corrected with Dukascopy values. The server rejects the whole replacement import if any row fails validation. Standard CSV imports continue to preserve existing candles by default.
 
-Example:
+Install its one dependency, then run the script from the folder where you downloaded it:
 
 ```sh
-python3 simple_downloader.py --symbol EURUSD --start 2019-01-28 --end 2019-01-29 --app http://localhost:8080
+python3 -m pip install requests
+python3 dukascopy_m1.py EURUSD 2019-01-28 2019-01-29 --app http://localhost:8080
 ```
 
-This script depends on Dukascopy continuing to serve the legacy `.bi5` feed. If the feed returns HTTP 429 or is blocked for your IP/network, the script cannot bypass that restriction.
+Use `--force` to re-fetch dates that appear complete. Temporary provider errors are retried with backoff; HTTP 429 stops immediately, and HTTP 202/provider challenges stop without attempting to bypass them. If the legacy feed continues returning HTTP 503, wait and try later or use Dukascopy's official CSV export. The downloader cannot override provider-side outages or rate limits.
