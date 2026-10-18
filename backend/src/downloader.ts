@@ -40,6 +40,111 @@ export interface FetchDateResult {
   empty: boolean;
 }
 
+
+/** Safe HTTP metadata retained when the JSON data API rejects a request. */
+export interface DukascopyResponseDiagnostic {
+  url: string;
+  status: number;
+  statusText: string;
+  server: string | null;
+  via: string | null;
+  wafAction: string | null;
+  contentType: string | null;
+  contentLength: string | null;
+  retryAfter: string | null;
+  cloudFrontId: string | null;
+}
+
+/**
+ * dukascopy-node currently accepts only HTTP 200. In particular, an AWS WAF
+ * Challenge is returned as HTTP 202 with x-amzn-waf-action=challenge; retrying
+ * the same URL cannot satisfy that browser challenge. Surface it as an access
+ * failure rather than letting the job mark dates as missing candles.
+ */
+export class DukascopyUpstreamResponseError extends Error {
+  constructor(readonly diagnostic: DukascopyResponseDiagnostic) {
+    const challenge = diagnostic.wafAction?.toLowerCase() === 'challenge';
+    const details = [
+      'url=' + diagnostic.url,
+      'HTTP ' + diagnostic.status + (diagnostic.statusText ? ' ' + diagnostic.statusText : ''),
+      diagnostic.server ? 'server=' + diagnostic.server : '',
+      diagnostic.wafAction ? 'x-amzn-waf-action=' + diagnostic.wafAction : '',
+      diagnostic.contentType ? 'content-type=' + diagnostic.contentType : '',
+      diagnostic.contentLength ? 'content-length=' + diagnostic.contentLength : '',
+      diagnostic.retryAfter ? 'retry-after=' + diagnostic.retryAfter : '',
+      diagnostic.via ? 'via=' + diagnostic.via : '',
+      diagnostic.cloudFrontId ? 'cloudfront-id=' + diagnostic.cloudFrontId : '',
+    ].filter(Boolean).join(' | ');
+
+    super(challenge
+      ? 'DUKASCOPY_WAF_CHALLENGE: Dukascopy returned an AWS WAF challenge; this is an upstream access challenge, not an empty market-data date. ' + details
+      : 'DUKASCOPY_HTTP_202: Dukascopy returned HTTP 202, which this dukascopy-node fetcher does not treat as a successful candle response. Stop the job instead of treating the date as missing. ' + details);
+    this.name = 'DukascopyUpstreamResponseError';
+  }
+
+  get isChallenge(): boolean {
+    return this.diagnostic.wafAction?.toLowerCase() === 'challenge';
+  }
+}
+
+/**
+ * Observe the provider's safe response metadata while calling dukascopy-node.
+ * Once an explicit WAF Challenge is seen, suppress further network requests
+ * during the library's internal retry loop and throw a distinct error.
+ */
+export async function withDukascopyResponseDiagnostics<T>(
+  request: () => Promise<T>,
+): Promise<T> {
+  const originalFetch = globalThis.fetch;
+  let lastNon200: DukascopyResponseDiagnostic | null = null;
+  let challenge: DukascopyResponseDiagnostic | null = null;
+
+  const wrappedFetch: typeof fetch = async (input, init) => {
+    if (challenge) {
+      throw new Error('DUKASCOPY_WAF_CHALLENGE_ALREADY_DETECTED');
+    }
+
+    const response = await originalFetch(input, init);
+    const url = typeof input === 'string'
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+    const diagnostic: DukascopyResponseDiagnostic = {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+      server: response.headers.get('server'),
+      via: response.headers.get('via'),
+      wafAction: response.headers.get('x-amzn-waf-action'),
+      contentType: response.headers.get('content-type'),
+      contentLength: response.headers.get('content-length'),
+      retryAfter: response.headers.get('retry-after'),
+      cloudFrontId: response.headers.get('x-amz-cf-id') || response.headers.get('x-amz-cf-pop'),
+    };
+
+    if (response.status !== 200) lastNon200 = diagnostic;
+    if (diagnostic.wafAction?.toLowerCase() === 'challenge') challenge = diagnostic;
+    return response;
+  };
+
+  globalThis.fetch = wrappedFetch;
+  try {
+    return await request();
+  } catch (error) {
+    if (challenge) throw new DukascopyUpstreamResponseError(challenge);
+    if (lastNon200?.status === 202) throw new DukascopyUpstreamResponseError(lastNon200);
+    if (lastNon200) {
+      throw new Error(
+        describeDownloadError(error) + ' | provider HTTP response=' + JSON.stringify(lastNon200),
+      );
+    }
+    throw error;
+  } finally {
+    if (globalThis.fetch === wrappedFetch) globalThis.fetch = originalFetch;
+  }
+}
+
 const DEFAULT_MAX_ATTEMPTS = 6;
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 const MAX_ATTEMPTS_LIMIT = 10;
