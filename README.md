@@ -74,3 +74,15 @@ curl -X POST "http://localhost:8080/api/import/candles?symbol=EURUSD&priceType=b
 Add `&utcOffsetMinutes=120` if the file's clock is UTC+2. Rows with invalid OHLC, off-minute times or unknown
 dates are rejected and reported; existing candles are never overwritten. Volume is stored exactly as in the file,
 so do not mix sources with different volume units for the same symbol.
+
+## Simple day-by-day Python downloader
+
+The **Simple Python Downloader** menu links to `frontend/public/simple_downloader.py`. It uses only Python's standard library, fetches one legacy Dukascopy BID M1 file per calendar date, and posts that day's candles to the existing local `/api/import/candles` endpoint. It deliberately does not create Atlas download jobs. HTTP 429/202 and other HTTP errors stop the script immediately; there are no automatic retries. Existing candles are deduplicated by the importer.
+
+Example:
+
+```sh
+python3 simple_downloader.py --symbol EURUSD --start 2019-01-28 --end 2019-01-29 --app http://localhost:8080
+```
+
+This script depends on Dukascopy continuing to serve the legacy `.bi5` feed. If the feed returns HTTP 429 or is blocked for your IP/network, the script cannot bypass that restriction.
