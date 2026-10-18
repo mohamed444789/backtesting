@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DownloadCancelledError, buildDukascopyM1Config, fetchDateCandles } from './downloader.js';
+import { DownloadCancelledError, DukascopyUpstreamResponseError, buildDukascopyM1Config, fetchDateCandles, withDukascopyResponseDiagnostics } from './downloader.js';
 
 const date = '2026-10-16';
 const start = Date.parse(date + 'T00:00:00.000Z');
@@ -171,4 +171,48 @@ test('builds the documented single-day M1 config with persistent cache and bound
 test('rejects an empty instrument or cache path', () => {
   assert.throws(() => buildDukascopyM1Config('', date, '/cache'), /Instrument is required/);
   assert.throws(() => buildDukascopyM1Config('eurusd', date, ''), /Cache folder path is required/);
+});
+
+
+test('detects AWS WAF HTTP 202 challenges and suppresses further provider requests', async () => {
+  const originalFetch = globalThis.fetch;
+  let networkCalls = 0;
+  globalThis.fetch = (async () => {
+    networkCalls++;
+    return new Response('', {
+      status: 202,
+      headers: {
+        'server': 'CloudFront',
+        'x-amzn-waf-action': 'challenge',
+        'content-type': 'text/html; charset=UTF-8',
+        'content-length': '0',
+      },
+    });
+  }) as typeof fetch;
+
+  try {
+    await assert.rejects(
+      withDukascopyResponseDiagnostics(async () => {
+        // Simulate the library's internal retry loop. After a confirmed
+        // challenge, the wrapper must not issue more outbound requests.
+        for (let attempt = 0; attempt < 6; attempt++) {
+          const response = await fetch('https://jetta.dukascopy.com/v1/candles/minute/EUR-USD/BID/2019/1/4');
+          if (response.status === 200) return response;
+        }
+        throw new Error('Request failed with status 202');
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof DukascopyUpstreamResponseError);
+        assert.equal(error.diagnostic.status, 202);
+        assert.equal(error.diagnostic.wafAction, 'challenge');
+        assert.equal(error.isChallenge, true);
+        assert.match(error.message, /AWS WAF challenge/);
+        return true;
+      },
+    );
+
+    assert.equal(networkCalls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
