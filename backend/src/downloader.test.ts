@@ -155,14 +155,14 @@ test('builds the documented single-day M1 config with persistent cache and bound
   assert.equal(config.volumes, true);
   assert.equal(config.volumeUnits, 'millions');
   assert.equal(config.ignoreFlats, false);
-  assert.equal(config.batchSize, 1);
+  assert.equal(config.batchSize, 10);
   assert.equal(config.pauseBetweenBatchesMs, 1000);
   assert.equal(config.useCache, true);
   assert.equal(config.cacheFolderPath, '/data/dukascopy-cache');
   assert.equal(config.retryCount, 5);
   assert.equal(config.retryOnEmpty, true);
   assert.equal(config.failAfterRetryCount, true);
-  assert.equal(config.pauseBetweenRetriesMs, 2000);
+  assert.equal(config.pauseBetweenRetriesMs, 250);
   assert.equal(config.dates.from.toISOString(), date + 'T00:00:00.000Z');
   assert.equal(config.dates.to.toISOString(), '2026-10-17T00:00:00.000Z');
   assert.equal(config.dates.to.getTime() - config.dates.from.getTime(), 86_400_000);

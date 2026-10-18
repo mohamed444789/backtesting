@@ -96,3 +96,12 @@ export function getDownloadRetryDelay(attempt: number): number {
   const safeAttempt = Number.isFinite(attempt) ? Math.max(1, Math.floor(attempt)) : 1;
   return Math.min(60_000, 1_500 * Math.pow(2, Math.min(safeAttempt - 1, 6)));
 }
+
+/**
+ * Make a message safe for the single-line log buffer and SSE stream: collapse CR/LF runs and cap the length.
+ * (The previous inline regex /[\\r\\n]+/ was a character class containing the letter "r", which blanked every
+ * "r" in every log line.)
+ */
+export function sanitizeLogMessage(message: unknown, maxLength = 1200): string {
+  return String(message).replace(/[\r\n]+/g, ' ').slice(0, maxLength);
+}

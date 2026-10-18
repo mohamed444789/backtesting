@@ -1,7 +1,7 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError}from'./download-utils.js';import{buildDukascopyLegacyM1Config,withDukascopyResponseDiagnostics,DukascopyUpstreamResponseError}from'./downloader.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError,sanitizeLogMessage}from'./download-utils.js';import{buildDukascopyM1Config,buildDukascopyLegacyM1Config,withDukascopyResponseDiagnostics,DukascopyUpstreamResponseError,jsonApiCooldownRemainingMs,noteJsonApiBlocked}from'./downloader.js';import{parseCandleCsv}from'./csv-import.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
 const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadAbortControllers=new Map<number,AbortController>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
-function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
+function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:sanitizeLogMessage(message)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
 appLog('INFO','API','Atlas backend process initialized');
 app.use((q,r,next)=>{const started=Date.now();if(q.path.startsWith('/api/')&&!q.path.startsWith('/api/logs')&&['POST','PUT','PATCH','DELETE'].includes(q.method)){r.on('finish',()=>appLog(r.statusCode>=400?'WARN':'INFO','HTTP',q.method+' '+q.path+' → '+r.statusCode+' ('+(Date.now()-started)+' ms)'))}next()});
 app.get('/api/diagnostics',(_q,r)=>{try{const dbPath=path.join(root,'atlas.sqlite');const fileSize=(p:string)=>{try{return fs.statSync(p).size}catch{return 0}};const databaseBytes=fileSize(dbPath),walBytes=fileSize(dbPath+'-wal'),shmBytes=fileSize(dbPath+'-shm');const directorySize=(dir:string):number=>{let total=0;try{for(const entry of fs.readdirSync(dir,{withFileTypes:true})){const full=path.join(dir,entry.name);if(entry.isDirectory())total+=directorySize(full);else if(entry.isFile())total+=fileSize(full)}}catch{}return total};const dataDirectoryBytes=directorySize(root);let filesystem:any=null;try{const statfs=(fs as any).statfsSync;if(typeof statfs==='function'){const s=statfs(root);filesystem={path:root,totalBytes:Number(s.blocks)*Number(s.bsize),freeBytes:Number(s.bavail)*Number(s.bsize),usedBytes:(Number(s.blocks)-Number(s.bfree))*Number(s.bsize)}}}catch{}r.json({databasePath:dbPath,databaseBytes,walBytes,shmBytes,dataDirectoryBytes,filesystem,checkedAt:new Date().toISOString()})}catch(e){r.status(500).json({error:'Unable to inspect database storage'})}});
@@ -157,7 +157,7 @@ function forexMarketOpen(epochMs:number){
  if(day==='Sat')return false;if(day==='Sun')return afterOpen;if(day==='Fri')return beforeClose;return true;
 }
 function utcDayHasOpenMarket(startMs:number,endMs:number){for(let t=startMs;t<endMs;t+=3600000)if(forexMarketOpen(t))return true;return false}
-const MAX_API_DAY_ATTEMPTS=3,API_RETRY_DELAY_MS=1000;
+const MAX_API_DAY_ATTEMPTS=3,API_RETRY_DELAY_MS=1000,PROVIDER_REQUEST_TIMEOUT_MS=30000,MAX_CONSECUTIVE_DATE_FAILURES=3;
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 async function download(id:number,symbol:string,start:string,end:string){
  let activeChunk:{start:string;end:string}|null=null;
@@ -184,7 +184,8 @@ async function download(id:number,symbol:string,start:string,end:string){
   if(coverage.every(x=>x.covered)){db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);appLog('INFO','DOWNLOAD','Job #'+id+': all eligible dates already covered in SQLite; no API request made.');return}
   const mod:any=await import('dukascopy-node'),fn=mod.getHistoricalRates||mod.default;
   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
-  let useLegacyDatafeed=false,legacyFn:any=null;
+  let useLegacyDatafeed=jsonApiCooldownRemainingMs()>0,legacyFn:any=null;const providerGuard={timeoutMs:PROVIDER_REQUEST_TIMEOUT_MS,signal:abortController.signal};
+  if(useLegacyDatafeed)appLog('WARN','FETCH','Job #'+id+': not calling the JSON API for another '+Math.ceil(jsonApiCooldownRemainingMs()/60000)+' minute(s) after a recent HTTP 202 challenge; using the legacy datafeed .bi5 endpoint.');
   const fetchLegacyDay=async(date:string)=>{
    if(!legacyFn){
     const legacyMod:any=await import('dukascopy-node-legacy');
@@ -192,11 +193,11 @@ async function download(id:number,symbol:string,start:string,end:string){
    }
    if(typeof legacyFn!=='function')throw Error('Legacy dukascopy-node 1.46.4 getHistoricalRates API unavailable');
    const config=buildDukascopyLegacyM1Config(symbol,date,path.join(root,'dukascopy-legacy-cache'));
-   return await withDukascopyResponseDiagnostics(()=>legacyFn(config));
+   return await withDukascopyResponseDiagnostics(()=>legacyFn(config),providerGuard);
   };
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
   const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time),candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(candle))inserted+=put.run(symbolUpper,candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes}return inserted});
-  let inputRows=0,insertedRows=0,processed=0,skippedClosed=0;const failedDates:{date:string;error:string}[]=[];
+  let inputRows=0,insertedRows=0,processed=0,skippedClosed=0,consecutiveFailures=0;const failedDates:{date:string;error:string}[]=[];
   for(let index=0;index<coverage.length;index++){
    const day=coverage[index];activeChunk=day;
    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date '+day.start);return}
@@ -212,10 +213,10 @@ async function download(id:number,symbol:string,start:string,end:string){
       result=await fetchLegacyDay(day.start);
      }else{
       try{
-       result=await withDukascopyResponseDiagnostics(()=>fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd)},timeframe:'m1',format:'json',priceType:'bid',utcOffset:0,volumes:true,volumeUnits:'millions',ignoreFlats:false,batchSize:10,pauseBetweenBatchesMs:1000,useCache:true,cacheFolderPath:path.join(root,'dukascopy-cache'),retryCount:5,retryOnEmpty:true,failAfterRetryCount:true,pauseBetweenRetriesMs:250}));
+       result=await withDukascopyResponseDiagnostics(()=>fn(buildDukascopyM1Config(symbol,day.start,path.join(root,'dukascopy-cache'))),providerGuard);
       }catch(primaryError){
        if(!(primaryError instanceof DukascopyUpstreamResponseError)||primaryError.diagnostic.status!==202)throw primaryError;
-       useLegacyDatafeed=true;
+       useLegacyDatafeed=true;noteJsonApiBlocked();
        appLog('WARN','FETCH','Job #'+id+': JSON API returned HTTP 202'+(primaryError.isChallenge?' AWS WAF challenge':'')+' for '+day.start+'; testing legacy datafeed .bi5 endpoint for this and subsequent dates.');
        result=await fetchLegacyDay(day.start);
        appLog('INFO','FETCH','Job #'+id+': legacy datafeed .bi5 request succeeded for '+day.start+'; continuing this job using the legacy endpoint.');
@@ -236,7 +237,7 @@ async function download(id:number,symbol:string,start:string,end:string){
      if(attempt<MAX_API_DAY_ATTEMPTS)await sleep(API_RETRY_DELAY_MS*attempt);
     }
    }
-   if(!saved)failedDates.push({date:day.start,error:lastError});
+   if(saved)consecutiveFailures=0;else{failedDates.push({date:day.start,error:lastError});consecutiveFailures++;if(consecutiveFailures>=MAX_CONSECUTIVE_DATE_FAILURES){const recent=failedDates.slice(-MAX_CONSECUTIVE_DATE_FAILURES).map(x=>x.date+': '+x.error).join(' | ');throw Error('Paused after '+consecutiveFailures+' consecutive failed dates to avoid hammering the provider. '+recent+'. Stored dates are kept; retry the job to resume, or import a CSV export (POST /api/import/candles).')}}
    processed++;db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.floor(processed/coverage.length*100)),id);
    if(index<coverage.length-1&&!cancelledDownloads.has(id))await sleep(350);
   }
@@ -246,6 +247,26 @@ async function download(id:number,symbol:string,start:string,end:string){
  }catch(e){if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return}const detail=describeDownloadError(e),range=activeChunk?' [failed date '+activeChunk.start+']':'',message=(detail+range).slice(0,1000);db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message)}
  finally{if(downloadAbortControllers.get(id)===abortController)downloadAbortControllers.delete(id)}
 }
+const csvUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:64*1024*1024,files:1}});
+app.post('/api/import/candles',(q,r)=>{csvUpload.single('file')(q,r,(uploadError:any)=>{
+ if(uploadError){const tooBig=uploadError.code==='LIMIT_FILE_SIZE';return r.status(tooBig?413:400).json({error:tooBig?'CSV file must be 64 MB or smaller':'Upload failed: '+String(uploadError.message||uploadError)})}
+ try{
+  const symbol=String(q.query.symbol||'').toUpperCase();
+  if(!db.prepare('select symbol from instruments where symbol=?').get(symbol))return r.status(400).json({error:'Unknown instrument symbol'});
+  if(String(q.query.priceType||'').toLowerCase()!=='bid')return r.status(400).json({error:'This app stores BID candles only. Export Bid prices and pass priceType=bid.'});
+  if(!q.file)return r.status(400).json({error:'Attach the CSV as multipart field "file"'});
+  const offset=Number(q.query.utcOffsetMinutes??0);
+  if(!Number.isFinite(offset)||Math.abs(offset)>840)return r.status(400).json({error:'utcOffsetMinutes must be between -840 and 840'});
+  const parsed=parseCandleCsv(q.file.buffer.toString('utf8'),{utcOffsetMinutes:offset});
+  if(!parsed.candles.length)return r.status(422).json({error:'No valid M1 candles found in the file',totalRows:parsed.totalRows,rejected:parsed.rejected,rejectSamples:parsed.rejectSamples});
+  const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
+  const inserted=db.transaction(()=>{let n=0;for(const c of parsed.candles)n+=put.run(symbol,c.time,c.open,c.high,c.low,c.close,c.volume).changes;return n})();
+  const day=(t:number)=>new Date(t*1000).toISOString().slice(0,10);
+  if(inserted>0)db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'completed',100,'csv')").run(symbol,day(parsed.firstTime!),day(parsed.lastTime!));
+  appLog('INFO','IMPORT','Imported '+symbol+' CSV: '+parsed.candles.length+' valid candle(s), '+inserted+' new, '+(parsed.candles.length-inserted)+' already present, '+parsed.rejected+' rejected row(s)');
+  r.status(201).json({symbol,totalRows:parsed.totalRows,accepted:parsed.candles.length,rejected:parsed.rejected,rejectSamples:parsed.rejectSamples,inserted,duplicatesIgnored:parsed.candles.length-inserted,firstTime:parsed.firstTime,lastTime:parsed.lastTime})
+ }catch(e){r.status(400).json({error:String((e as Error).message||e)})}
+})});
 app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}const interruptedDownloads=db.prepare("select id,symbol,start_date,end_date,status,downloader from downloads where status in ('queued','running') order by id").all() as any[];
 let recoveryWaitFor:number|undefined;
 for(const job of interruptedDownloads){

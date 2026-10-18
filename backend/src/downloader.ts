@@ -95,8 +95,16 @@ export class DukascopyUpstreamResponseError extends Error {
  * Once an explicit WAF Challenge is seen, suppress further network requests
  * during the library's internal retry loop and throw a distinct error.
  */
+export interface ProviderRequestGuard {
+  /** Per HTTP attempt; covers the body read because the same signal stays attached to the response. */
+  timeoutMs?: number;
+  /** Job cancellation (the Stop button). */
+  signal?: AbortSignal;
+}
+
 export async function withDukascopyResponseDiagnostics<T>(
   request: () => Promise<T>,
+  guard: ProviderRequestGuard = {},
 ): Promise<T> {
   const originalFetch = globalThis.fetch;
   // Store diagnostics on a mutable object so TypeScript accounts for updates
@@ -114,7 +122,13 @@ export async function withDukascopyResponseDiagnostics<T>(
       throw new Error('DUKASCOPY_WAF_CHALLENGE_ALREADY_DETECTED');
     }
 
-    const response = await originalFetch(input, init);
+    const signals: AbortSignal[] = [];
+    if (guard.timeoutMs && guard.timeoutMs > 0) signals.push(AbortSignal.timeout(guard.timeoutMs));
+    if (guard.signal) signals.push(guard.signal);
+    if (init?.signal) signals.push(init.signal as AbortSignal);
+    const signal = signals.length === 0 ? undefined : signals.length === 1 ? signals[0] : AbortSignal.any(signals);
+
+    const response = await originalFetch(input, signal ? { ...init, signal } : init);
     const url = typeof input === 'string'
       ? input
       : input instanceof URL
@@ -154,6 +168,28 @@ export async function withDukascopyResponseDiagnostics<T>(
   } finally {
     if (globalThis.fetch === wrappedFetch) globalThis.fetch = originalFetch;
   }
+}
+
+/**
+ * Process-wide cool-down for the JSON API. A WAF challenge cannot be passed by an HTTP client, so once one
+ * is seen, further JSON-API requests (from this or later jobs) are pointless and only add load.
+ * Default 30 minutes; override with DUKASCOPY_JSON_COOLDOWN_MS. In-memory by design: a restart costs one probe.
+ */
+const DEFAULT_JSON_COOLDOWN_MS = 30 * 60_000;
+let jsonApiBlockedUntil = 0;
+
+function jsonCooldownMs(): number {
+  const configured = Number(process.env.DUKASCOPY_JSON_COOLDOWN_MS);
+  return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_JSON_COOLDOWN_MS;
+}
+export function noteJsonApiBlocked(now: number = Date.now()): void {
+  jsonApiBlockedUntil = now + jsonCooldownMs();
+}
+export function jsonApiCooldownRemainingMs(now: number = Date.now()): number {
+  return Math.max(0, jsonApiBlockedUntil - now);
+}
+export function resetJsonApiCooldown(): void {
+  jsonApiBlockedUntil = 0;
 }
 
 const DEFAULT_MAX_ATTEMPTS = 6;

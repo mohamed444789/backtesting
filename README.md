@@ -48,3 +48,27 @@ authentication. Do not expose it directly to an untrusted network.
 Historical candles are Dukascopy bid OHLC data, not tick-level bid/ask
 data. Intrabar stop/target collisions use conservative stop-first
 handling. This is a local practice simulator, not a live broker connection.
+
+## When the Dukascopy download is blocked
+
+Dukascopy's JSON API (`jetta.dukascopy.com`) can answer plain HTTP clients with **HTTP 202** and an AWS WAF
+challenge (`x-amzn-waf-action: challenge`). An HTTP client cannot pass that challenge, so retrying does not help.
+The app then tries the legacy `.bi5` feed, which is itself unreliable at times.
+
+What the app does now:
+
+- Any provider request has a 30 s timeout and the **Stop** button aborts it immediately.
+- After a 202 the JSON API is not called again for 30 minutes (`DUKASCOPY_JSON_COOLDOWN_MS` to change).
+- A job pauses after 3 consecutive failed dates instead of retrying a whole range.
+- Failures are never recorded as downloaded data.
+
+To get data in while the API is blocked, export **Bid** M1 candles from Dukascopy's official historical data
+export (choose GMT/UTC) and import the CSV:
+
+~~~
+curl -X POST "http://localhost:8080/api/import/candles?symbol=EURUSD&priceType=bid" -F file=@EURUSD_M1.csv
+~~~
+
+Add `&utcOffsetMinutes=120` if the file's clock is UTC+2. Rows with invalid OHLC, off-minute times or unknown
+dates are rejected and reported; existing candles are never overwritten. Volume is stored exactly as in the file,
+so do not mix sources with different volume units for the same symbol.
