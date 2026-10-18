@@ -197,7 +197,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    for(let attempt=1;attempt<=MAX_API_DAY_ATTEMPTS;attempt++){
     try{
      appLog('INFO','FETCH','Job #'+id+': requesting API date '+day.start+' ('+(index+1)+'/'+coverage.length+'), attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS);
-     const result:any=await fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd-60000)},timeframe:'m1',format:'json',priceType:'bid',volumes:true});
+     const result:any=await fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd)},timeframe:'m1',format:'json',priceType:'bid',utcOffset:0,volumes:true,volumeUnits:'millions',ignoreFlats:false,batchSize:10,pauseBetweenBatchesMs:1000,useCache:true,cacheFolderPath:path.join(root,'dukascopy-cache'),retryCount:5,retryOnEmpty:true,failAfterRetryCount:true,pauseBetweenRetriesMs:250});
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for '+day.start+' after cancellation');return}
      const rows:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
      const relevant=rows.filter((x:any)=>{const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms)});
