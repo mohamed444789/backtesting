@@ -1,4 +1,4 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError}from'./download-utils.js';import{withDukascopyResponseDiagnostics,DukascopyUpstreamResponseError}from'./downloader.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError}from'./download-utils.js';import{buildDukascopyLegacyM1Config,withDukascopyResponseDiagnostics,DukascopyUpstreamResponseError}from'./downloader.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
 const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadAbortControllers=new Map<number,AbortController>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:String(message).replace(/[\\r\n]+/g,' ').slice(0,1200)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
@@ -184,6 +184,16 @@ async function download(id:number,symbol:string,start:string,end:string){
   if(coverage.every(x=>x.covered)){db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);appLog('INFO','DOWNLOAD','Job #'+id+': all eligible dates already covered in SQLite; no API request made.');return}
   const mod:any=await import('dukascopy-node'),fn=mod.getHistoricalRates||mod.default;
   if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable');
+  let useLegacyDatafeed=false,legacyFn:any=null;
+  const fetchLegacyDay=async(date:string)=>{
+   if(!legacyFn){
+    const legacyMod:any=await import('dukascopy-node-legacy');
+    legacyFn=legacyMod.getHistoricalRates||legacyMod.default;
+   }
+   if(typeof legacyFn!=='function')throw Error('Legacy dukascopy-node 1.46.4 getHistoricalRates API unavailable');
+   const config=buildDukascopyLegacyM1Config(symbol,date,path.join(root,'dukascopy-legacy-cache'));
+   return await withDukascopyResponseDiagnostics(()=>legacyFn(config));
+  };
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
   const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time),candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(candle))inserted+=put.run(symbolUpper,candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes}return inserted});
   let inputRows=0,insertedRows=0,processed=0,skippedClosed=0;const failedDates:{date:string;error:string}[]=[];
@@ -196,12 +206,25 @@ async function download(id:number,symbol:string,start:string,end:string){
    let saved=false,lastError='No candles returned for an open-market period';
    for(let attempt=1;attempt<=MAX_API_DAY_ATTEMPTS;attempt++){
     try{
-     appLog('INFO','FETCH','Job #'+id+': requesting API date '+day.start+' ('+(index+1)+'/'+coverage.length+'), attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS);
-     const result:any=await withDukascopyResponseDiagnostics(()=>fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd)},timeframe:'m1',format:'json',priceType:'bid',utcOffset:0,volumes:true,volumeUnits:'millions',ignoreFlats:false,batchSize:10,pauseBetweenBatchesMs:1000,useCache:true,cacheFolderPath:path.join(root,'dukascopy-cache'),retryCount:5,retryOnEmpty:true,failAfterRetryCount:true,pauseBetweenRetriesMs:250}));
+     appLog('INFO','FETCH','Job #'+id+': requesting '+(useLegacyDatafeed?'legacy datafeed .bi5':'JSON API')+' date '+day.start+' ('+(index+1)+'/'+coverage.length+'), attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS);
+     let result:any;
+     if(useLegacyDatafeed){
+      result=await fetchLegacyDay(day.start);
+     }else{
+      try{
+       result=await withDukascopyResponseDiagnostics(()=>fn({instrument:symbol,dates:{from:new Date(dayStart),to:new Date(dayEnd)},timeframe:'m1',format:'json',priceType:'bid',utcOffset:0,volumes:true,volumeUnits:'millions',ignoreFlats:false,batchSize:10,pauseBetweenBatchesMs:1000,useCache:true,cacheFolderPath:path.join(root,'dukascopy-cache'),retryCount:5,retryOnEmpty:true,failAfterRetryCount:true,pauseBetweenRetriesMs:250}));
+      }catch(primaryError){
+       if(!(primaryError instanceof DukascopyUpstreamResponseError)||primaryError.diagnostic.status!==202)throw primaryError;
+       useLegacyDatafeed=true;
+       appLog('WARN','FETCH','Job #'+id+': JSON API returned HTTP 202'+(primaryError.isChallenge?' AWS WAF challenge':'')+' for '+day.start+'; testing legacy datafeed .bi5 endpoint for this and subsequent dates.');
+       result=await fetchLegacyDay(day.start);
+       appLog('INFO','FETCH','Job #'+id+': legacy datafeed .bi5 request succeeded for '+day.start+'; continuing this job using the legacy endpoint.');
+      }
+     }
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for '+day.start+' after cancellation');return}
      const rows:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
      const relevant=rows.filter((x:any)=>{const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms)});
-     appLog('INFO','FETCH','Job #'+id+': API returned '+rows.length+' row(s), '+relevant.length+' within the requested market session for '+day.start);
+     appLog('INFO','FETCH','Job #'+id+': '+(useLegacyDatafeed?'legacy .bi5':'JSON API')+' returned '+rows.length+' row(s), '+relevant.length+' within the requested market session for '+day.start);
      if(!relevant.length)throw Error('No candles returned for an open-market period');
      const inserted=insertBatch(relevant);inputRows+=relevant.length;insertedRows+=inserted;
      if(day.start<todayUtc&&!isDateCovered(day.start))throw Error('API returned '+relevant.length+' candles but expected session coverage remains incomplete after import');
@@ -219,7 +242,7 @@ async function download(id:number,symbol:string,start:string,end:string){
   }
   if(failedDates.length){const dates=failedDates.map(x=>x.date),samples=failedDates.slice(0,3).map(x=>x.date+': '+x.error).join(' | '),summary=('Download finished with '+failedDates.length+' unresolved date(s): '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);appLog('WARN','DOWNLOAD','Job #'+id+': '+failedDates.length+' date(s) remain unresolved after '+MAX_API_DAY_ATTEMPTS+' API attempts each; successful dates remain saved');return}
   const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on a.id=d.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed using Direct API. '+inputRows+' rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?' Ignored '+futureDatesIgnored+' future date(s).':'')+(skippedClosed?' Skipped '+skippedClosed+' market-closed date(s).':'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+  appLog('INFO','DOWNLOAD','Job #'+id+': completed using '+(useLegacyDatafeed?'legacy datafeed .bi5':'Dukascopy JSON API')+'. '+inputRows+' rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?' Ignored '+futureDatesIgnored+' future date(s).':'')+(skippedClosed?' Skipped '+skippedClosed+' market-closed date(s).':'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
  }catch(e){if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return}const detail=describeDownloadError(e),range=activeChunk?' [failed date '+activeChunk.start+']':'',message=(detail+range).slice(0,1000);db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message)}
  finally{if(downloadAbortControllers.get(id)===abortController)downloadAbortControllers.delete(id)}
 }
