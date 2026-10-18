@@ -9,13 +9,27 @@ COPY frontend/package.json frontend/package.json
 # Keep npm's download cache across failed builds and retry transient registry
 # resets. Low socket concurrency is more reliable on unstable network links.
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
-    npm install --workspaces --include-workspace-root --prefer-offline \
-      --fetch-retries=5 \
-      --fetch-retry-factor=2 \
-      --fetch-retry-mintimeout=20000 \
-      --fetch-retry-maxtimeout=120000 \
-      --fetch-timeout=600000 \
-      --maxsockets=3
+    set -eu; \
+    attempt=1; \
+    while [ "$attempt" -le 5 ]; do \
+      echo "npm workspace install attempt $attempt/5"; \
+      if npm install --workspaces --include-workspace-root --prefer-offline \
+        --fetch-retries=8 \
+        --fetch-retry-factor=2 \
+        --fetch-retry-mintimeout=20000 \
+        --fetch-retry-maxtimeout=120000 \
+        --fetch-timeout=600000 \
+        --maxsockets=1; then \
+        exit 0; \
+      fi; \
+      if [ "$attempt" -eq 5 ]; then \
+        echo "npm install failed after 5 attempts" >&2; \
+        exit 1; \
+      fi; \
+      attempt=$((attempt + 1)); \
+      echo "npm install failed; preserving cache and retrying after a short pause" >&2; \
+      sleep $((attempt * 5)); \
+    done
 COPY backend backend
 COPY frontend frontend
 RUN npm run build
