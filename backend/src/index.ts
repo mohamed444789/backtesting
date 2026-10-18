@@ -257,14 +257,23 @@ app.post('/api/import/candles',(q,r)=>{csvUpload.single('file')(q,r,(uploadError
   if(!q.file)return r.status(400).json({error:'Attach the CSV as multipart field "file"'});
   const offset=Number(q.query.utcOffsetMinutes??0);
   if(!Number.isFinite(offset)||Math.abs(offset)>840)return r.status(400).json({error:'utcOffsetMinutes must be between -840 and 840'});
+  const replaceExisting=['true','1'].includes(String(q.query.replaceExisting??'').toLowerCase());
   const parsed=parseCandleCsv(q.file.buffer.toString('utf8'),{utcOffsetMinutes:offset});
   if(!parsed.candles.length)return r.status(422).json({error:'No valid M1 candles found in the file',totalRows:parsed.totalRows,rejected:parsed.rejected,rejectSamples:parsed.rejectSamples});
+  // The opt-in replacement mode is used by the Dukascopy downloader to repair
+  // previously imported bad rows. Refuse the whole file before writing if any
+  // row fails validation; default CSV imports still preserve existing candles.
+  if(replaceExisting&&parsed.rejected>0)return r.status(422).json({error:'Replacement import refused because some rows failed validation',totalRows:parsed.totalRows,accepted:parsed.candles.length,rejected:parsed.rejected,rejectSamples:parsed.rejectSamples});
   const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
-  const inserted=db.transaction(()=>{let n=0;for(const c of parsed.candles)n+=put.run(symbol,c.time,c.open,c.high,c.low,c.close,c.volume).changes;return n})();
+  const putReplacing=db.prepare('insert into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?) on conflict(symbol,time,price_type) do update set open=excluded.open,high=excluded.high,low=excluded.low,close=excluded.close,volume=excluded.volume');
+  const exists=db.prepare("select 1 from candles where symbol=? and time=? and price_type='bid'");
+  const writeCounts=db.transaction(()=>{let inserted=0,updated=0;for(const c of parsed.candles){if(replaceExisting){const alreadyExists=Boolean(exists.get(symbol,c.time));putReplacing.run(symbol,c.time,c.open,c.high,c.low,c.close,c.volume);if(alreadyExists)updated++;else inserted++}else inserted+=put.run(symbol,c.time,c.open,c.high,c.low,c.close,c.volume).changes}return{inserted,updated}})();
+  const {inserted,updated}=writeCounts;
+  const duplicatesIgnored=parsed.candles.length-inserted-updated;
   const day=(t:number)=>new Date(t*1000).toISOString().slice(0,10);
-  if(inserted>0)db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'completed',100,'csv')").run(symbol,day(parsed.firstTime!),day(parsed.lastTime!));
-  appLog('INFO','IMPORT','Imported '+symbol+' CSV: '+parsed.candles.length+' valid candle(s), '+inserted+' new, '+(parsed.candles.length-inserted)+' already present, '+parsed.rejected+' rejected row(s)');
-  r.status(201).json({symbol,totalRows:parsed.totalRows,accepted:parsed.candles.length,rejected:parsed.rejected,rejectSamples:parsed.rejectSamples,inserted,duplicatesIgnored:parsed.candles.length-inserted,firstTime:parsed.firstTime,lastTime:parsed.lastTime})
+  if(inserted+updated>0)db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'completed',100,'csv')").run(symbol,day(parsed.firstTime!),day(parsed.lastTime!));
+  appLog('INFO','IMPORT','Imported '+symbol+' CSV: '+parsed.candles.length+' valid candle(s), '+inserted+' new, '+updated+' replaced, '+duplicatesIgnored+' already present, '+parsed.rejected+' rejected row(s)');
+  r.status(201).json({symbol,totalRows:parsed.totalRows,accepted:parsed.candles.length,rejected:parsed.rejected,rejectSamples:parsed.rejectSamples,inserted,updated,duplicatesIgnored,firstTime:parsed.firstTime,lastTime:parsed.lastTime})
  }catch(e){r.status(400).json({error:String((e as Error).message||e)})}
 })});
 app.get('/api/export/trades.csv',(_q,r)=>{const rows=db.prepare('select * from trades order by entry_time').all() as any[],cols=rows.length?Object.keys(rows[0]):['id','symbol','side','entry_time','entry','exit_time','exit','lots','pnl','status','notes'];r.type('text/csv').attachment('atlas-trades.csv').send([cols.join(','),...rows.map(x=>cols.map(k=>JSON.stringify(x[k]??'')).join(','))].join('\n'))});const front=path.resolve(process.cwd(),'frontend/dist');if(fs.existsSync(front)){app.use(express.static(front));app.get('*',(q,r,next)=>q.path.startsWith('/api/')?next():r.sendFile(path.join(front,'index.html')))}const interruptedDownloads=db.prepare("select id,symbol,start_date,end_date,status,downloader from downloads where status in ('queued','running') order by id").all() as any[];
