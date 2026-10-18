@@ -77,7 +77,7 @@ so do not mix sources with different volume units for the same symbol.
 
 ## Simple day-by-day Python downloader
 
-The **Simple Python Downloader** menu links to `frontend/public/simple_downloader.py`. It uses only Python's standard library, fetches one legacy Dukascopy BID M1 file per calendar date, and posts that day's candles to the existing local `/api/import/candles` endpoint. It deliberately does not create Atlas download jobs. HTTP 429/202 and other HTTP errors stop the script immediately; there are no automatic retries. Existing candles are deduplicated by the importer.
+The **Simple Python Downloader** menu links to `frontend/public/simple_downloader.py`. It uses only Python's standard library, fetches one legacy Dukascopy BID M1 file per calendar date, and posts that day's candles to the existing local `/api/import/candles` endpoint. It deliberately does not create Atlas download jobs. HTTP errors stop the script immediately; there are no automatic retries. The script validates that all rows were accepted before continuing and reports whether the error came from Dukascopy or Atlas. It opts into `replaceExisting=true`: accepted candles for overlapping timestamps are updated from Dukascopy, which can repair rows imported by an older buggy script. In replacement mode the API refuses the whole day's file if any row fails validation; ordinary CSV imports still leave existing candles untouched.
 
 Example:
 
