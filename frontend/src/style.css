@@ -1000,3 +1000,34 @@ td{font-size:12px}
 
 .simple-python-downloader{max-width:100%;display:flex;flex-direction:column;gap:12px}.simple-download-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.simple-download-fields label{display:flex;flex-direction:column;gap:7px;min-width:0}.simple-download-fields input,.simple-download-fields select{width:100%;min-width:0;margin-top:0}.simple-download-command{white-space:pre-wrap;overflow-wrap:anywhere;background:#070c12;border:1px solid #263344;border-radius:8px;padding:14px;color:#7fe6bf;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.simple-download-link{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:10px 14px;border-radius:7px}.simple-python-downloader .muted{color:var(--muted,#93a4b7);font-size:12px}@media(max-width:800px){.simple-download-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.simple-download-fields{grid-template-columns:1fr}}
 
+
+
+/* Explain empty replay charts and provide recovery actions without obscuring drawing tools. */
+.chart-empty-state{
+  position:absolute;inset:0;z-index:2;display:grid;place-items:center;
+  padding:22px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(5,12,20,.26),rgba(5,12,20,.48));
+}
+.chart-empty-card{
+  width:min(590px,100%);padding:24px 26px;text-align:center;pointer-events:auto;
+  border:1px solid #34465a;border-radius:12px;
+  background:rgba(14,24,36,.97);box-shadow:0 16px 46px rgba(0,0,0,.3);
+}
+.chart-empty-card>svg{color:#65d9b1;margin-bottom:9px}
+.chart-empty-card h3{font-size:17px;line-height:1.35;margin:0 0 9px;color:#eef5fc}
+.chart-empty-card p{font-size:13px;line-height:1.65;color:#a4b5c9;margin:0 auto 17px;max-width:490px}
+.chart-empty-actions{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
+.chart-empty-actions button{min-height:37px;font-size:12px}
+.chart-empty-actions button:disabled{opacity:.6;cursor:wait}
+.theme-light .chart-empty-state{background:linear-gradient(180deg,rgba(241,245,249,.35),rgba(241,245,249,.7))}
+.theme-light .chart-empty-card{background:rgba(255,255,255,.98);border-color:#cbd5e1;box-shadow:0 16px 40px rgba(15,23,42,.12)}
+.theme-light .chart-empty-card h3{color:#172334}
+.theme-light .chart-empty-card p{color:#536b83}
+@media(max-width:600px){
+ .chart-empty-state{padding:12px}
+ .chart-empty-card{padding:18px 15px}
+ .chart-empty-card h3{font-size:15px}
+ .chart-empty-card p{font-size:12px}
+ .chart-empty-actions{align-items:stretch;flex-direction:column}
+ .chart-empty-actions button{justify-content:center;width:100%}
+}
