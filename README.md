@@ -87,3 +87,14 @@ python3 dukascopy_m1.py EURUSD 2019-01-28 2019-01-29 --app http://localhost:8080
 ```
 
 Use `--force` to re-fetch dates that appear complete. Temporary provider errors are retried with backoff; HTTP 429 stops immediately, and HTTP 202/provider challenges stop without attempting to bypass them. If the legacy feed continues returning HTTP 503, wait and try later or use Dukascopy's official CSV export. The downloader cannot override provider-side outages or rate limits.
+
+## Python downloader verification
+
+The day-by-day Python downloader has been successfully run in a local Atlas environment. It checks existing candle coverage, downloads Dukascopy BID M1 data one day at a time, and validates that every submitted row was accepted before continuing. Provider-side HTTP 429 or 202 challenge responses stop the run rather than attempting to bypass them.
+
+Run it with:
+
+```sh
+python3 -m pip install requests
+python3 dukascopy_m1.py EURUSD 2019-01-28 2019-01-29 --app http://localhost:8080
+```
