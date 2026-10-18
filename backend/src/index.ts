@@ -40,8 +40,8 @@ async function download(id:number,symbol:string,start:string,end:string){
     if(!Number.isFinite(first)||!Number.isFinite(last)||first>last)throw Error('Invalid UTC date range');
     const totalDays=Math.floor((last-first)/86400000)+1;
     log('range-validated',{totalDays});
-    const hasCandles=db.prepare('select 1 from candles where symbol=? and time>=? and time<? limit 1');
-    const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume,price_type) values(?,?,?,?,?,?,?,?)');
+    const candlesForDay=db.prepare('select count(*) as n from candles where symbol=? and time>=? and time<?');
+    const put=db.prepare('insert into candles(symbol,time,open,high,low,close,volume,price_type) values(?,?,?,?,?,?,?,?) on conflict(symbol,time,price_type) do update set open=excluded.open,high=excluded.high,low=excluded.low,close=excluded.close,volume=excluded.volume');
     const saveDay=(rows:any[],dayStart:number,dayEnd:number)=>db.transaction((batch:any[])=>{
       for(const x of batch){
         const rawTime=x.timestamp??x.time;
@@ -58,8 +58,12 @@ async function download(id:number,symbol:string,start:string,end:string){
         db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
         continue;
       }
-      if(hasCandles.get(pair,Math.floor(dayStart/1000),Math.floor(dayEnd/1000))){
-        log('day-skipped-existing-data',{day});
+      const existingCount=Number((candlesForDay.get(pair,Math.floor(dayStart/1000),Math.floor(dayEnd/1000)) as any)?.n||0);
+      // Only skip dates that look substantially complete. Partial/incorrectly
+      // imported dates must be fetched again so missing candles can be filled
+      // and existing timestamps can be corrected from the provider's values.
+      if(existingCount>=1400){
+        log('day-skipped-existing-data',{day,existingCandles:existingCount});
         db.prepare('update downloads set progress=? where id=?').run(Math.round((n+1)/totalDays*100),id);
         continue;
       }
