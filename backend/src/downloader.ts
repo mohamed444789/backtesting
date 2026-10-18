@@ -76,9 +76,12 @@ export class DukascopyUpstreamResponseError extends Error {
       diagnostic.cloudFrontId ? 'cloudfront-id=' + diagnostic.cloudFrontId : '',
     ].filter(Boolean).join(' | ');
 
+    const rejected = diagnostic.status === 202
+      ? 'DUKASCOPY_HTTP_202: Dukascopy returned HTTP 202 instead of candle data.'
+      : 'DUKASCOPY_HTTP_ERROR: Dukascopy returned a non-success HTTP response.';
     super(challenge
       ? 'DUKASCOPY_WAF_CHALLENGE: Dukascopy returned an AWS WAF challenge; this is an upstream access challenge, not an empty market-data date. ' + details
-      : 'DUKASCOPY_HTTP_202: Dukascopy returned HTTP 202, which this dukascopy-node fetcher does not treat as a successful candle response. Stop the job instead of treating the date as missing. ' + details);
+      : rejected + ' Stop the job instead of treating the date as missing. ' + details);
     this.name = 'DukascopyUpstreamResponseError';
   }
 
@@ -142,11 +145,7 @@ export async function withDukascopyResponseDiagnostics<T>(
     const { challenge, lastNon200 } = responseState;
     if (challenge) throw new DukascopyUpstreamResponseError(challenge);
     if (lastNon200?.status === 202) throw new DukascopyUpstreamResponseError(lastNon200);
-    if (lastNon200) {
-      throw new Error(
-        describeDownloadError(error) + ' | provider HTTP response=' + JSON.stringify(lastNon200),
-      );
-    }
+    if (lastNon200) throw new DukascopyUpstreamResponseError(lastNon200);
     throw error;
   } finally {
     if (globalThis.fetch === wrappedFetch) globalThis.fetch = originalFetch;
