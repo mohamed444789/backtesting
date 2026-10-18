@@ -232,7 +232,7 @@ async function download(id:number,symbol:string,start:string,end:string){
      saved=true;appLog('INFO','DATABASE','Job #'+id+': stored '+relevant.length+' candles for '+day.start+'; '+inserted+' new candles inserted');break;
     }catch(error){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for '+day.start);return}
-     if(error instanceof DukascopyUpstreamResponseError){lastError=describeDownloadError(error);appLog('ERROR','FETCH','Job #'+id+': '+lastError+'; stopping the entire job instead of retrying remaining dates.');throw error}
+     if(error instanceof DukascopyUpstreamResponseError){lastError=describeDownloadError(error);if(error.isRateLimited&&error.diagnostic.retryAfter)lastError+=' | provider requested Retry-After '+error.diagnostic.retryAfter;appLog('ERROR','FETCH','Job #'+id+': '+lastError+'; stopping the entire job instead of retrying remaining dates. No additional provider requests will be sent for this job.');throw error}
      lastError=describeDownloadError(error);appLog(attempt<MAX_API_DAY_ATTEMPTS?'WARN':'ERROR','FETCH','Job #'+id+': API attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS+' failed for '+day.start+': '+lastError+(attempt<MAX_API_DAY_ATTEMPTS?'; retrying':''));
      if(attempt<MAX_API_DAY_ATTEMPTS)await sleep(API_RETRY_DELAY_MS*attempt);
     }

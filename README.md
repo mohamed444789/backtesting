@@ -62,6 +62,8 @@ What the app does now:
 - A job pauses after 3 consecutive failed dates instead of retrying a whole range.
 - Failures are never recorded as downloaded data.
 
+- If either endpoint returns HTTP 429, the job now stops immediately (and stops the library's own retry loop after that first response). Use the provider's `Retry-After` value, if present, before attempting another download.
+
 To get data in while the API is blocked, export **Bid** M1 candles from Dukascopy's official historical data
 export (choose GMT/UTC) and import the CSV:
 

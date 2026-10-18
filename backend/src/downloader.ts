@@ -78,7 +78,9 @@ export class DukascopyUpstreamResponseError extends Error {
 
     const rejected = diagnostic.status === 202
       ? 'DUKASCOPY_HTTP_202: Dukascopy returned HTTP 202 instead of candle data.'
-      : 'DUKASCOPY_HTTP_ERROR: Dukascopy returned a non-success HTTP response.';
+      : diagnostic.status === 429
+        ? 'DUKASCOPY_RATE_LIMITED: Dukascopy returned HTTP 429 Too Many Requests.'
+        : 'DUKASCOPY_HTTP_ERROR: Dukascopy returned a non-success HTTP response.';
     super(challenge
       ? 'DUKASCOPY_WAF_CHALLENGE: Dukascopy returned an AWS WAF challenge; this is an upstream access challenge, not an empty market-data date. ' + details
       : rejected + ' Stop the job instead of treating the date as missing. ' + details);
@@ -87,6 +89,10 @@ export class DukascopyUpstreamResponseError extends Error {
 
   get isChallenge(): boolean {
     return this.diagnostic.wafAction?.toLowerCase() === 'challenge';
+  }
+
+  get isRateLimited(): boolean {
+    return this.diagnostic.status === 429;
   }
 }
 
@@ -112,14 +118,21 @@ export async function withDukascopyResponseDiagnostics<T>(
   const responseState: {
     lastNon200: DukascopyResponseDiagnostic | null;
     challenge: DukascopyResponseDiagnostic | null;
+    rateLimited: boolean;
   } = {
     lastNon200: null,
     challenge: null,
+    rateLimited: false,
   };
 
   const wrappedFetch: typeof fetch = async (input, init) => {
     if (responseState.challenge) {
       throw new Error('DUKASCOPY_WAF_CHALLENGE_ALREADY_DETECTED');
+    }
+    if (responseState.rateLimited) {
+      // The server has already rate-limited this job. Don't send another request
+      // from the library's internal retry loop.
+      throw new Error('DUKASCOPY_RATE_LIMIT_ALREADY_DETECTED');
     }
 
     const signals: AbortSignal[] = [];
@@ -149,6 +162,7 @@ export async function withDukascopyResponseDiagnostics<T>(
 
     if (response.status !== 200) responseState.lastNon200 = diagnostic;
     if (diagnostic.wafAction?.toLowerCase() === 'challenge') responseState.challenge = diagnostic;
+    if (response.status === 429) responseState.rateLimited = true;
     return response;
   };
 
@@ -158,7 +172,9 @@ export async function withDukascopyResponseDiagnostics<T>(
   } catch (error) {
     const { challenge, lastNon200 } = responseState;
     if (challenge) throw new DukascopyUpstreamResponseError(challenge);
-    if (lastNon200?.status === 202) throw new DukascopyUpstreamResponseError(lastNon200);
+    if (lastNon200?.status === 202 || lastNon200?.status === 429) {
+      throw new DukascopyUpstreamResponseError(lastNon200);
+    }
     if (lastNon200) {
       throw new Error(
         describeDownloadError(error) + ' | provider HTTP response=' + JSON.stringify(lastNon200),

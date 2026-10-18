@@ -151,3 +151,38 @@ test('log sanitizer collapses line breaks but never alters ordinary letters', ()
   assert.equal(sanitizeLogMessage('rrr nnn \\ ok'), 'rrr nnn \\ ok');
   assert.equal(sanitizeLogMessage('x'.repeat(2000)).length, 1200);
 });
+
+
+test('HTTP 429 stops retries at the first rate-limited network response', async () => {
+  let networkCalls = 0;
+  const f = (async () => {
+    networkCalls++;
+    return new Response(JSON.stringify({ message: 'Too Many Requests' }), {
+      status: 429,
+      headers: { 'content-type': 'application/json', 'retry-after': '60' },
+    });
+  }) as typeof fetch;
+
+  await withFakeFetch(f, async () => {
+    await assert.rejects(
+      withDukascopyResponseDiagnostics(async () => {
+        // Simulate a library retry loop. Only its first HTTP request should reach the provider.
+        for (let attempt = 0; attempt < 6; attempt++) {
+          const response = await fetch(URL1);
+          if (response.status === 200) return response;
+        }
+        throw new Error('request attempts exhausted');
+      }, { timeoutMs: 500 }),
+      (error: unknown) => {
+        assert.ok(error instanceof DukascopyUpstreamResponseError);
+        assert.equal(error.diagnostic.status, 429);
+        assert.equal(error.isRateLimited, true);
+        assert.match(error.message, /DUKASCOPY_RATE_LIMITED/);
+        assert.equal(error.diagnostic.retryAfter, '60');
+        return true;
+      },
+    );
+  });
+
+  assert.equal(networkCalls, 1);
+});
