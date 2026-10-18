@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DownloadCancelledError, DukascopyUpstreamResponseError, buildDukascopyM1Config, fetchDateCandles, withDukascopyResponseDiagnostics } from './downloader.js';
+import { DownloadCancelledError, DukascopyUpstreamResponseError, buildDukascopyLegacyM1Config, buildDukascopyM1Config, fetchDateCandles, withDukascopyResponseDiagnostics } from './downloader.js';
 
 const date = '2026-10-16';
 const start = Date.parse(date + 'T00:00:00.000Z');
@@ -215,4 +215,27 @@ test('detects AWS WAF HTTP 202 challenges and suppresses further provider reques
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+test('builds a separate legacy .bi5 M1 config for the fallback library', () => {
+  const config = buildDukascopyLegacyM1Config('EURUSD', date, '/data/dukascopy-legacy-cache');
+
+  assert.equal(config.instrument, 'eurusd');
+  assert.equal(config.timeframe, 'm1');
+  assert.equal(config.priceType, 'bid');
+  assert.equal(config.format, 'json');
+  assert.equal(config.utcOffset, 0);
+  assert.equal(config.volumes, true);
+  assert.equal(config.volumeUnits, 'millions');
+  assert.equal(config.ignoreFlats, false);
+  assert.equal(config.batchSize, 1);
+  assert.equal(config.pauseBetweenBatchesMs, 1000);
+  assert.equal(config.useCache, true);
+  assert.equal(config.cacheFolderPath, '/data/dukascopy-legacy-cache');
+  assert.equal(config.retryCount, 2);
+  assert.equal(config.retryOnEmpty, true);
+  assert.equal(config.pauseBetweenRetriesMs, 1000);
+  assert.equal(config.dates.from.toISOString(), date + 'T00:00:00.000Z');
+  assert.equal(config.dates.to.toISOString(), '2026-10-17T00:00:00.000Z');
 });
