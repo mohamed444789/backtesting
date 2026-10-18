@@ -90,16 +90,18 @@ export function buildDukascopyM1Config(
     // Fill missing minutes with flat candles when the provider has no tick
     // change; this keeps replay/coverage sessions continuous.
     ignoreFlats: false,
-    batchSize: 1,
+    // Keep requests date-scoped for reliable resume/coverage tracking; the
+    // library's batch size applies inside each daily request.
+    batchSize: 10,
     pauseBetweenBatchesMs: 1000,
     useCache: true,
     cacheFolderPath,
     retryCount: 5,
     retryOnEmpty: true,
     failAfterRetryCount: true,
-    // 202 Accepted responses have no Location header to poll; leave enough
-    // time for the provider to finish any queued response before retrying.
-    pauseBetweenRetriesMs: 2000,
+    // Match Dukascopy's recommended short retry pause; the outer downloader
+    // also applies bounded backoff when a whole daily request fails.
+    pauseBetweenRetriesMs: 250,
   } as const;
 }
 
