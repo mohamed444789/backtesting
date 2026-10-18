@@ -195,9 +195,9 @@ async function download(id:number,symbol:string,start:string,end:string){
    const config=buildDukascopyLegacyM1Config(symbol,date,path.join(root,'dukascopy-legacy-cache'));
    return await withDukascopyResponseDiagnostics(()=>legacyFn(config),providerGuard);
   };
-  const put=db.prepare('insert or ignore into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?)');
+  const put=db.prepare('insert into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?) on conflict(symbol,time,price_type) do update set open=excluded.open,high=excluded.high,low=excluded.low,close=excluded.close,volume=excluded.volume');
   const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time),candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(candle))inserted+=put.run(symbolUpper,candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes}return inserted});
-  let inputRows=0,insertedRows=0,processed=0,skippedClosed=0,consecutiveFailures=0;const failedDates:{date:string;error:string}[]=[];
+  let inputRows=0,writtenRows=0,processed=0,skippedClosed=0,consecutiveFailures=0;const failedDates:{date:string;error:string}[]=[];
   for(let index=0;index<coverage.length;index++){
    const day=coverage[index];activeChunk=day;
    if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date '+day.start);return}
@@ -227,9 +227,9 @@ async function download(id:number,symbol:string,start:string,end:string){
      const relevant=rows.filter((x:any)=>{const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms)});
      appLog('INFO','FETCH','Job #'+id+': '+(useLegacyDatafeed?'legacy .bi5':'JSON API')+' returned '+rows.length+' row(s), '+relevant.length+' within the requested market session for '+day.start);
      if(!relevant.length)throw Error('No candles returned for an open-market period');
-     const inserted=insertBatch(relevant);inputRows+=relevant.length;insertedRows+=inserted;
+     const inserted=insertBatch(relevant);inputRows+=relevant.length;writtenRows+=inserted;
      if(day.start<todayUtc&&!isDateCovered(day.start))throw Error('API returned '+relevant.length+' candles but expected session coverage remains incomplete after import');
-     saved=true;appLog('INFO','DATABASE','Job #'+id+': stored '+relevant.length+' candles for '+day.start+'; '+inserted+' new candles inserted');break;
+     saved=true;appLog('INFO','DATABASE','Job #'+id+': stored '+relevant.length+' candles for '+day.start+'; '+inserted+' candle(s) inserted or updated');break;
     }catch(error){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for '+day.start);return}
      if(error instanceof DukascopyUpstreamResponseError){lastError=describeDownloadError(error);if(error.isRateLimited&&error.diagnostic.retryAfter)lastError+=' | provider requested Retry-After '+error.diagnostic.retryAfter;appLog('ERROR','FETCH','Job #'+id+': '+lastError+'; stopping the entire job instead of retrying remaining dates. No additional provider requests will be sent for this job.');throw error}
@@ -243,7 +243,7 @@ async function download(id:number,symbol:string,start:string,end:string){
   }
   if(failedDates.length){const dates=failedDates.map(x=>x.date),samples=failedDates.slice(0,3).map(x=>x.date+': '+x.error).join(' | '),summary=('Download finished with '+failedDates.length+' unresolved date(s): '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);appLog('WARN','DOWNLOAD','Job #'+id+': '+failedDates.length+' date(s) remain unresolved after '+MAX_API_DAY_ATTEMPTS+' API attempts each; successful dates remain saved');return}
   const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on a.id=d.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed using '+(useLegacyDatafeed?'legacy datafeed .bi5':'Dukascopy JSON API')+'. '+inputRows+' rows processed and '+insertedRows+' new candles inserted (duplicates ignored).'+(futureDatesIgnored?' Ignored '+futureDatesIgnored+' future date(s).':'')+(skippedClosed?' Skipped '+skippedClosed+' market-closed date(s).':'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
+  appLog('INFO','DOWNLOAD','Job #'+id+': completed using '+(useLegacyDatafeed?'legacy datafeed .bi5':'Dukascopy JSON API')+'. '+inputRows+' rows processed and '+writtenRows+' candle(s) inserted or updated.'+(futureDatesIgnored?' Ignored '+futureDatesIgnored+' future date(s).':'')+(skippedClosed?' Skipped '+skippedClosed+' market-closed date(s).':'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
  }catch(e){if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return}const detail=describeDownloadError(e),range=activeChunk?' [failed date '+activeChunk.start+']':'',message=(detail+range).slice(0,1000);db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message)}
  finally{if(downloadAbortControllers.get(id)===abortController)downloadAbortControllers.delete(id)}
 }
