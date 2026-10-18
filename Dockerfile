@@ -9,7 +9,7 @@ COPY frontend/package.json frontend/package.json
 # Keep npm's download cache across failed builds and retry transient registry
 # resets. Low socket concurrency is more reliable on unstable network links.
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
-    npm ci --workspaces --include-workspace-root --prefer-offline \
+    npm install --workspaces --include-workspace-root --prefer-offline \
       --fetch-retries=5 \
       --fetch-retry-factor=2 \
       --fetch-retry-mintimeout=20000 \
