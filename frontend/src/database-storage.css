@@ -737,3 +737,12 @@
   width: 100%;
   text-align: center;
 }
+
+
+/* Center the selected downloader option inside its dropdown while keeping the chevron at the right. */
+.historical-download-form .historical-download-fields > .historical-downloader-select select {
+  text-align: center;
+  text-align-last: center;
+  padding-left: 28px;
+  padding-right: 28px;
+}
