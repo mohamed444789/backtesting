@@ -51,9 +51,9 @@ handling. This is a local practice simulator, not a live broker connection.
 
 ## Built-in downloader (Historical Data → Download)
 
-By default the UI downloader fetches Dukascopy's daily .bi5 M1 files directly, one UTC day at a time, the same
-way dukascopy_m1.py does. Each day is decoded and stored through the normal validation and coverage checks, and
-the queue, progress bar and Stop button work as before.
+By default the UI downloader runs the checked-in `dukascopy_m1.py` through a managed Python subprocess. It uses the same `requests.Session`, User-Agent, `.bi5` fetching, LZMA decoding, retries, pauses, coverage checks, and CSV import path as the working command-line script. Job state and progress stay connected to the UI, imports update the parent job rather than creating a separate history row for every day, and Stop terminates the Python worker.
+
+The Docker runtime installs Python 3 and `requests` and includes the root script. If running outside Docker, install `requests` for the same Python interpreter used by the backend (`python3 -m pip install requests`).
 
 - It waits 1 second between days and retries temporary errors (HTTP 5xx, timeouts, network errors) up to 3 times per day.
 - HTTP 429, 202 and other 4xx responses stop the whole job immediately; nothing is retried or worked around.
@@ -71,7 +71,7 @@ The app then tries the legacy `.bi5` feed, which is itself unreliable at times.
 
 When `DUKASCOPY_JSON_API=1` enables the JSON-API mode, the app:
 
-- Any provider request has a 30 s timeout and the **Stop** button aborts it immediately.
+- Any provider request has a 30 s timeout and the **Stop** button terminates the built-in Python worker immediately.
 - After a 202 the JSON API is not called again for 30 minutes (`DUKASCOPY_JSON_COOLDOWN_MS` to change).
 - A job pauses after 3 consecutive failed dates instead of retrying a whole range.
 - Failures are never recorded as downloaded data.

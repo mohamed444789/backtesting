@@ -1,6 +1,6 @@
-import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError,sanitizeLogMessage}from'./download-utils.js';import{buildDukascopyM1Config,buildDukascopyLegacyM1Config,withDukascopyResponseDiagnostics,DukascopyUpstreamResponseError,jsonApiCooldownRemainingMs,noteJsonApiBlocked}from'./downloader.js';import{fetchBi5Day}from'./bi5.js';import{parseCandleCsv}from'./csv-import.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import{spawn}from'node:child_process';import{fileURLToPath}from'node:url';import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError,sanitizeLogMessage}from'./download-utils.js';import{buildDukascopyM1Config,buildDukascopyLegacyM1Config,withDukascopyResponseDiagnostics,DukascopyUpstreamResponseError,jsonApiCooldownRemainingMs,noteJsonApiBlocked}from'./downloader.js';import{fetchBi5Day}from'./bi5.js';import{parseCandleCsv}from'./csv-import.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
-const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadAbortControllers=new Map<number,AbortController>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
+const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadAbortControllers=new Map<number,AbortController>();const pythonDownloadProcesses=new Map<number,ReturnType<typeof spawn>>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:sanitizeLogMessage(message)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
 appLog('INFO','API','Atlas backend process initialized');
 app.use((q,r,next)=>{const started=Date.now();if(q.path.startsWith('/api/')&&!q.path.startsWith('/api/logs')&&['POST','PUT','PATCH','DELETE'].includes(q.method)){r.on('finish',()=>appLog(r.statusCode>=400?'WARN':'INFO','HTTP',q.method+' '+q.path+' → '+r.statusCode+' ('+(Date.now()-started)+' ms)'))}next()});
@@ -90,7 +90,7 @@ function scheduleDownload(id:number,symbol:string,start:string,end:string,waitFo
    appLog('INFO','DOWNLOAD','Job #'+id+': restart was superseded before the replacement began');
    return;
   }
-  appLog('INFO','DOWNLOAD','Job #'+id+': worker started via Direct API; downloads run one at a time to reduce provider timeouts');
+  appLog('INFO','DOWNLOAD','Job #'+id+': worker started via Python downloader; downloads run one at a time to reduce provider timeouts');
   await download(id,symbol,start,end);
  }).finally(()=>{downloadTasks.delete(id)});
  downloadQueueTail=task.then(()=>undefined,()=>undefined);
@@ -102,11 +102,11 @@ app.post('/api/downloads',(q,r)=>{
  const b=q.body||{},symbol=String(b.symbol||'').toUpperCase(),start=String(b.startDate||''),end=String(b.endDate||'');
  if(!symbol||!validDateOnly(start)||!validDateOnly(end)||start>end)return r.status(400).json({error:'Instrument and valid start/end dates in YYYY-MM-DD format are required'});
  const active:any=db.prepare("select id,status from downloads where upper(symbol)=? and start_date=? and end_date=? and status in ('queued','running') order by id desc limit 1").get(symbol,start,end);
- if(active){appLog('INFO','DOWNLOAD','Duplicate Direct API request for '+symbol+' '+start+' to '+end+' reused active job #'+active.id);return r.status(200).json({id:Number(active.id),status:String(active.status),existing:true,downloader:'api'})}
- const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'queued',0,'api')").run(symbol,start,end).lastInsertRowid);
- appLog('INFO','DOWNLOAD','Queued Direct API job #'+id+' for '+symbol+' from '+start+' to '+end);
+ if(active){appLog('INFO','DOWNLOAD','Duplicate Python downloader request for '+symbol+' '+start+' to '+end+' reused active job #'+active.id);return r.status(200).json({id:Number(active.id),status:String(active.status),existing:true,downloader:'python'})}
+ const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'queued',0,'python')").run(symbol,start,end).lastInsertRowid);
+ appLog('INFO','DOWNLOAD','Queued Python downloader job #'+id+' for '+symbol+' from '+start+' to '+end);
  scheduleDownload(id,symbol.toLowerCase(),start,end);
- r.status(202).json({id,status:'queued',existing:false,downloader:'api'});
+ r.status(202).json({id,status:'queued',existing:false,downloader:'python'});
 });
 app.post('/api/downloads/delete-failed',(q,r)=>{const raw=Array.isArray(q.body?.ids)?q.body.ids:[];const ids=[...new Set(raw.map(Number).filter((id:number)=>Number.isSafeInteger(id)&&id>0))];if(!ids.length)return r.status(400).json({error:'Select at least one failed job to delete'});if(ids.length>250)return r.status(400).json({error:'Delete at most 250 jobs at a time'});const findJob=db.prepare('select * from downloads where id=?');const hasActiveDescendant=db.prepare("with recursive descendants(id) as (select id from downloads where retry_of=? union all select d.id from downloads d join descendants x on d.retry_of=x.id) select id from downloads where id in (select id from descendants) and status in ('queued','running') limit 1");const candidates=ids.map(id=>findJob.get(id) as any).filter(job=>job&&job.status==='failed'&&!job.recovered_by&&!hasActiveDescendant.get(Number(job.id)));if(!candidates.length)return r.status(409).json({error:'No selected jobs are eligible for deletion. Only unresolved failed jobs without active retries can be deleted.'});const removed=db.transaction(()=>{const del=db.prepare("delete from downloads where id=? and status='failed' and recovered_by is null");return candidates.filter(job=>del.run(Number(job.id)).changes>0).map(job=>Number(job.id))})();appLog('WARN','DOWNLOAD','Deleted '+removed.length+' unresolved failed download job(s): '+removed.map(id=>'#'+id).join(', '));r.json({deleted:removed,skipped:ids.length-removed.length})});
 app.delete('/api/downloads/:id',(q,r)=>{const id=Number(q.params.id),job=db.prepare('select id,status,recovered_by from downloads where id=?').get(id) as any;if(!job)return r.status(404).json({error:'Download job not found'});if(job.status!=='failed'||job.recovered_by)return r.status(409).json({error:'Only unresolved failed jobs can be deleted'});const active=db.prepare("with recursive descendants(id) as (select id from downloads where retry_of=? union all select d.id from downloads d join descendants x on d.retry_of=x.id) select id from downloads where id in (select id from descendants) and status in ('queued','running') limit 1").get(id) as any;if(active)return r.status(409).json({error:'This job has an active retry (#'+active.id+'); stop or finish that retry before deleting this failure.'});db.prepare("delete from downloads where id=? and status='failed' and recovered_by is null").run(id);appLog('WARN','DOWNLOAD','Deleted unresolved failed download job #'+id);r.json({id,deleted:true})});
@@ -117,15 +117,15 @@ app.post('/api/downloads/retry-failed',(q,r)=>{
  const candidates=ids.map(id=>db.prepare('select * from downloads where id=?').get(id) as any).filter(job=>job&&job.status==='failed'&&!job.recovered_by);
  if(!candidates.length)return r.status(409).json({error:'No selected jobs remain eligible for retry'});
  const created=db.transaction(()=>candidates.map(previous=>{
-  const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,'api')").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id)).lastInsertRowid);
-  return{id,retryOf:Number(previous.id),symbol:String(previous.symbol),start:String(previous.start_date),end:String(previous.end_date),downloader:'api'};
+  const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,'python')").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id)).lastInsertRowid);
+  return{id,retryOf:Number(previous.id),symbol:String(previous.symbol),start:String(previous.start_date),end:String(previous.end_date),downloader:'python'};
  }))();
  let waitFor:number|undefined;
  for(const job of created){scheduleDownload(job.id,job.symbol.toLowerCase(),job.start,job.end,waitFor);waitFor=job.id}
  appLog('INFO','DOWNLOAD','Bulk retry queued '+created.length+' failed Direct API job(s): '+created.map(job=>'#'+job.retryOf+' → #'+job.id).join(', '));
  r.status(202).json({jobs:created.map(({id,retryOf,symbol,start,end,downloader})=>({id,retryOf,symbol,start_date:start,end_date:end,status:'queued',downloader})),skipped:ids.length-candidates.length});
 });
-app.post('/api/downloads/:id/stop',(q,r)=>{const id=Number(q.params.id),job=db.prepare('select id,status from downloads where id=?').get(id) as any;if(!job)return r.status(404).json({error:'Download job not found'});if(!['queued','running'].includes(String(job.status)))return r.status(409).json({error:'Only queued or running jobs can be stopped'});cancelledDownloads.add(id);downloadAbortControllers.get(id)?.abort();db.prepare("update downloads set status='cancelled',error='Stopped manually by user.' where id=?").run(id);appLog('WARN','DOWNLOAD','Stop requested for job #'+id+'; the current API request will be discarded when it returns and no further chunks will start');r.status(202).json({id,status:'cancelled',inFlight:downloadTasks.has(id)})});
+app.post('/api/downloads/:id/stop',(q,r)=>{const id=Number(q.params.id),job=db.prepare('select id,status from downloads where id=?').get(id) as any;if(!job)return r.status(404).json({error:'Download job not found'});if(!['queued','running'].includes(String(job.status)))return r.status(409).json({error:'Only queued or running jobs can be stopped'});cancelledDownloads.add(id);downloadAbortControllers.get(id)?.abort();pythonDownloadProcesses.get(id)?.kill('SIGTERM');db.prepare("update downloads set status='cancelled',error='Stopped manually by user.' where id=?").run(id);appLog('WARN','DOWNLOAD','Stop requested for job #'+id+'; the current API request will be discarded when it returns and no further chunks will start');r.status(202).json({id,status:'cancelled',inFlight:downloadTasks.has(id)})});
 app.post('/api/downloads/:id/retry',(q,r)=>{
  const previous=db.prepare('select * from downloads where id=?').get(Number(q.params.id)) as any;
  if(!previous)return r.status(404).json({error:'Download job not found'});
@@ -133,11 +133,11 @@ app.post('/api/downloads/:id/retry',(q,r)=>{
  const canRetry=['failed','queued','running'].includes(String(previous.status));
  if(!canRetry)return r.status(409).json({error:'Only failed, queued, or running jobs can be retried/restarted'});
  const restarting=['queued','running'].includes(String(previous.status));
- const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,'api')").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id)).lastInsertRowid);
- if(restarting){cancelledDownloads.add(Number(previous.id));downloadAbortControllers.get(Number(previous.id))?.abort();db.prepare("update downloads set status='restarted',error=? where id=?").run('Restart requested; the current API request will be discarded when it returns. Replacement job #'+id+' will then start this date range from the beginning.',Number(previous.id))}
- appLog(restarting?'WARN':'INFO','DOWNLOAD',(restarting?'Restart':'Retry')+' requested for Direct API job #'+previous.id+'; created job #'+id+' for '+previous.symbol+' '+previous.start_date+' to '+previous.end_date+(restarting?'; replacement waits for the old worker to stop':''));
+ const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,'python')").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id)).lastInsertRowid);
+ if(restarting){cancelledDownloads.add(Number(previous.id));downloadAbortControllers.get(Number(previous.id))?.abort();pythonDownloadProcesses.get(Number(previous.id))?.kill('SIGTERM');db.prepare("update downloads set status='restarted',error=? where id=?").run('Restart requested; the current API request will be discarded when it returns. Replacement job #'+id+' will then start this date range from the beginning.',Number(previous.id))}
+ appLog(restarting?'WARN':'INFO','DOWNLOAD',(restarting?'Restart':'Retry')+' requested for Python downloader job #'+previous.id+'; created job #'+id+' for '+previous.symbol+' '+previous.start_date+' to '+previous.end_date+(restarting?'; replacement waits for the old worker to stop':''));
  scheduleDownload(id,String(previous.symbol).toLowerCase(),String(previous.start_date),String(previous.end_date),restarting?Number(previous.id):undefined);
- r.status(202).json({id,status:'queued',retryOf:Number(previous.id),restarted:restarting,waitingFor:restarting?Number(previous.id):undefined,downloader:'api'});
+ r.status(202).json({id,status:'queued',retryOf:Number(previous.id),restarted:restarting,waitingFor:restarting?Number(previous.id):undefined,downloader:'python'});
 });
 
 function expectedUtcMinuteTimestamps(date:string,symbol:string):number[]{
@@ -170,94 +170,104 @@ const MAX_API_DAY_ATTEMPTS=3,API_RETRY_DELAY_MS=1000,PROVIDER_REQUEST_TIMEOUT_MS
 // Default: fetch the daily .bi5 files directly. Set DUKASCOPY_JSON_API=1 to restore the JSON-API-first behaviour.
 const DIRECT_BI5=process.env.DUKASCOPY_JSON_API!=='1',BI5_BASE_URL=process.env.DUKASCOPY_BI5_BASE_URL||undefined,DIRECT_BI5_PAUSE_MS=1000;
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
+function resolvePythonDownloaderPath():string|null{
+ const moduleDirectory=path.dirname(fileURLToPath(import.meta.url));
+ const candidates=[path.resolve(process.cwd(),'dukascopy_m1.py'),path.resolve(moduleDirectory,'../../dukascopy_m1.py'),path.resolve(moduleDirectory,'../../../dukascopy_m1.py')];
+ return candidates.find(candidate=>fs.existsSync(candidate))||null;
+}
 async function download(id:number,symbol:string,start:string,end:string){
- let activeChunk:{start:string;end:string}|null=null;
- const abortController=new AbortController();downloadAbortControllers.set(id,abortController);
- try{
-  db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
-  const requestedChunks=splitDateRange(start,end,1),todayUtc=new Date().toISOString().slice(0,10),chunks=requestedChunks.filter(chunk=>chunk.start<=todayUtc),futureDatesIgnored=requestedChunks.length-chunks.length;
-  if(!chunks.length){db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);appLog('INFO','DOWNLOAD','Job #'+id+': no past/current dates to fetch; '+futureDatesIgnored+' future date(s) ignored.');return}
-  const symbolUpper=symbol.toUpperCase();
-  const storedForDate=db.prepare("select time from candles where symbol=? and price_type='bid' and time>=? and time<? order by time");
-  const isDateCovered=(date:string)=>{
-   const weekday=new Date(date+'T00:00:00Z').getUTCDay();if(weekday===6)return true;
-   if(coverageMarketClosure(date)==='closed')return true;
-   const expected=expectedUtcMinuteTimestamps(date,symbolUpper);if(!expected.length)return true;
-   const from=Math.floor(Date.parse(date+'T00:00:00Z')/1000),until=from+86400;
-   const rows=storedForDate.all(symbolUpper,from,until) as {time:number}[];
-   const stored=new Set<number>(rows.map(row=>Math.floor(Number(row.time)/60)*60));
-   let present=0;for(const timestamp of expected)if(stored.has(timestamp))present++;
-   if(coverageMarketClosure(date)==='reduced-hours')return present>=Math.ceil(expected.length*0.4);
-   return present===expected.length;
+ db.prepare("update downloads set status='running',progress=0,error=null where id=?").run(id);
+ const scriptPath=resolvePythonDownloaderPath();
+ if(!scriptPath){
+  const message='The checked-in dukascopy_m1.py script was not found. Rebuild/deploy the app with the repository root script included.';
+  db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);
+  appLog('ERROR','PYTHON-DOWNLOADER','Job #'+id+': '+message);
+  return;
+ }
+ if(cancelledDownloads.has(id)){
+  cancelledDownloads.delete(id);
+  db.prepare("update downloads set status='cancelled',error='Stopped before the Python worker started.' where id=?").run(id);
+  return;
+ }
+ const appUrl='http://127.0.0.1:'+port;
+ appLog('INFO','PYTHON-DOWNLOADER','Job #'+id+': starting the checked-in Python downloader for '+symbol.toUpperCase()+' '+start+' to '+end);
+ await new Promise<void>(resolve=>{
+  let stdoutBuffer='',stderrBuffer='',stderrTail='',spawnError:Error|null=null,closed=false,coveredDays=0;
+  const completedDates=new Set<string>();
+  const totalDays=Math.max(1,Math.floor((Date.parse(end+'T00:00:00Z')-Date.parse(start+'T00:00:00Z'))/86400000)+1);
+  const updateProgress=(value:number)=>{
+   const progress=Math.max(0,Math.min(99,Math.floor(value)));
+   db.prepare("update downloads set progress=MAX(progress,?) where id=? and status='running'").run(progress,id);
   };
-  const coverage=chunks.map(chunk=>({...chunk,covered:isDateCovered(chunk.start)}));
-  appLog('INFO','DATABASE','Job #'+id+': checked SQLite for '+start+' to '+end+'; '+coverage.filter(x=>x.covered).length+'/'+coverage.length+' dates already covered, '+coverage.filter(x=>!x.covered).length+' need fetching'+(futureDatesIgnored?'; '+futureDatesIgnored+' future date(s) ignored':''));
-  if(coverage.every(x=>x.covered)){db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);appLog('INFO','DOWNLOAD','Job #'+id+': all eligible dates already covered in SQLite; no API request made.');return}
-  let fn:any=null;
-  if(!DIRECT_BI5){const mod:any=await import('dukascopy-node');fn=mod.getHistoricalRates||mod.default;if(typeof fn!=='function')throw Error('dukascopy-node getHistoricalRates API unavailable')}
-  let useLegacyDatafeed=DIRECT_BI5||jsonApiCooldownRemainingMs()>0,legacyFn:any=null;const providerGuard={timeoutMs:PROVIDER_REQUEST_TIMEOUT_MS,signal:abortController.signal};
-  if(DIRECT_BI5)appLog('INFO','FETCH','Job #'+id+': using direct daily .bi5 requests; set DUKASCOPY_JSON_API=1 to re-enable the JSON API.');else if(useLegacyDatafeed)appLog('WARN','FETCH','Job #'+id+': not calling the JSON API for another '+Math.ceil(jsonApiCooldownRemainingMs()/60000)+' minute(s) after a recent HTTP 202 challenge; using the legacy datafeed .bi5 endpoint.');
-  const fetchLegacyDay=async(date:string)=>{
-   if(DIRECT_BI5)return await fetchBi5Day({symbol:symbolUpper,date,baseUrl:BI5_BASE_URL,timeoutMs:PROVIDER_REQUEST_TIMEOUT_MS,signal:abortController.signal});
-   if(!legacyFn){
-    const legacyMod:any=await import('dukascopy-node-legacy');
-    legacyFn=legacyMod.getHistoricalRates||legacyMod.default;
+  const handleLine=(stream:'stdout'|'stderr',rawLine:string)=>{
+   const line=sanitizeLogMessage(rawLine,1600).trim();
+   if(!line)return;
+   if(stream==='stderr'){
+    stderrTail=(stderrTail+line+'\n').slice(-6000);
+    appLog('WARN','PYTHON-DOWNLOADER','Job #'+id+': '+line);
+    return;
    }
-   if(typeof legacyFn!=='function')throw Error('Legacy dukascopy-node 1.46.4 getHistoricalRates API unavailable');
-   const config=buildDukascopyLegacyM1Config(symbol,date,path.join(root,'dukascopy-legacy-cache'));
-   return await withDukascopyResponseDiagnostics(()=>legacyFn(config),providerGuard);
+   appLog('INFO','PYTHON-DOWNLOADER','Job #'+id+': '+line);
+   const skipped=line.match(/Skipping\s+(\d+)\s+complete\/closed day\(s\)/i);
+   if(skipped)coveredDays=Math.max(coveredDays,Number(skipped[1])||0);
+   if(/Nothing to download; every requested date/i.test(line))updateProgress(99);
+   const dateRow=line.match(/^[A-Z0-9]+\s+(\d{4}-\d{2}-\d{2})\s+\.\.\.\s*(.*)$/);
+   if(dateRow&&/(validated candles|no data \(weekend\/holiday\)|FAILED \(will retry on a later pass\))/i.test(dateRow[2])){
+    completedDates.add(dateRow[1]);
+    updateProgress((coveredDays+completedDates.size)/totalDays*100);
+   }
   };
-  const put=db.prepare('insert into candles(symbol,time,open,high,low,close,volume) values(?,?,?,?,?,?,?) on conflict(symbol,time,price_type) do update set open=excluded.open,high=excluded.high,low=excluded.low,close=excluded.close,volume=excluded.volume');
-  const insertBatch=db.transaction((arr:any[])=>{let inserted=0;for(const x of arr){const time=candleTimestampSeconds(x.timestamp??x.time),candle={time,open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume||0)};if(valid(candle))inserted+=put.run(symbolUpper,candle.time,candle.open,candle.high,candle.low,candle.close,candle.volume).changes}return inserted});
-  let inputRows=0,writtenRows=0,processed=0,skippedClosed=0,consecutiveFailures=0;const failedDates:{date:string;error:string}[]=[];
-  for(let index=0;index<coverage.length;index++){
-   const day=coverage[index];activeChunk=day;
-   if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped before date '+day.start);return}
-   if(day.covered){processed++;db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.floor(processed/coverage.length*100)),id);appLog('INFO','DATABASE','Job #'+id+': skipped already-covered date '+day.start);continue}
-   const dayStart=Date.parse(day.start+'T00:00:00Z'),dayEnd=dayStart+86400000;
-   if(!utcDayHasOpenMarket(dayStart,dayEnd)){skippedClosed++;processed++;db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.floor(processed/coverage.length*100)),id);appLog('INFO','FETCH','Job #'+id+': skipped '+day.start+' because the market is closed for this UTC date');continue}
-   let saved=false,lastError='No candles returned for an open-market period';
-   for(let attempt=1;attempt<=MAX_API_DAY_ATTEMPTS;attempt++){
-    try{
-     appLog('INFO','FETCH','Job #'+id+': requesting '+(DIRECT_BI5?'direct .bi5':useLegacyDatafeed?'legacy datafeed .bi5':'JSON API')+' date '+day.start+' ('+(index+1)+'/'+coverage.length+'), attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS);
-     let result:any;
-     if(useLegacyDatafeed){
-      result=await fetchLegacyDay(day.start);
-     }else{
-      try{
-       result=await withDukascopyResponseDiagnostics(()=>fn(buildDukascopyM1Config(symbol,day.start,path.join(root,'dukascopy-cache'))),providerGuard);
-      }catch(primaryError){
-       if(!(primaryError instanceof DukascopyUpstreamResponseError)||primaryError.diagnostic.status!==202)throw primaryError;
-       useLegacyDatafeed=true;noteJsonApiBlocked();
-       appLog('WARN','FETCH','Job #'+id+': JSON API returned HTTP 202'+(primaryError.isChallenge?' AWS WAF challenge':'')+' for '+day.start+'; testing legacy datafeed .bi5 endpoint for this and subsequent dates.');
-       result=await fetchLegacyDay(day.start);
-       appLog('INFO','FETCH','Job #'+id+': legacy datafeed .bi5 request succeeded for '+day.start+'; continuing this job using the legacy endpoint.');
-      }
-     }
-     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for '+day.start+' after cancellation');return}
-     const rows:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
-     const relevant=rows.filter((x:any)=>{const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms)});
-     appLog('INFO','FETCH','Job #'+id+': '+(DIRECT_BI5?'direct .bi5':useLegacyDatafeed?'legacy .bi5':'JSON API')+' returned '+rows.length+' row(s), '+relevant.length+' within the requested market session for '+day.start);
-     if(!relevant.length)throw Error('No candles returned for an open-market period');
-     const inserted=insertBatch(relevant);inputRows+=relevant.length;writtenRows+=inserted;
-     if(day.start<todayUtc&&!isDateCovered(day.start))throw Error('API returned '+relevant.length+' candles but expected session coverage remains incomplete after import');
-     saved=true;appLog('INFO','DATABASE','Job #'+id+': stored '+relevant.length+' candles for '+day.start+'; '+inserted+' candle(s) inserted or updated');break;
-    }catch(error){
-     if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for '+day.start);return}
-     if(error instanceof DukascopyUpstreamResponseError){lastError=describeDownloadError(error);if(error.isRateLimited&&error.diagnostic.retryAfter)lastError+=' | provider requested Retry-After '+error.diagnostic.retryAfter;appLog('ERROR','FETCH','Job #'+id+': '+lastError+'; stopping the entire job instead of retrying remaining dates. No additional provider requests will be sent for this job.');throw error}
-     lastError=describeDownloadError(error);appLog(attempt<MAX_API_DAY_ATTEMPTS?'WARN':'ERROR','FETCH','Job #'+id+': provider attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS+' failed for '+day.start+': '+lastError+(attempt<MAX_API_DAY_ATTEMPTS?'; retrying':''));
-     if(attempt<MAX_API_DAY_ATTEMPTS)await sleep(API_RETRY_DELAY_MS*attempt);
-    }
-   }
-   if(saved)consecutiveFailures=0;else{failedDates.push({date:day.start,error:lastError});consecutiveFailures++;if(consecutiveFailures>=MAX_CONSECUTIVE_DATE_FAILURES){const recent=failedDates.slice(-MAX_CONSECUTIVE_DATE_FAILURES).map(x=>x.date+': '+x.error).join(' | ');throw Error('Paused after '+consecutiveFailures+' consecutive failed dates to avoid hammering the provider. '+recent+'. Stored dates are kept; retry the job to resume, or import a CSV export (POST /api/import/candles).')}}
-   processed++;db.prepare('update downloads set progress=? where id=?').run(Math.min(99,Math.floor(processed/coverage.length*100)),id);
-   if(index<coverage.length-1&&!cancelledDownloads.has(id))await sleep(DIRECT_BI5?DIRECT_BI5_PAUSE_MS:350);
+  const drain=(stream:'stdout'|'stderr',chunk:unknown)=>{
+   const text=String(chunk);
+   if(stream==='stderr')stderrTail=(stderrTail+text).slice(-6000);
+   let buffer=stream==='stdout'?stdoutBuffer:stderrBuffer;
+   buffer+=text;
+   const lines=buffer.split(/\r?\n/);
+   buffer=lines.pop()||'';
+   for(const line of lines)handleLine(stream,line);
+   if(stream==='stdout')stdoutBuffer=buffer;else stderrBuffer=buffer;
+  };
+  let child;
+  try{
+   child=spawn(process.env.PYTHON_EXECUTABLE||'python3',['-u',scriptPath,symbol.toUpperCase(),start,end,'--app',appUrl,'--job-id',String(id)],{
+    cwd:path.dirname(scriptPath),
+    env:{...process.env,PYTHONUNBUFFERED:'1'},
+    stdio:['ignore','pipe','pipe']
+   });
+  }catch(error){
+   spawnError=error instanceof Error?error:new Error(String(error));
+   handleLine('stderr','Could not launch Python downloader: '+spawnError.message);
+   db.prepare("update downloads set status='failed',error=? where id=?").run(spawnError.message,id);
+   resolve();
+   return;
   }
-  if(failedDates.length){const dates=failedDates.map(x=>x.date),samples=failedDates.slice(0,3).map(x=>x.date+': '+x.error).join(' | '),summary=('Download finished with '+failedDates.length+' unresolved date(s): '+dates.slice(0,30).join(', ')+(dates.length>30?', and '+(dates.length-30)+' more':'')+'. Sample errors: '+samples+'. Retry this job; dates already covered in SQLite will be skipped.').slice(0,1000);db.prepare("update downloads set status='failed',progress=99,error=? where id=?").run(summary,id);appLog('WARN','DOWNLOAD','Job #'+id+': '+failedDates.length+' date(s) remain unresolved after '+MAX_API_DAY_ATTEMPTS+' attempts per date; successful dates remain saved');return}
-  const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on a.id=d.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
-  appLog('INFO','DOWNLOAD','Job #'+id+': completed using '+(useLegacyDatafeed?'legacy datafeed .bi5':'Dukascopy JSON API')+'. '+inputRows+' rows processed and '+writtenRows+' candle(s) inserted or updated.'+(futureDatesIgnored?' Ignored '+futureDatesIgnored+' future date(s).':'')+(skippedClosed?' Skipped '+skippedClosed+' market-closed date(s).':'')+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).':''));
- }catch(e){if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': ended after cancellation');return}const detail=describeDownloadError(e),range=activeChunk?' [failed date '+activeChunk.start+']':'',message=(detail+range).slice(0,1000);db.prepare("update downloads set status='failed',error=? where id=?").run(message,id);appLog('ERROR','DOWNLOAD','Job #'+id+' failed: '+message)}
- finally{if(downloadAbortControllers.get(id)===abortController)downloadAbortControllers.delete(id)}
+  pythonDownloadProcesses.set(id,child);
+  child.stdout?.on('data',(chunk)=>drain('stdout',chunk));
+  child.stderr?.on('data',(chunk)=>drain('stderr',chunk));
+  child.on('error',(error)=>{spawnError=error;handleLine('stderr','Could not launch Python downloader: '+error.message)});
+  child.on('close',(code,signal)=>{
+   if(closed)return;closed=true;
+   if(stdoutBuffer)handleLine('stdout',stdoutBuffer);
+   if(stderrBuffer)handleLine('stderr',stderrBuffer);
+   pythonDownloadProcesses.delete(id);
+   const current=db.prepare('select status from downloads where id=?').get(id) as {status:string}|undefined;
+   if(cancelledDownloads.has(id)||current?.status==='cancelled'||current?.status==='restarted'){
+    cancelledDownloads.delete(id);
+    appLog('INFO','PYTHON-DOWNLOADER','Job #'+id+': Python worker stopped'+(signal?' by '+signal:'')+'; preserving status '+String(current?.status||'cancelled'));
+    resolve();
+    return;
+   }
+   if(code===0){
+    db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
+    appLog('INFO','PYTHON-DOWNLOADER','Job #'+id+': Python downloader completed successfully.');
+   }else{
+    const detail=(stderrTail.trim()||(spawnError?spawnError.message:'Python downloader exited with '+String(code)+(signal?' ('+signal+')':''))).slice(-1200);
+    db.prepare("update downloads set status='failed',error=? where id=?").run(detail,id);
+    appLog('ERROR','PYTHON-DOWNLOADER','Job #'+id+' failed: '+detail);
+   }
+   resolve();
+  });
+ });
 }
 const csvUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:64*1024*1024,files:1}});
 app.post('/api/import/candles',(q,r)=>{csvUpload.single('file')(q,r,(uploadError:any)=>{
@@ -265,6 +275,15 @@ app.post('/api/import/candles',(q,r)=>{csvUpload.single('file')(q,r,(uploadError
  try{
   const symbol=String(q.query.symbol||'').toUpperCase();
   if(!db.prepare('select symbol from instruments where symbol=?').get(symbol))return r.status(400).json({error:'Unknown instrument symbol'});
+  let parentDownload:any=null;
+  if(q.query.downloadId!==undefined){
+   const parentId=Number(q.query.downloadId);
+   if(!Number.isSafeInteger(parentId)||parentId<=0)return r.status(400).json({error:'Invalid downloadId'});
+   parentDownload=db.prepare('select id,symbol,status,start_date,end_date from downloads where id=?').get(parentId) as any;
+   if(!parentDownload)return r.status(404).json({error:'Parent download job not found'});
+   if(String(parentDownload.symbol).toUpperCase()!==symbol)return r.status(400).json({error:'Parent download job instrument does not match the CSV'});
+   if(parentDownload.status!=='running')return r.status(409).json({error:'Parent download job is not running'});
+  }
   if(String(q.query.priceType||'').toLowerCase()!=='bid')return r.status(400).json({error:'This app stores BID candles only. Export Bid prices and pass priceType=bid.'});
   if(!q.file)return r.status(400).json({error:'Attach the CSV as multipart field "file"'});
   const offset=Number(q.query.utcOffsetMinutes??0);
@@ -283,7 +302,12 @@ app.post('/api/import/candles',(q,r)=>{csvUpload.single('file')(q,r,(uploadError
   const {inserted,updated}=writeCounts;
   const duplicatesIgnored=parsed.candles.length-inserted-updated;
   const day=(t:number)=>new Date(t*1000).toISOString().slice(0,10);
-  if(inserted+updated>0)db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'completed',100,'csv')").run(symbol,day(parsed.firstTime!),day(parsed.lastTime!));
+  if(inserted+updated>0&&!parentDownload)db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,downloader) values(?,?,?,'completed',100,'csv')").run(symbol,day(parsed.firstTime!),day(parsed.lastTime!));
+  if(parentDownload&&inserted+updated>0){
+   const totalDays=Math.max(1,Math.floor((Date.parse(String(parentDownload.end_date)+'T00:00:00Z')-Date.parse(String(parentDownload.start_date)+'T00:00:00Z'))/86400000)+1);
+   const importedThrough=Math.max(1,Math.floor((Date.parse(day(parsed.lastTime!)+'T00:00:00Z')-Date.parse(String(parentDownload.start_date)+'T00:00:00Z'))/86400000)+1);
+   db.prepare("update downloads set progress=MAX(progress,?) where id=? and status='running'").run(Math.min(99,Math.floor(importedThrough/totalDays*100)),Number(parentDownload.id));
+  }
   appLog('INFO','IMPORT','Imported '+symbol+' CSV: '+parsed.candles.length+' valid candle(s), '+inserted+' new, '+updated+' replaced, '+duplicatesIgnored+' already present, '+parsed.rejected+' rejected row(s)');
   r.status(201).json({symbol,totalRows:parsed.totalRows,accepted:parsed.candles.length,rejected:parsed.rejected,rejectSamples:parsed.rejectSamples,inserted,updated,duplicatesIgnored,firstTime:parsed.firstTime,lastTime:parsed.lastTime})
  }catch(e){r.status(400).json({error:String((e as Error).message||e)})}
