@@ -22,9 +22,11 @@ app.get('/api/health',(_q,r)=>{try{db.prepare('select 1').get();r.json({ok:true,
 app.post('/api/instruments',(q,r)=>{
  const rawSymbol=String(q.body?.symbol||'').trim().toUpperCase();
  const symbol=rawSymbol.replace(/\s+/g,'');
- const pipSize=Number(q.body?.pipSize);
- if(!/^[A-Z0-9]{3,20}$/.test(symbol))return r.status(400).json({error:'Enter a valid instrument code using 3–20 letters or numbers (for example GBPCHF or XAGUSD).'});
- if(!Number.isFinite(pipSize)||pipSize<=0||pipSize>1000000)return r.status(400).json({error:'Pip size must be a number greater than zero.'});
+ const suppliedPipSize=q.body?.pipSize;
+ const inferredPipSize=symbol.endsWith('JPY')||symbol==='XAUUSD'||symbol==='XAGUSD'?0.01:0.0001;
+ const pipSize=suppliedPipSize===undefined?inferredPipSize:Number(suppliedPipSize);
+ if(!/^[A-Z0-9]{6,20}$/.test(symbol))return r.status(400).json({error:'Enter a valid instrument code using 6–20 letters or numbers (for example GBPCHF or XAGUSD).'});
+ if(!Number.isFinite(pipSize)||pipSize<=0||pipSize>1000000)return r.status(400).json({error:'Invalid instrument pip size.'});
  if(db.prepare('select 1 from instruments where symbol=?').get(symbol))return r.status(409).json({error:symbol+' is already in the instrument list.'});
  const providerSymbol=symbol.toLowerCase();
  db.prepare('insert into instruments(symbol,provider_symbol,pip_size) values(?,?,?)').run(symbol,providerSymbol,pipSize);
