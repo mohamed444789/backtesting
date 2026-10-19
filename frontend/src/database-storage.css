@@ -647,3 +647,17 @@
 .historical-download-action {
   align-self: end;
 }
+
+
+/* Final baseline adjustment: the first select and the action button sit slightly
+   above the date-picker controls in the five-column desktop row. */
+@media (min-width: 1201px) {
+  .historical-download-fields > label:first-child {
+    position: relative;
+    top: 15px;
+  }
+  .historical-download-fields > .historical-download-action {
+    position: relative;
+    top: 10px;
+  }
+}
