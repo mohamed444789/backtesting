@@ -630,3 +630,25 @@
 .theme-light .ds-instrument-delete-success{color:#047857}
 @media(max-width:1000px){.ds-instrument-delete{grid-template-columns:minmax(0,1fr)}.ds-instrument-delete-confirm{grid-template-columns:minmax(0,1fr) minmax(180px,.75fr)}.ds-instrument-delete-confirm-actions{grid-column:1/-1}}
 @media(max-width:650px){.ds-instrument-delete-controls{align-items:stretch;flex-direction:column}.ds-instrument-delete-controls>label,.ds-instrument-delete-controls select{width:100%}.ds-instrument-delete-controls .ds-danger-button{width:100%}.ds-instrument-delete-confirm{grid-template-columns:minmax(0,1fr)}.ds-instrument-delete-confirm-actions{grid-column:1}.ds-instrument-delete-confirm-actions>button{flex:1}}
+
+
+/* Align every Historical Data download control on the same baseline.
+   Generic .form label margins were lifting select fields relative to the custom date pickers. */
+.historical-download-fields > label {
+  margin: 0;
+}
+.historical-download-fields > .atlas-date-field {
+  align-self: end;
+  margin: 0;
+}
+.historical-download-fields > .historical-downloader-select {
+  margin: 0;
+}
+.historical-download-action {
+  align-self: end;
+}
+@media (max-width: 1000px) {
+  .historical-download-fields > label:first-child {
+    grid-column: auto;
+  }
+}
