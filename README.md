@@ -49,6 +49,20 @@ Historical candles are Dukascopy bid OHLC data, not tick-level bid/ask
 data. Intrabar stop/target collisions use conservative stop-first
 handling. This is a local practice simulator, not a live broker connection.
 
+## Built-in downloader (Historical Data → Download)
+
+By default the UI downloader fetches Dukascopy's daily .bi5 M1 files directly, one UTC day at a time, the same
+way dukascopy_m1.py does. Each day is decoded and stored through the normal validation and coverage checks, and
+the queue, progress bar and Stop button work as before.
+
+- It waits 1 second between days and retries temporary errors (HTTP 5xx, timeouts, network errors) up to 3 times per day.
+- HTTP 429, 202 and other 4xx responses stop the whole job immediately; nothing is retried or worked around.
+- Network failures are logged with their real cause (for example ECONNREFUSED or ETIMEDOUT) instead of a bare "fetch failed".
+- A response that is not a valid LZMA .bi5 file (for example an HTML error page) is rejected before decoding.
+
+Optional environment variables: DUKASCOPY_JSON_API=1 tries the JSON API first (the previous behaviour),
+and DUKASCOPY_BI5_BASE_URL points at a different feed root (testing or a mirror).
+
 ## When the Dukascopy download is blocked
 
 Dukascopy's JSON API (`jetta.dukascopy.com`) can answer plain HTTP clients with **HTTP 202** and an AWS WAF
