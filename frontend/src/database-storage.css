@@ -722,3 +722,18 @@
   margin: 0;
   align-self: stretch;
 }
+
+
+/* Center each field label over the middle of its own control. */
+.historical-download-form .historical-download-fields > label {
+  text-align: center;
+}
+.historical-download-form .historical-download-fields > .atlas-date-field > .atlas-date-label {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.historical-download-form .historical-download-fields > .historical-downloader-select > span {
+  width: 100%;
+  text-align: center;
+}
