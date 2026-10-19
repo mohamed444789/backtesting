@@ -77,9 +77,11 @@ so do not mix sources with different volume units for the same symbol.
 
 ## Simple day-by-day Python downloader
 
-The **Simple Python Downloader** menu links to `frontend/public/dukascopy_m1.py`. It downloads one legacy Dukascopy BID M1 file at a time and imports it through `/api/import/candles`. It checks the app's modeled minute coverage and re-fetches incomplete dates; existing candle timestamps on fetched dates are corrected with Dukascopy values. The server rejects the whole replacement import if any row fails validation. Standard CSV imports continue to preserve existing candles by default.
+The same downloader is checked into the repository root as `dukascopy_m1.py`, so after pulling the branch you can run it directly from `~/backtesting` without downloading it from the UI. The **Simple Python Downloader** menu still offers a browser download at `/dukascopy_m1.py` (the copy in `frontend/public`).
 
-Install its one dependency, then run the script from the folder where you downloaded it:
+The script downloads one legacy Dukascopy BID M1 file at a time and imports it through `/api/import/candles`. It checks the app's modeled minute coverage and re-fetches incomplete dates; existing candle timestamps on fetched dates are corrected with Dukascopy values. The server rejects the whole replacement import if any row fails validation. Standard CSV imports continue to preserve existing candles by default.
+
+From the repository root, install its one dependency and run the checked-in script:
 
 ```sh
 python3 -m pip install requests
