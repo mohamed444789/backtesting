@@ -694,3 +694,31 @@
   align-self: end;
   margin: 0;
 }
+
+
+/* Final optical alignment for the Historical Data download row:
+   equalize label heights and center the action button against the input boxes. */
+.historical-download-form .historical-download-fields {
+  align-items: end;
+}
+.historical-download-form .historical-download-fields > label,
+.historical-download-form .historical-download-fields > .atlas-date-field,
+.historical-download-form .historical-download-fields > .historical-downloader-select {
+  align-self: end;
+}
+.historical-download-form .historical-download-fields > .historical-download-action {
+  align-self: end;
+  padding-top: 26.6px;
+  box-sizing: border-box;
+}
+.historical-download-form .historical-download-fields > .historical-download-action .historical-download-spacer {
+  min-height: 19.6px;
+  height: 19.6px;
+  line-height: 19.6px;
+}
+.historical-download-form .historical-download-fields > .historical-download-action .wide {
+  height: 42px;
+  min-height: 42px;
+  margin: 0;
+  align-self: stretch;
+}
