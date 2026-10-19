@@ -647,8 +647,3 @@
 .historical-download-action {
   align-self: end;
 }
-@media (max-width: 1000px) {
-  .historical-download-fields > label:first-child {
-    grid-column: auto;
-  }
-}
