@@ -245,8 +245,8 @@ async function download(id:number,symbol:string,start:string,end:string){
     return;
    }
    if(code===0){
-    db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);
-    appLog('INFO','PYTHON-DOWNLOADER','Job #'+id+': Python downloader completed successfully.');
+    const recoveredCount=db.transaction(()=>{db.prepare("update downloads set status='completed',progress=100,error=null where id=?").run(id);return db.prepare("with recursive ancestry(id,retry_of) as (select id,retry_of from downloads where id=? union all select d.id,d.retry_of from downloads d join ancestry a on a.id=d.retry_of where a.retry_of is not null) update downloads set recovered_by=? where id in (select id from ancestry where id<>?) and status='failed' and recovered_by is null").run(id,id,id).changes})();
+    appLog('INFO','PYTHON-DOWNLOADER','Job #'+id+': Python downloader completed successfully.'+(recoveredCount?' Recovered '+recoveredCount+' earlier failed job(s).|':'').replace('|',''));
    }else{
     const detail=(stderrTail.trim()||(spawnError?spawnError.message:'Python downloader exited with '+String(code)+(signal?' ('+signal+')':''))).slice(-1200);
     db.prepare("update downloads set status='failed',error=? where id=?").run(detail,id);
