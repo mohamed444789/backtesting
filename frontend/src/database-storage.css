@@ -746,3 +746,63 @@
   padding-left: 28px;
   padding-right: 28px;
 }
+
+
+/* Add custom Dukascopy instruments directly from the Historical Data panel. */
+.historical-add-instrument {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--ds-line, #26384d);
+  border-radius: 8px;
+  background: var(--ds-panel-raised, #111e2d);
+}
+.historical-add-instrument-fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, .55fr) auto;
+  align-items: end;
+  gap: 10px 12px;
+}
+.historical-add-instrument-fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  color: #a9b7c8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.historical-add-instrument-fields input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  margin: 0;
+  padding: 9px 11px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+.historical-add-instrument-fields button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  margin: 0;
+  white-space: nowrap;
+}
+.historical-add-instrument > p {
+  margin: 8px 0 0;
+  color: #91a5bd;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.theme-light .historical-add-instrument {
+  background: #f4f8fc;
+  border-color: #d4dfeb;
+}
+.theme-light .historical-add-instrument-fields > label { color: #536b83; }
+.theme-light .historical-add-instrument > p { color: #647b93; }
+@media (max-width: 700px) {
+  .historical-add-instrument-fields { grid-template-columns: minmax(0, 1fr); }
+  .historical-add-instrument-fields button { width: 100%; }
+}
