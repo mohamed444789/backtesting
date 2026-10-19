@@ -245,3 +245,758 @@ td{font-size:12px}
   width: 100%;
 }
 
+
+/* TradingView-style left drawing rail and per-drawing settings */
+.chart-workspace{display:flex;align-items:stretch;gap:8px;min-width:0;margin-top:10px}
+.drawing-rail{display:flex;flex:0 0 38px;flex-direction:column;align-items:stretch;gap:5px;padding:5px 3px;background:#0d151f;border:1px solid #273647;border-radius:6px;height:max-content;position:relative;z-index:3}
+.drawing-rail button{display:grid;place-items:center;width:30px;height:32px;padding:0;border:1px solid transparent;border-radius:4px;background:transparent;color:#9aabc0}
+.drawing-rail button:hover{background:#1b2b3b;border-color:#3b536b;color:#e4edf8}
+.drawing-rail button.selected-tool{background:#183c35;border-color:#32c99a;color:#69e4ba}
+.chart-workspace>.chart{flex:1;min-width:0;margin:0;height:400px}
+.drawing-settings-modal{max-height:min(82vh,720px);overflow:auto}
+.drawing-settings-modal .settings-help{font-size:11px;line-height:1.5;color:#94a6ba}
+.fib-level-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;margin:14px 0 20px}
+.fib-level-row{display:flex!important;align-items:center;gap:9px;padding:7px 8px;margin:0!important;border:1px solid #273647;border-radius:5px;background:#0c141d;color:#cbd7e5!important;font-size:11px!important}
+.fib-level-row input[type=checkbox]{display:block;width:14px;min-height:14px;height:14px;margin:0;accent-color:#32c99a}
+.fib-color{width:9px;height:9px;border-radius:50%;flex:none}
+@media(max-width:600px){.chart-workspace{gap:5px}.drawing-rail{flex-basis:34px;padding:4px 2px}.drawing-rail button{width:28px;height:30px}.chart-workspace>.chart{height:300px}.fib-level-list{grid-template-columns:1fr}}
+
+
+/* Layout correction: let the chart workspace consume the panel's available height.
+   The previous fullscreen rules flexed the chart element but not its parent. */
+.terminal > .chart-panel {
+  min-height: calc(100vh - 150px);
+  display: flex;
+  flex-direction: column;
+}
+.terminal > .chart-panel > .chart-workspace {
+  flex: 1 1 auto;
+  min-height: 360px;
+  height: auto;
+}
+.terminal > .chart-panel > .chart-workspace > .chart {
+  flex: 1 1 auto;
+  width: 0;
+  height: auto;
+  min-height: 360px;
+}
+.terminal > .chart-panel > .mini {
+  flex: 0 0 auto;
+}
+.fullscreen-terminal > .chart-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+.fullscreen-terminal > .chart-panel > .chart-workspace {
+  flex: 1 1 0;
+  min-height: 0;
+}
+.fullscreen-terminal > .chart-panel > .chart-workspace > .chart {
+  flex: 1 1 0;
+  width: 0;
+  height: 100%;
+  min-height: 0;
+}
+@media (max-width: 1050px) {
+  .terminal:not(.fullscreen-terminal) > .chart-panel {
+    min-height: calc(100vh - 125px);
+  }
+}
+@media (max-width: 700px) {
+  .terminal:not(.fullscreen-terminal) > .chart-panel {
+    min-height: 0;
+  }
+  .terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace {
+    min-height: 320px;
+  }
+  .terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace > .chart {
+    min-height: 320px;
+  }
+}
+
+/* Drawing settings behave like a floating TradingView properties panel. */
+.drawing-settings-overlay{background:transparent!important;pointer-events:none!important;place-items:start center!important;padding:0!important}
+.drawing-settings-modal{pointer-events:auto!important;position:fixed;top:12vh;left:50%;transform:translateX(-50%);margin:0;box-shadow:0 12px 40px #0003}
+.drawing-settings-header{cursor:move;user-select:none}
+
+
+/* Light TradingView-inspired floating drawing properties panel */
+.drawing-settings-overlay{
+  background:transparent!important;
+  pointer-events:none!important;
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  padding:0!important;
+  z-index:1100!important;
+}
+.drawing-settings-modal{
+  pointer-events:auto!important;
+  position:fixed!important;
+  top:12vh;
+  left:50%;
+  transform:translateX(-50%);
+  margin:0!important;
+  width:min(390px,calc(100vw - 24px))!important;
+  max-height: min(86vh, 760px)!important;
+  overflow:auto!important;
+  padding:20px!important;
+  background:#fffde7!important;
+  color:#202124!important;
+  border:1px solid #e5ddbb!important;
+  border-radius:8px!important;
+  box-shadow:0 5px 24px #0002!important;
+}
+.drawing-settings-modal h2{
+  color:#202124!important;
+  font-size:19px!important;
+  margin:0 0 18px!important;
+}
+.drawing-settings-modal .settings-help{color:#65615a!important}
+.drawing-settings-modal label{color:#3f3b32!important}
+.drawing-settings-modal input:not([type=checkbox]),
+.drawing-settings-modal select{
+  color:#202124!important;
+  background:#fffef8!important;
+  border:1px solid #e1d8b6!important;
+  border-radius:6px!important;
+}
+.drawing-settings-modal button{
+  border-radius:6px;
+}
+.drawing-settings-header{cursor:move!important;user-select:none}
+
+
+/* Refined neutral light settings panel and TradingView-style price rows */
+.drawing-settings-modal{
+  background:#f7f7f7!important;
+  color:#202124!important;
+  border:1px solid #d6d6d6!important;
+  box-shadow:0 4px 18px #0002!important;
+}
+.drawing-settings-modal h2{color:#202124!important}
+.drawing-settings-modal .settings-help{color:#666!important}
+.drawing-settings-modal label{color:#333!important}
+.drawing-settings-modal .position-price-row{
+  display:grid!important;
+  grid-template-columns:minmax(105px,1fr) minmax(150px,1.45fr)!important;
+  align-items:center!important;
+  gap:14px!important;
+  margin:14px 0!important;
+  font-size:12px!important;
+}
+.drawing-settings-modal .position-price-row input{
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  min-height:36px!important;
+  padding:8px 10px!important;
+  background:#fff!important;
+  color:#202124!important;
+  border:1px solid #c8c8c8!important;
+  border-radius:5px!important;
+  box-shadow:inset 0 1px 1px #00000008!important;
+}
+.drawing-settings-modal .position-price-row input:focus{
+  outline:1px solid #2962ff!important;
+  border-color:#2962ff!important;
+}
+.drawing-settings-modal button.primary{
+  background:#2962ff!important;
+  border-color:#2962ff!important;
+  color:#fff!important;
+}
+.drawing-settings-modal button.secondary{
+  background:#f7f7f7!important;
+  border-color:#c8c8c8!important;
+  color:#202124!important;
+}
+
+
+/* Final neutral TradingView-like drawing properties panel */
+.drawing-settings-modal{
+  background:#f8f9fd!important;
+  color:#131722!important;
+  border:1px solid #d1d4dc!important;
+  border-radius:8px!important;
+  box-shadow:0 6px 22px rgba(0,0,0,.16)!important;
+}
+.drawing-settings-modal h2{color:#131722!important}
+.drawing-settings-modal .settings-help{color:#434651!important}
+.drawing-settings-modal label{color:#434651!important}
+.drawing-settings-modal .position-price-row{
+  display:grid!important;
+  grid-template-columns:120px minmax(0,1fr)!important;
+  gap:12px!important;
+  align-items:center!important;
+  width:100%!important;
+  margin:14px 0!important;
+}
+.drawing-settings-modal .position-price-row input{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  min-height:34px!important;
+  padding:7px 9px!important;
+  background:#fff!important;
+  color:#131722!important;
+  border:1px solid #cfd3dc!important;
+  border-radius:4px!important;
+}
+.drawing-settings-modal button.primary{
+  background:#2962ff!important;
+  border:1px solid #2962ff!important;
+  color:#fff!important;
+}
+.drawing-settings-modal button.secondary{
+  background:#f8f9fd!important;
+  border:1px solid #cfd3dc!important;
+  color:#131722!important;
+}
+
+
+/* Fullscreen fixes: keep the drawing rail inside the plot area and let it scroll
+   instead of overlapping the balance/open/closed-position cards. */
+.fullscreen-terminal .chart-workspace {
+  min-height: 0;
+}
+.fullscreen-terminal .drawing-rail {
+  align-self: stretch;
+  height: auto;
+  max-height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+
+/* Keep the chart theme switch with the replay controls, not in the chart title. */
+.toolbar .theme-toggle-toolbar,
+.fullscreen-controls .theme-toggle-toolbar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  background: #172431;
+  color: #d4e0ed;
+  border: 1px solid #2c3c4e;
+  border-radius: 5px;
+  padding: 9px 10px;
+  font-size: 10px;
+}
+.theme-light .toolbar .theme-toggle-toolbar,
+.theme-light .fullscreen-controls .theme-toggle-toolbar {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+
+/* Keep the saved-session selector readable in both replay control bars. */
+.toolbar .saved-session-select,
+.fullscreen-controls .saved-session-select {
+  min-width: 160px;
+  max-width: 240px;
+}
+@media (max-width: 700px) {
+  .toolbar .saved-session-select,
+  .fullscreen-controls .saved-session-select {
+    min-width: 125px;
+    max-width: 180px;
+  }
+}
+
+
+/* Center the drawing tools in the Price action header instead of beside the plot. */
+.chart-heading .drawing-rail-header,
+.fullscreen-terminal .chart-heading .drawing-rail-header {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 180px);
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+  gap: 4px;
+  height: auto;
+  max-height: none;
+  padding: 4px 6px;
+  overflow: visible;
+  background: #101821;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.chart-heading .drawing-rail-header button {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  color: #a9b7c8;
+}
+.chart-heading .drawing-rail-header button:hover {
+  background: #1b2b3b;
+  border-color: #64748b;
+}
+.theme-light .chart-heading .drawing-rail-header,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header {
+  background: #f8fafc;
+  border: 1px solid #94a3b8;
+}
+.theme-light .chart-heading .drawing-rail-header button {
+  color: #475569;
+}
+.theme-light .chart-heading .drawing-rail-header button:hover {
+  background: #e2e8f0;
+  border-color: #64748b;
+}
+@media (max-width: 700px) {
+  .chart-heading .drawing-rail-header,
+  .fullscreen-terminal .chart-heading .drawing-rail-header {
+    max-width: calc(100% - 130px);
+    gap: 2px;
+    padding: 3px;
+  }
+  .chart-heading .drawing-rail-header button {
+    flex-basis: 26px;
+    width: 26px;
+    height: 28px;
+  }
+}
+
+
+/* Make the complete Price action header match the replay timeframe control bar. */
+.chart-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #0b131c;
+  border: 1px solid #29394a;
+  border-radius: 6px;
+}
+.chart-heading .drawing-rail-header,
+.fullscreen-terminal .chart-heading .drawing-rail-header {
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+.theme-light .chart-heading {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.theme-light .chart-heading .drawing-rail-header {
+  background: transparent;
+  border: 0;
+}
+/* In fullscreen, show the timeframe/replay bar first and Price action directly below it. */
+.fullscreen-terminal > .chart-panel > .fullscreen-controls {
+  order: -1;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+.fullscreen-terminal > .chart-panel > .chart-heading {
+  order: 0;
+}
+
+
+/* The drawing tools sit directly on the Price action bar; no separate outline. */
+.chart-heading .drawing-rail-header,
+.fullscreen-terminal .chart-heading .drawing-rail-header,
+.theme-light .chart-heading .drawing-rail-header,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+
+/* Improve selected drawing-tool contrast in light theme. */
+.theme-light .chart-heading .drawing-rail-header button.selected-tool,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header button.selected-tool {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+  box-shadow: inset 0 0 0 1px rgba(5, 150, 105, 0.12);
+}
+.theme-light .chart-heading .drawing-rail-header button.selected-tool:hover,
+.theme-light .fullscreen-terminal .chart-heading .drawing-rail-header button.selected-tool:hover {
+  background: #a7f3d0;
+  border-color: #047857;
+  color: #064e3b;
+}
+
+
+/* Floating drawing tools inside the chart canvas with a draggable grip. */
+.chart-workspace {
+  position: relative;
+  isolation: isolate;
+}
+.chart-workspace .floating-drawing-tools {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 20;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  width: max-content;
+  max-width: calc(100% - 12px);
+  height: auto;
+  max-height: calc(100% - 12px);
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+}
+.chart-workspace .floating-drawing-tools button {
+  display: grid;
+  flex: 0 0 30px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #cbd5e1;
+}
+.chart-workspace .floating-drawing-tools button:hover {
+  background: #263548;
+  border-color: #64748b;
+  color: #f8fafc;
+}
+.chart-workspace .floating-drawing-tools button.selected-tool {
+  background: #064e3b;
+  border-color: #10b981;
+  color: #d1fae5;
+}
+.chart-workspace .drawing-toolbar-grip {
+  display: grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 30px;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.chart-workspace .drawing-toolbar-grip:hover {
+  background: #263548;
+  color: #f8fafc;
+}
+.chart-workspace .drawing-toolbar-grip:active {
+  cursor: grabbing;
+}
+.theme-light .chart-workspace .floating-drawing-tools {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+}
+.theme-light .chart-workspace .floating-drawing-tools button {
+  color: #334155;
+}
+.theme-light .chart-workspace .floating-drawing-tools button:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+.theme-light .chart-workspace .floating-drawing-tools button.selected-tool {
+  background: #d1fae5;
+  border-color: #059669;
+  color: #065f46;
+}
+.theme-light .chart-workspace .drawing-toolbar-grip {
+  color: #64748b;
+}
+.theme-light .chart-workspace .drawing-toolbar-grip:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.toolbar .fullscreen-switch,
+.fullscreen-controls .fullscreen-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  background: #172431;
+  color: #dce6f2;
+  border: 1px solid #3a4b5f;
+}
+.theme-light .toolbar .fullscreen-switch,
+.theme-light .fullscreen-controls .fullscreen-switch {
+  background: #fff;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+.theme-light .toolbar .fullscreen-switch:hover,
+.theme-light .fullscreen-controls .fullscreen-switch:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+@media (max-width: 700px) {
+  .chart-workspace .floating-drawing-tools {
+    gap: 2px;
+    padding: 3px;
+  }
+  .chart-workspace .floating-drawing-tools button {
+    flex-basis: 28px;
+    width: 28px;
+    height: 29px;
+  }
+  .chart-workspace .drawing-toolbar-grip {
+    width: 20px;
+    flex-basis: 20px;
+    height: 29px;
+  }
+}
+
+
+/* Keep the fullscreen toggle pinned to the far-right end of either replay bar. */
+.toolbar .fullscreen-switch,
+.fullscreen-controls .fullscreen-switch {
+  margin-left: auto !important;
+  flex-shrink: 0;
+}
+
+
+/* Rectangle settings: compact, theme-aware color picker. */
+.rectangle-color-row {
+  display: block;
+  margin: 12px 0 18px;
+  color: inherit;
+  font-size: 12px;
+}
+.rectangle-color-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.rectangle-color-control input[type="color"] {
+  display: block;
+  flex: 0 0 56px;
+  width: 56px !important;
+  height: 42px;
+  min-height: 42px;
+  margin: 0 !important;
+  padding: 3px !important;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+.rectangle-color-control span {
+  font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #cbd5e1;
+  letter-spacing: 0.3px;
+}
+.theme-light .rectangle-color-control input[type="color"] {
+  border-color: #cbd5e1;
+  background: #fff;
+}
+.theme-light .rectangle-color-control span {
+  color: #334155;
+}
+
+
+/* FXReplay-style collapsible order ticket rail. */
+.terminal {
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, .75fr) 44px;
+}
+.terminal.order-ticket-closed {
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+.terminal > .order-ticket-panel {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.terminal > .order-tools-rail {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 68px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 5px 2px;
+  border: 1px solid #263443;
+  border-radius: 7px;
+  background: #101821;
+}
+.terminal.order-ticket-closed > .order-tools-rail {
+  grid-column: 2;
+}
+.order-ticket-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 38px;
+  min-height: 54px;
+  padding: 5px 2px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #a9b7c8;
+  font-size: 9px;
+  line-height: 1;
+}
+.order-ticket-toggle svg {
+  width: 25px;
+  height: 25px;
+  padding: 3px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.order-ticket-toggle:hover,
+.order-ticket-toggle.active {
+  background: #183c35;
+  border-color: #32c99a;
+  color: #69e4bd;
+}
+.order-ticket-toggle:focus-visible {
+  outline: 2px solid #32c99a;
+  outline-offset: 2px;
+}
+.fullscreen-terminal.order-ticket-open {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px) 44px !important;
+}
+.fullscreen-terminal.order-ticket-closed {
+  grid-template-columns: minmax(0, 1fr) 44px !important;
+}
+.fullscreen-terminal > .chart-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+.fullscreen-terminal > .order-ticket-panel {
+  grid-column: 2;
+  grid-row: 1;
+  max-height: none;
+}
+.fullscreen-terminal > .order-tools-rail {
+  grid-column: 3;
+  grid-row: 1;
+}
+.fullscreen-terminal.order-ticket-closed > .order-tools-rail {
+  grid-column: 2;
+}
+.theme-light .terminal > .order-tools-rail {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.theme-light .order-ticket-toggle {
+  color: #475569;
+}
+.theme-light .order-ticket-toggle:hover,
+.theme-light .order-ticket-toggle.active {
+  background: #dcfce7;
+  border-color: #059669;
+  color: #047857;
+}
+@media (max-width: 1050px) {
+  .terminal,
+  .terminal.order-ticket-open,
+  .terminal.order-ticket-closed {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+  .terminal > .chart-panel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .terminal.order-ticket-open > .order-ticket-panel {
+    grid-column: 1;
+    grid-row: 2;
+    max-height: none;
+  }
+  .terminal > .order-tools-rail {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .fullscreen-terminal.order-ticket-open {
+    grid-template-columns: minmax(0, 1fr) 44px !important;
+    grid-template-rows: minmax(0, 1fr) auto !important;
+  }
+  .fullscreen-terminal.order-ticket-closed {
+    grid-template-columns: minmax(0, 1fr) 44px !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+  .fullscreen-terminal.order-ticket-open > .chart-panel {
+    height: auto !important;
+    min-height: 0;
+  }
+  .fullscreen-terminal.order-ticket-open > .order-ticket-panel {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto !important;
+    max-height: 45vh;
+    overflow: auto;
+  }
+  .fullscreen-terminal.order-ticket-open > .order-tools-rail,
+  .fullscreen-terminal.order-ticket-closed > .order-tools-rail {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+
+/* Sidebar typography: clear, consistent navigation labels. */
+.nav{font-size:14px;font-weight:500;line-height:1.45;letter-spacing:0}
+.nav.active{font-weight:650}
+.nav svg{width:18px;height:18px;flex:0 0 18px}
+
+
+/* Stabilize the non-fullscreen chart canvas.
+   A flex-growing auto-height chart can feed its measured size back into its parent;
+   Lightweight Charts then repeatedly resizes the plot and the autoscaled price axis
+   appears to drift. Keep a definite plot height outside fullscreen as well. */
+.terminal:not(.fullscreen-terminal) > .chart-panel {
+  min-height: 0;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+.terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace {
+  flex: 0 0 auto;
+  width: 100%;
+  height: clamp(420px, 55vh, 700px);
+  min-height: 0;
+}
+.terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace > .chart {
+  flex: 1 1 0;
+  width: 0;
+  height: 100%;
+  min-height: 0;
+}
+@media (max-width: 700px) {
+  .terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace {
+    height: clamp(320px, 48vh, 520px);
+    min-height: 320px;
+  }
+  .terminal:not(.fullscreen-terminal) > .chart-panel > .chart-workspace > .chart {
+    min-height: 0;
+  }
+}
+
+.simple-python-downloader{max-width:100%;display:flex;flex-direction:column;gap:12px}.simple-download-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.simple-download-fields label{display:flex;flex-direction:column;gap:7px;min-width:0}.simple-download-fields input,.simple-download-fields select{width:100%;min-width:0;margin-top:0}.simple-download-command{white-space:pre-wrap;overflow-wrap:anywhere;background:#070c12;border:1px solid #263344;border-radius:8px;padding:14px;color:#7fe6bf;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.simple-download-link{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:10px 14px;border-radius:7px}.simple-python-downloader .muted{color:var(--muted,#93a4b7);font-size:12px}@media(max-width:800px){.simple-download-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.simple-download-fields{grid-template-columns:1fr}}
+

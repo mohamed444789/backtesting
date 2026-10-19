@@ -48,3 +48,55 @@ authentication. Do not expose it directly to an untrusted network.
 Historical candles are Dukascopy bid OHLC data, not tick-level bid/ask
 data. Intrabar stop/target collisions use conservative stop-first
 handling. This is a local practice simulator, not a live broker connection.
+
+## When the Dukascopy download is blocked
+
+Dukascopy's JSON API (`jetta.dukascopy.com`) can answer plain HTTP clients with **HTTP 202** and an AWS WAF
+challenge (`x-amzn-waf-action: challenge`). An HTTP client cannot pass that challenge, so retrying does not help.
+The app then tries the legacy `.bi5` feed, which is itself unreliable at times.
+
+What the app does now:
+
+- Any provider request has a 30 s timeout and the **Stop** button aborts it immediately.
+- After a 202 the JSON API is not called again for 30 minutes (`DUKASCOPY_JSON_COOLDOWN_MS` to change).
+- A job pauses after 3 consecutive failed dates instead of retrying a whole range.
+- Failures are never recorded as downloaded data.
+
+- If either endpoint returns HTTP 429, the job now stops immediately (and stops the library's own retry loop after that first response). Use the provider's `Retry-After` value, if present, before attempting another download.
+
+To get data in while the API is blocked, export **Bid** M1 candles from Dukascopy's official historical data
+export (choose GMT/UTC) and import the CSV:
+
+~~~
+curl -X POST "http://localhost:8080/api/import/candles?symbol=EURUSD&priceType=bid" -F file=@EURUSD_M1.csv
+~~~
+
+Add `&utcOffsetMinutes=120` if the file's clock is UTC+2. Rows with invalid OHLC, off-minute times or unknown
+dates are rejected and reported; existing candles are never overwritten. Volume is stored exactly as in the file,
+so do not mix sources with different volume units for the same symbol.
+
+## Simple day-by-day Python downloader
+
+The same downloader is checked into the repository root as `dukascopy_m1.py`, so after pulling the branch you can run it directly from `~/backtesting` without downloading it from the UI. The **Simple Python Downloader** menu still offers a browser download at `/dukascopy_m1.py` (the copy in `frontend/public`).
+
+The script downloads one legacy Dukascopy BID M1 file at a time and imports it through `/api/import/candles`. It checks the app's modeled minute coverage and re-fetches incomplete dates; existing candle timestamps on fetched dates are corrected with Dukascopy values. The server rejects the whole replacement import if any row fails validation. Standard CSV imports continue to preserve existing candles by default.
+
+From the repository root, install its one dependency and run the checked-in script:
+
+```sh
+python3 -m pip install requests
+python3 dukascopy_m1.py EURUSD 2019-01-28 2019-01-29 --app http://localhost:8080
+```
+
+Use `--force` to re-fetch dates that appear complete. Temporary provider errors are retried with backoff; HTTP 429 stops immediately, and HTTP 202/provider challenges stop without attempting to bypass them. If the legacy feed continues returning HTTP 503, wait and try later or use Dukascopy's official CSV export. The downloader cannot override provider-side outages or rate limits.
+
+## Python downloader verification
+
+The day-by-day Python downloader has been successfully run in a local Atlas environment. It checks existing candle coverage, downloads Dukascopy BID M1 data one day at a time, and validates that every submitted row was accepted before continuing. Provider-side HTTP 429 or 202 challenge responses stop the run rather than attempting to bypass them.
+
+Run it with:
+
+```sh
+python3 -m pip install requests
+python3 dukascopy_m1.py EURUSD 2019-01-28 2019-01-29 --app http://localhost:8080
+```
