@@ -649,15 +649,48 @@
 }
 
 
-/* Final baseline adjustment: the first select and the action button sit slightly
-   above the date-picker controls in the five-column desktop row. */
-@media (min-width: 1201px) {
-  .historical-download-fields > label:first-child {
-    position: relative;
-    top: 15px;
-  }
-  .historical-download-fields > .historical-download-action {
-    position: relative;
-    top: 10px;
-  }
+
+
+/* Consistent typography and true vertical centering across the Historical Data controls. */
+.historical-download-form .historical-download-fields > label,
+.historical-download-form .historical-download-fields > .atlas-date-field,
+.historical-download-form .historical-download-fields > .historical-downloader-select {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: inherit;
+}
+.historical-download-form .historical-download-fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+}
+.historical-download-form .historical-download-fields > .historical-downloader-select > span {
+  min-height: 19.6px;
+  font: inherit;
+}
+.historical-download-form .historical-download-fields > label select,
+.historical-download-form .historical-download-fields > .atlas-date-field .atlas-date-trigger {
+  height: 42px;
+  min-height: 42px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+.historical-download-form .historical-download-fields > label select {
+  padding: 0 11px;
+  line-height: 1.4;
+  font-size: 15px;
+}
+.historical-download-form .historical-download-fields > .atlas-date-field .atlas-date-trigger {
+  padding: 0 11px;
+  line-height: 1.4;
+}
+.historical-download-form .historical-download-fields > .historical-download-action {
+  align-self: end;
+  margin: 0;
 }
