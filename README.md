@@ -69,7 +69,7 @@ Dukascopy's JSON API (`jetta.dukascopy.com`) can answer plain HTTP clients with 
 challenge (`x-amzn-waf-action: challenge`). An HTTP client cannot pass that challenge, so retrying does not help.
 The app then tries the legacy `.bi5` feed, which is itself unreliable at times.
 
-What the app does now:
+When `DUKASCOPY_JSON_API=1` enables the JSON-API mode, the app:
 
 - Any provider request has a 30 s timeout and the **Stop** button aborts it immediately.
 - After a 202 the JSON API is not called again for 30 minutes (`DUKASCOPY_JSON_COOLDOWN_MS` to change).

@@ -219,7 +219,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    let saved=false,lastError='No candles returned for an open-market period';
    for(let attempt=1;attempt<=MAX_API_DAY_ATTEMPTS;attempt++){
     try{
-     appLog('INFO','FETCH','Job #'+id+': requesting '+(useLegacyDatafeed?'legacy datafeed .bi5':'JSON API')+' date '+day.start+' ('+(index+1)+'/'+coverage.length+'), attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS);
+     appLog('INFO','FETCH','Job #'+id+': requesting '+(DIRECT_BI5?'direct .bi5':useLegacyDatafeed?'legacy datafeed .bi5':'JSON API')+' date '+day.start+' ('+(index+1)+'/'+coverage.length+'), attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS);
      let result:any;
      if(useLegacyDatafeed){
       result=await fetchLegacyDay(day.start);
@@ -237,7 +237,7 @@ async function download(id:number,symbol:string,start:string,end:string){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': discarded API response for '+day.start+' after cancellation');return}
      const rows:any[]=Array.isArray(result)?result:(Array.isArray(result?.data)?result.data:[]);
      const relevant=rows.filter((x:any)=>{const raw=x.timestamp??x.time,ms=raw instanceof Date?raw.getTime():typeof raw==='number'?(raw<1e12?raw*1000:raw):new Date(raw).getTime();return Number.isFinite(ms)&&ms>=dayStart&&ms<dayEnd&&forexMarketOpen(ms)});
-     appLog('INFO','FETCH','Job #'+id+': '+(useLegacyDatafeed?'legacy .bi5':'JSON API')+' returned '+rows.length+' row(s), '+relevant.length+' within the requested market session for '+day.start);
+     appLog('INFO','FETCH','Job #'+id+': '+(DIRECT_BI5?'direct .bi5':useLegacyDatafeed?'legacy .bi5':'JSON API')+' returned '+rows.length+' row(s), '+relevant.length+' within the requested market session for '+day.start);
      if(!relevant.length)throw Error('No candles returned for an open-market period');
      const inserted=insertBatch(relevant);inputRows+=relevant.length;writtenRows+=inserted;
      if(day.start<todayUtc&&!isDateCovered(day.start))throw Error('API returned '+relevant.length+' candles but expected session coverage remains incomplete after import');
@@ -245,7 +245,7 @@ async function download(id:number,symbol:string,start:string,end:string){
     }catch(error){
      if(cancelledDownloads.has(id)){cancelledDownloads.delete(id);appLog('INFO','DOWNLOAD','Job #'+id+': stopped during API request for '+day.start);return}
      if(error instanceof DukascopyUpstreamResponseError){lastError=describeDownloadError(error);if(error.isRateLimited&&error.diagnostic.retryAfter)lastError+=' | provider requested Retry-After '+error.diagnostic.retryAfter;appLog('ERROR','FETCH','Job #'+id+': '+lastError+'; stopping the entire job instead of retrying remaining dates. No additional provider requests will be sent for this job.');throw error}
-     lastError=describeDownloadError(error);appLog(attempt<MAX_API_DAY_ATTEMPTS?'WARN':'ERROR','FETCH','Job #'+id+': API attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS+' failed for '+day.start+': '+lastError+(attempt<MAX_API_DAY_ATTEMPTS?'; retrying':''));
+     lastError=describeDownloadError(error);appLog(attempt<MAX_API_DAY_ATTEMPTS?'WARN':'ERROR','FETCH','Job #'+id+': provider attempt '+attempt+'/'+MAX_API_DAY_ATTEMPTS+' failed for '+day.start+': '+lastError+(attempt<MAX_API_DAY_ATTEMPTS?'; retrying':''));
      if(attempt<MAX_API_DAY_ATTEMPTS)await sleep(API_RETRY_DELAY_MS*attempt);
     }
    }
