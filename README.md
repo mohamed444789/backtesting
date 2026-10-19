@@ -61,29 +61,15 @@ The Python downloader retries transient request failures, waits one second betwe
 
 ## When the Dukascopy download is blocked
 
-Dukascopy's JSON API (`jetta.dukascopy.com`) can answer plain HTTP clients with **HTTP 202** and an AWS WAF
-challenge (`x-amzn-waf-action: challenge`). An HTTP client cannot pass that challenge, so retrying does not help.
-The app then tries the legacy `.bi5` feed, which is itself unreliable at times.
+The built-in UI and the command-line tool use the same direct Python `.bi5` downloader. Dukascopy may return HTTP 429 (rate limit) or HTTP 202 (provider challenge). The script stops on these responses; don't repeatedly restart the job or try to bypass provider restrictions. Wait before trying again if the provider asks for it.
 
-When `DUKASCOPY_JSON_API=1` enables the JSON-API mode, the app:
+As an alternative, export **Bid** M1 candles from Dukascopy's official historical data export (choose GMT/UTC) and import the CSV through the UI, or with:
 
-- Any provider request has a 30 s timeout and the **Stop** button terminates the built-in Python worker immediately.
-- After a 202 the JSON API is not called again for 30 minutes (`DUKASCOPY_JSON_COOLDOWN_MS` to change).
-- A job pauses after 3 consecutive failed dates instead of retrying a whole range.
-- Failures are never recorded as downloaded data.
-
-- If either endpoint returns HTTP 429, the job now stops immediately (and stops the library's own retry loop after that first response). Use the provider's `Retry-After` value, if present, before attempting another download.
-
-To get data in while the API is blocked, export **Bid** M1 candles from Dukascopy's official historical data
-export (choose GMT/UTC) and import the CSV:
-
-~~~
+```sh
 curl -X POST "http://localhost:8080/api/import/candles?symbol=EURUSD&priceType=bid" -F file=@EURUSD_M1.csv
-~~~
+```
 
-Add `&utcOffsetMinutes=120` if the file's clock is UTC+2. Rows with invalid OHLC, off-minute times or unknown
-dates are rejected and reported; existing candles are never overwritten. Volume is stored exactly as in the file,
-so do not mix sources with different volume units for the same symbol.
+Add `&utcOffsetMinutes=120` if the file's clock is UTC+2. Rows with invalid OHLC, off-minute times or unknown dates are rejected and reported; standard CSV imports preserve existing candles. Volume is stored as provided by the file, so avoid mixing sources with different volume units for the same symbol.
 
 ## Simple day-by-day Python downloader
 
