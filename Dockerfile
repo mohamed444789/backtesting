@@ -36,12 +36,13 @@ RUN npm run build
 FROM node:22-alpine
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data
 WORKDIR /app
-RUN apk add --no-cache tini && addgroup -S atlas && adduser -S -G atlas atlas && mkdir -p /data/screenshots && chown -R atlas:atlas /app /data
+RUN apk add --no-cache tini python3 py3-requests && addgroup -S atlas && adduser -S -G atlas atlas && mkdir -p /data/screenshots && chown -R atlas:atlas /app /data
 COPY --from=build --chown=atlas:atlas /app/package.json ./package.json
 COPY --from=build --chown=atlas:atlas /app/node_modules ./node_modules
 COPY --from=build --chown=atlas:atlas /app/backend/package.json ./backend/package.json
 COPY --from=build --chown=atlas:atlas /app/backend/dist ./backend/dist
 COPY --from=build --chown=atlas:atlas /app/frontend/dist ./frontend/dist
+COPY --chown=atlas:atlas dukascopy_m1.py ./dukascopy_m1.py
 USER atlas
 EXPOSE 8080
 HEALTHCHECK --interval=20s --timeout=5s --start-period=20s --retries=5 CMD node -e "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

@@ -133,7 +133,7 @@ def complete_days(app, symbol, start, end):
     return have
 
 
-def import_day(app, symbol, day, candles, timeout=60):
+def import_day(app, symbol, day, candles, timeout=60, download_id=None):
     output = io.StringIO(newline="")
     writer = csv.writer(output)
     writer.writerow(["time", "open", "high", "low", "close", "volume"])
@@ -143,7 +143,7 @@ def import_day(app, symbol, day, candles, timeout=60):
     try:
         response = requests.post(
             f"{app}/api/import/candles",
-            params={"symbol": symbol, "priceType": "bid", "replaceExisting": "true"},
+            params={"symbol": symbol, "priceType": "bid", "replaceExisting": "true", **({"downloadId": str(download_id)} if download_id is not None else {})},
             timeout=timeout,
             files={"file": (f"{symbol}_{day.isoformat()}.csv", output.getvalue(), "text/csv")},
         )
@@ -180,6 +180,7 @@ def main():
     parser.add_argument("--passes", type=int, default=2, help="extra passes over days that failed")
     parser.add_argument("--delay", type=float, default=1.0, help="seconds between Dukascopy requests")
     parser.add_argument("--timeout", type=float, default=60, help="Dukascopy request timeout in seconds")
+    parser.add_argument("--job-id", type=int, default=None, help=argparse.SUPPRESS)
     parser.add_argument("--provider", default=PROVIDER, help=argparse.SUPPRESS)
     args = parser.parse_args()
 
@@ -187,6 +188,8 @@ def main():
     app = args.app.rstrip("/")
     if not symbol.isalnum():
         parser.error("instrument must contain only letters and digits")
+    if args.job_id is not None and args.job_id <= 0:
+        parser.error("--job-id must be a positive integer")
     if args.retries < 0 or args.passes < 0 or args.delay < 0 or args.timeout <= 0:
         parser.error("retries, passes and delay must be non-negative; timeout must be positive")
     try:
@@ -241,7 +244,7 @@ def main():
                 else:
                     try:
                         candles = decode_day(raw, day, divisor)
-                        body = import_day(app, symbol, day, candles)
+                        body = import_day(app, symbol, day, candles, download_id=args.job_id)
                     except (ValueError, RuntimeError) as exc:
                         raise StopRun(f"\n{day}: STOP — {exc}. No later dates were attempted.") from exc
                     imported_days += 1

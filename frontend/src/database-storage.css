@@ -630,3 +630,124 @@
 .theme-light .ds-instrument-delete-success{color:#047857}
 @media(max-width:1000px){.ds-instrument-delete{grid-template-columns:minmax(0,1fr)}.ds-instrument-delete-confirm{grid-template-columns:minmax(0,1fr) minmax(180px,.75fr)}.ds-instrument-delete-confirm-actions{grid-column:1/-1}}
 @media(max-width:650px){.ds-instrument-delete-controls{align-items:stretch;flex-direction:column}.ds-instrument-delete-controls>label,.ds-instrument-delete-controls select{width:100%}.ds-instrument-delete-controls .ds-danger-button{width:100%}.ds-instrument-delete-confirm{grid-template-columns:minmax(0,1fr)}.ds-instrument-delete-confirm-actions{grid-column:1}.ds-instrument-delete-confirm-actions>button{flex:1}}
+
+
+/* Align every Historical Data download control on the same baseline.
+   Generic .form label margins were lifting select fields relative to the custom date pickers. */
+.historical-download-fields > label {
+  margin: 0;
+}
+.historical-download-fields > .atlas-date-field {
+  align-self: end;
+  margin: 0;
+}
+.historical-download-fields > .historical-downloader-select {
+  margin: 0;
+}
+.historical-download-action {
+  align-self: end;
+}
+
+
+
+
+/* Consistent typography and true vertical centering across the Historical Data controls. */
+.historical-download-form .historical-download-fields > label,
+.historical-download-form .historical-download-fields > .atlas-date-field,
+.historical-download-form .historical-download-fields > .historical-downloader-select {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: inherit;
+}
+.historical-download-form .historical-download-fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+}
+.historical-download-form .historical-download-fields > .historical-downloader-select > span {
+  min-height: 19.6px;
+  font: inherit;
+}
+.historical-download-form .historical-download-fields > label select,
+.historical-download-form .historical-download-fields > .atlas-date-field .atlas-date-trigger {
+  height: 42px;
+  min-height: 42px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+.historical-download-form .historical-download-fields > label select,
+.historical-download-form .historical-download-fields > label input {
+  width: 100%;
+  padding: 0 11px;
+  line-height: 1.4;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 400;
+  box-sizing: border-box;
+}
+.historical-download-form .historical-download-fields > .atlas-date-field .atlas-date-trigger {
+  padding: 0 11px;
+  line-height: 1.4;
+}
+.historical-download-form .historical-download-fields > .historical-download-action {
+  align-self: end;
+  margin: 0;
+}
+
+
+/* Final optical alignment for the Historical Data download row:
+   equalize label heights and center the action button against the input boxes. */
+.historical-download-form .historical-download-fields {
+  align-items: end;
+}
+.historical-download-form .historical-download-fields > label,
+.historical-download-form .historical-download-fields > .atlas-date-field,
+.historical-download-form .historical-download-fields > .historical-downloader-select {
+  align-self: end;
+}
+.historical-download-form .historical-download-fields > .historical-download-action {
+  align-self: end;
+  padding-top: 26.6px;
+  box-sizing: border-box;
+}
+.historical-download-form .historical-download-fields > .historical-download-action .historical-download-spacer {
+  min-height: 19.6px;
+  height: 19.6px;
+  line-height: 19.6px;
+}
+.historical-download-form .historical-download-fields > .historical-download-action .wide {
+  height: 42px;
+  min-height: 42px;
+  margin: 0;
+  align-self: stretch;
+}
+
+
+/* Center each field label over the middle of its own control. */
+.historical-download-form .historical-download-fields > label {
+  text-align: center;
+}
+.historical-download-form .historical-download-fields > .atlas-date-field > .atlas-date-label {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.historical-download-form .historical-download-fields > .historical-downloader-select > span {
+  width: 100%;
+  text-align: center;
+}
+
+
+/* Center the selected downloader option inside its dropdown while keeping the chevron at the right. */
+.historical-download-form .historical-download-fields > .historical-downloader-select select {
+  text-align: center;
+  text-align-last: center;
+  padding-left: 28px;
+  padding-right: 28px;
+}
