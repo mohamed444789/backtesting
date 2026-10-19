@@ -21,7 +21,7 @@ app.get('/api/logs/stream',(q,r)=>{r.status(200);r.set({'Content-Type':'text/eve
 app.get('/api/health',(_q,r)=>{try{db.prepare('select 1').get();r.json({ok:true,db:'ready'})}catch{r.status(503).json({ok:false})}});app.get('/api/instruments',(_q,r)=>r.json(db.prepare('select * from instruments order by symbol').all()));
 app.post('/api/instruments',(q,r)=>{
  const rawSymbol=String(q.body?.symbol||'').trim().toUpperCase();
- const symbol=rawSymbol.replace(/\\s+/g,'');
+ const symbol=rawSymbol.replace(/\s+/g,'');
  const pipSize=Number(q.body?.pipSize);
  if(!/^[A-Z0-9]{3,20}$/.test(symbol))return r.status(400).json({error:'Enter a valid instrument code using 3–20 letters or numbers (for example GBPCHF or XAGUSD).'});
  if(!Number.isFinite(pipSize)||pipSize<=0||pipSize>1000000)return r.status(400).json({error:'Pip size must be a number greater than zero.'});
