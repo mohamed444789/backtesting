@@ -51,17 +51,13 @@ handling. This is a local practice simulator, not a live broker connection.
 
 ## Built-in downloader (Historical Data → Download)
 
-By default the UI downloader runs the checked-in `dukascopy_m1.py` through a managed Python subprocess. It uses the same `requests.Session`, User-Agent, `.bi5` fetching, LZMA decoding, retries, pauses, coverage checks, and CSV import path as the working command-line script. Job state and progress stay connected to the UI, imports update the parent job rather than creating a separate history row for every day, and Stop terminates the Python worker.
+The Historical Data UI runs the checked-in root `dukascopy_m1.py` as a managed Python subprocess. This is the same code path as running the working command-line downloader: `requests.Session`, the `Mozilla/5.0 AtlasDownloader/2.1` User-Agent, one daily `.bi5` request at a time, LZMA decoding, coverage checks, CSV validation/import, and retry passes.
 
-The Docker runtime installs Python 3 and `requests` and includes the root script. If running outside Docker, install `requests` for the same Python interpreter used by the backend (`python3 -m pip install requests`).
+The UI keeps the existing download-job row and streams the Python output into the application logs. A hidden `--job-id` option associates CSV imports with that parent job instead of creating a separate history row per day. Stop terminates the Python process.
 
-- It waits 1 second between days and retries temporary errors (HTTP 5xx, timeouts, network errors) up to 3 times per day.
-- HTTP 429, 202 and other 4xx responses stop the whole job immediately; nothing is retried or worked around.
-- Network failures are logged with their real cause (for example ECONNREFUSED or ETIMEDOUT) instead of a bare "fetch failed".
-- A response that is not a valid LZMA .bi5 file (for example an HTML error page) is rejected before decoding.
+The Docker runtime installs Python 3 and `requests`, and includes the root script. For a non-Docker local runtime, install `requests` for the Python interpreter used by the backend (`python3 -m pip install requests`). Set `PYTHON_EXECUTABLE` if the backend should use a Python executable other than `python3`.
 
-Optional environment variables: DUKASCOPY_JSON_API=1 tries the JSON API first (the previous behaviour),
-and DUKASCOPY_BI5_BASE_URL points at a different feed root (testing or a mirror).
+The Python downloader retries transient request failures, waits one second between dates, and makes additional passes over dates that failed transiently. HTTP 429 and provider HTTP 202 challenges stop the job immediately; the downloader does not attempt to bypass provider rate limits or challenges.
 
 ## When the Dukascopy download is blocked
 

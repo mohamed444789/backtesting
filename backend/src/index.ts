@@ -1,6 +1,6 @@
-import{spawn}from'node:child_process';import{fileURLToPath}from'node:url';import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{splitDateRange,describeDownloadError,sanitizeLogMessage}from'./download-utils.js';import{buildDukascopyM1Config,buildDukascopyLegacyM1Config,withDukascopyResponseDiagnostics,DukascopyUpstreamResponseError,jsonApiCooldownRemainingMs,noteJsonApiBlocked}from'./downloader.js';import{fetchBi5Day}from'./bi5.js';import{parseCandleCsv}from'./csv-import.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import{spawn}from'node:child_process';import{fileURLToPath}from'node:url';import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{describeDownloadError,sanitizeLogMessage}from'./download-utils.js';import{parseCandleCsv}from'./csv-import.js';import{aggregate,valid,exitHit,pnl}from'./core.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
-const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const downloadAbortControllers=new Map<number,AbortController>();const pythonDownloadProcesses=new Map<number,ReturnType<typeof spawn>>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
+const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const pythonDownloadProcesses=new Map<number,ReturnType<typeof spawn>>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:sanitizeLogMessage(message)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
 appLog('INFO','API','Atlas backend process initialized');
 app.use((q,r,next)=>{const started=Date.now();if(q.path.startsWith('/api/')&&!q.path.startsWith('/api/logs')&&['POST','PUT','PATCH','DELETE'].includes(q.method)){r.on('finish',()=>appLog(r.statusCode>=400?'WARN':'INFO','HTTP',q.method+' '+q.path+' → '+r.statusCode+' ('+(Date.now()-started)+' ms)'))}next()});
@@ -122,10 +122,10 @@ app.post('/api/downloads/retry-failed',(q,r)=>{
  }))();
  let waitFor:number|undefined;
  for(const job of created){scheduleDownload(job.id,job.symbol.toLowerCase(),job.start,job.end,waitFor);waitFor=job.id}
- appLog('INFO','DOWNLOAD','Bulk retry queued '+created.length+' failed Direct API job(s): '+created.map(job=>'#'+job.retryOf+' → #'+job.id).join(', '));
+ appLog('INFO','DOWNLOAD','Bulk retry queued '+created.length+' failed Python downloader job(s): '+created.map(job=>'#'+job.retryOf+' → #'+job.id).join(', '));
  r.status(202).json({jobs:created.map(({id,retryOf,symbol,start,end,downloader})=>({id,retryOf,symbol,start_date:start,end_date:end,status:'queued',downloader})),skipped:ids.length-candidates.length});
 });
-app.post('/api/downloads/:id/stop',(q,r)=>{const id=Number(q.params.id),job=db.prepare('select id,status from downloads where id=?').get(id) as any;if(!job)return r.status(404).json({error:'Download job not found'});if(!['queued','running'].includes(String(job.status)))return r.status(409).json({error:'Only queued or running jobs can be stopped'});cancelledDownloads.add(id);downloadAbortControllers.get(id)?.abort();pythonDownloadProcesses.get(id)?.kill('SIGTERM');db.prepare("update downloads set status='cancelled',error='Stopped manually by user.' where id=?").run(id);appLog('WARN','DOWNLOAD','Stop requested for job #'+id+'; the current API request will be discarded when it returns and no further chunks will start');r.status(202).json({id,status:'cancelled',inFlight:downloadTasks.has(id)})});
+app.post('/api/downloads/:id/stop',(q,r)=>{const id=Number(q.params.id),job=db.prepare('select id,status from downloads where id=?').get(id) as any;if(!job)return r.status(404).json({error:'Download job not found'});if(!['queued','running'].includes(String(job.status)))return r.status(409).json({error:'Only queued or running jobs can be stopped'});cancelledDownloads.add(id);pythonDownloadProcesses.get(id)?.kill('SIGTERM');db.prepare("update downloads set status='cancelled',error='Stopped manually by user.' where id=?").run(id);appLog('WARN','DOWNLOAD','Stop requested for job #'+id+'; the Python subprocess is being terminated and no further dates will start');r.status(202).json({id,status:'cancelled',inFlight:downloadTasks.has(id)})});
 app.post('/api/downloads/:id/retry',(q,r)=>{
  const previous=db.prepare('select * from downloads where id=?').get(Number(q.params.id)) as any;
  if(!previous)return r.status(404).json({error:'Download job not found'});
@@ -134,7 +134,7 @@ app.post('/api/downloads/:id/retry',(q,r)=>{
  if(!canRetry)return r.status(409).json({error:'Only failed, queued, or running jobs can be retried/restarted'});
  const restarting=['queued','running'].includes(String(previous.status));
  const id=Number(db.prepare("insert into downloads(symbol,start_date,end_date,status,progress,retry_of,downloader) values(?,?,?,'queued',0,?,'python')").run(previous.symbol,previous.start_date,previous.end_date,Number(previous.id)).lastInsertRowid);
- if(restarting){cancelledDownloads.add(Number(previous.id));downloadAbortControllers.get(Number(previous.id))?.abort();pythonDownloadProcesses.get(Number(previous.id))?.kill('SIGTERM');db.prepare("update downloads set status='restarted',error=? where id=?").run('Restart requested; the current API request will be discarded when it returns. Replacement job #'+id+' will then start this date range from the beginning.',Number(previous.id))}
+ if(restarting){cancelledDownloads.add(Number(previous.id));pythonDownloadProcesses.get(Number(previous.id))?.kill('SIGTERM');db.prepare("update downloads set status='restarted',error=? where id=?").run('Restart requested; the current API request will be discarded when it returns. Replacement job #'+id+' will then start this date range from the beginning.',Number(previous.id))}
  appLog(restarting?'WARN':'INFO','DOWNLOAD',(restarting?'Restart':'Retry')+' requested for Python downloader job #'+previous.id+'; created job #'+id+' for '+previous.symbol+' '+previous.start_date+' to '+previous.end_date+(restarting?'; replacement waits for the old worker to stop':''));
  scheduleDownload(id,String(previous.symbol).toLowerCase(),String(previous.start_date),String(previous.end_date),restarting?Number(previous.id):undefined);
  r.status(202).json({id,status:'queued',retryOf:Number(previous.id),restarted:restarting,waitingFor:restarting?Number(previous.id):undefined,downloader:'python'});
@@ -157,19 +157,6 @@ function expectedUtcMinuteTimestamps(date:string,symbol:string):number[]{
  return [...expected].sort((a,b)=>a-b);
 }
 
-function marketClock(epochMs:number){
- const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(epochMs));
- return Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value])) as Record<string,string>;
-}
-function forexMarketOpen(epochMs:number){
- const t=marketClock(epochMs),day=t.weekday,h=Number(t.hour),m=Number(t.minute),afterOpen=h>17||(h===17&&m>=0),beforeClose=h<17;
- if(day==='Sat')return false;if(day==='Sun')return afterOpen;if(day==='Fri')return beforeClose;return true;
-}
-function utcDayHasOpenMarket(startMs:number,endMs:number){for(let t=startMs;t<endMs;t+=3600000)if(forexMarketOpen(t))return true;return false}
-const MAX_API_DAY_ATTEMPTS=3,API_RETRY_DELAY_MS=1000,PROVIDER_REQUEST_TIMEOUT_MS=30000,MAX_CONSECUTIVE_DATE_FAILURES=3;
-// Default: fetch the daily .bi5 files directly. Set DUKASCOPY_JSON_API=1 to restore the JSON-API-first behaviour.
-const DIRECT_BI5=process.env.DUKASCOPY_JSON_API!=='1',BI5_BASE_URL=process.env.DUKASCOPY_BI5_BASE_URL||undefined,DIRECT_BI5_PAUSE_MS=1000;
-const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 function resolvePythonDownloaderPath():string|null{
  const moduleDirectory=path.dirname(fileURLToPath(import.meta.url));
  const candidates=[path.resolve(process.cwd(),'dukascopy_m1.py'),path.resolve(moduleDirectory,'../../dukascopy_m1.py'),path.resolve(moduleDirectory,'../../../dukascopy_m1.py')];
@@ -219,7 +206,7 @@ async function download(id:number,symbol:string,start:string,end:string){
   };
   const drain=(stream:'stdout'|'stderr',chunk:unknown)=>{
    const text=String(chunk);
-   if(stream==='stderr')stderrTail=(stderrTail+text).slice(-6000);
+   
    let buffer=stream==='stdout'?stdoutBuffer:stderrBuffer;
    buffer+=text;
    const lines=buffer.split(/\r?\n/);
@@ -227,7 +214,7 @@ async function download(id:number,symbol:string,start:string,end:string){
    for(const line of lines)handleLine(stream,line);
    if(stream==='stdout')stdoutBuffer=buffer;else stderrBuffer=buffer;
   };
-  let child;
+  let child:ReturnType<typeof spawn>;
   try{
    child=spawn(process.env.PYTHON_EXECUTABLE||'python3',['-u',scriptPath,symbol.toUpperCase(),start,end,'--app',appUrl,'--job-id',String(id)],{
     cwd:path.dirname(scriptPath),
