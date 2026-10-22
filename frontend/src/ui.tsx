@@ -111,7 +111,7 @@ try{
     const dates=[...new Set(chartData.map((x:any)=>dateKey(x.time)))].sort();
     const priorDay=[...dates].reverse().find((d:string)=>d<latestDate);
     const priorWeek=weekKey(latestDate),priorMonth=monthKey(latestDate);
-    const priorWeekStart=previousDate(priorWeek),priorMonthStart=(()=>{const d=toUtc(priorMonth+'-01');d.setUTCMonth(d.getUTCMonth()-1);return d.toISOString().slice(0,7)})();
+    const priorWeekStart=(()=>{const d=toUtc(priorWeek);d.setUTCDate(d.getUTCDate()-7);return d.toISOString().slice(0,10)})(),priorMonthStart=(()=>{const d=toUtc(priorMonth+'-01');d.setUTCMonth(d.getUTCMonth()-1);return d.toISOString().slice(0,7)})();
     const groups=[
       {title:'PDH',color:'#22c55e',match:(x:any)=>!!priorDay&&dateKey(x.time)===priorDay,field:'high'},
       {title:'PDL',color:'#22c55e',match:(x:any)=>!!priorDay&&dateKey(x.time)===priorDay,field:'low'},
