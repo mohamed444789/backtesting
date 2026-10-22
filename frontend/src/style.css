@@ -1163,3 +1163,77 @@ td{font-size:12px}
 .theme-light .fullscreen-mini-stats b{color:#0f172a}
 @media(max-width:1050px){.fullscreen-mini-stats{gap:8px;padding:0 6px}.fullscreen-mini-stats span{font-size:8px}.fullscreen-mini-stats b{font-size:11px}}
 @media(max-width:760px){.fullscreen-mini-stats{order:10;flex:1 0 100%;margin-left:0;border-left:0;border-right:0;border-top:1px solid #29394a;padding-top:6px;height:auto;justify-content:flex-start}}
+
+
+/* Polished fullscreen replay metrics with clear win/loss emphasis. */
+.fullscreen-mini-stats{
+  gap:6px;
+  padding:0 8px;
+  border:0;
+  height:auto;
+}
+.fullscreen-mini-stats>div{
+  position:relative;
+  min-width:68px;
+  gap:4px;
+  padding:7px 10px;
+  border:1px solid #2a394a;
+  border-radius:7px;
+  background:linear-gradient(180deg,#172431 0%,#111b26 100%);
+}
+.fullscreen-mini-stats span{
+  color:#92a4b9;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.25px;
+}
+.fullscreen-mini-stats b{
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+}
+.fullscreen-mini-stats .metric-balance{
+  border-color:#285348;
+  background:linear-gradient(180deg,#17352f 0%,#122720 100%);
+}
+.fullscreen-mini-stats .metric-balance b{color:#6ee7b7}
+.fullscreen-mini-stats .metric-wins{
+  border-color:#245a46;
+  background:linear-gradient(180deg,#15372b 0%,#11271f 100%);
+}
+.fullscreen-mini-stats .metric-wins b{color:#5ee0a0}
+.fullscreen-mini-stats .metric-losses{
+  border-color:#5b343b;
+  background:linear-gradient(180deg,#3a232b 0%,#261920 100%);
+}
+.fullscreen-mini-stats .metric-losses b{color:#ff9299}
+.theme-light .fullscreen-mini-stats>div{
+  background:#fff;
+  border-color:#dbe3ec;
+  box-shadow:0 1px 2px #0f172a0a;
+}
+.theme-light .fullscreen-mini-stats span{color:#64748b}
+.theme-light .fullscreen-mini-stats .metric-balance{
+  background:#ecfdf5;
+  border-color:#a7f3d0;
+}
+.theme-light .fullscreen-mini-stats .metric-balance b{color:#047857}
+.theme-light .fullscreen-mini-stats .metric-wins{
+  background:#f0fdf4;
+  border-color:#bbf7d0;
+}
+.theme-light .fullscreen-mini-stats .metric-wins b{color:#15803d}
+.theme-light .fullscreen-mini-stats .metric-losses{
+  background:#fff1f2;
+  border-color:#fecdd3;
+}
+.theme-light .fullscreen-mini-stats .metric-losses b{color:#be123c}
+@media(max-width:1050px){
+  .fullscreen-mini-stats{gap:4px;padding:0 4px}
+  .fullscreen-mini-stats>div{min-width:58px;padding:6px 7px}
+  .fullscreen-mini-stats span{font-size:8px}
+  .fullscreen-mini-stats b{font-size:12px}
+}
+@media(max-width:760px){
+  .fullscreen-mini-stats{gap:6px}
+  .fullscreen-mini-stats>div{flex:1;min-width:0;padding:7px 8px}
+}
