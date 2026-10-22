@@ -99,9 +99,9 @@ if(canUpdate){
 chartDataRef.current=chartData;
 if(emaSeries.current){try{emaSeries.current.setData(calculateEma(chartData.map((x:any)=>({time:Number(x.time),close:Number(x.close)}))));emaSeries.current.applyOptions({visible:emaVisible})}catch(e){console.error('EMA update failed',e)}}
 try{
-  for(const line of previousPeriodLines.current){try{series.current?.removePriceLine(line)}catch{}}
+  for(const line of previousPeriodLines.current){try{chart.current?.removeSeries(line)}catch{}}
   previousPeriodLines.current=[];
-  if(previousLevelsVisible&&chartData.length&&series.current){
+  if(previousLevelsVisible&&chartData.length&&series.current&&chart.current){
     const dateKey=(time:number)=>{const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(time*1000));const get=(type:string)=>parts.find((p:any)=>p.type===type)?.value||'';return get('year')+'-'+get('month')+'-'+get('day')};
     const latestDate=dateKey(chartData[chartData.length-1].time);
     const toUtc=(key:string)=>new Date(key+'T00:00:00Z');
@@ -123,8 +123,11 @@ try{
     for(const g of groups){
       const values=chartData.filter(g.match);
       if(!values.length)continue;
-      const price=Math[g.field==='high'?'max':'min'](...values.map((x:any)=>Number(x[g.field])));
-      const line=series.current.createPriceLine({price,color:g.color,lineWidth:1,lineStyle:LineStyle.Solid,axisLabelVisible:true,title:g.title});
+      const extreme=values.reduce((best:any,x:any)=>g.field==='high'?(Number(x.high)>Number(best.high)?x:best):(Number(x.low)<Number(best.low)?x:best),values[0]);
+      const price=Number(extreme[g.field]);
+      const line=chart.current.addSeries(LineSeries,{color:g.color,lineWidth:1,lineStyle:LineStyle.Solid,priceLineVisible:false,lastValueVisible:true,crosshairMarkerVisible:false,title:g.title});
+      const startTime=Number(extreme.time),endTime=Number(chartData[chartData.length-1].time);
+      line.setData(startTime<endTime?[{time:startTime,value:price},{time:endTime,value:price}]:[{time:startTime,value:price}]);
       previousPeriodLines.current.push(line);
     }
   }
