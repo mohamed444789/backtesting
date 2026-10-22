@@ -1000,3 +1000,46 @@ td{font-size:12px}
 
 .simple-python-downloader{max-width:100%;display:flex;flex-direction:column;gap:12px}.simple-download-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.simple-download-fields label{display:flex;flex-direction:column;gap:7px;min-width:0}.simple-download-fields input,.simple-download-fields select{width:100%;min-width:0;margin-top:0}.simple-download-command{white-space:pre-wrap;overflow-wrap:anywhere;background:#070c12;border:1px solid #263344;border-radius:8px;padding:14px;color:#7fe6bf;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.simple-download-link{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:10px 14px;border-radius:7px}.simple-python-downloader .muted{color:var(--muted,#93a4b7);font-size:12px}@media(max-width:800px){.simple-download-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.simple-download-fields{grid-template-columns:1fr}}
 
+
+
+/* Replay date navigation: replaces manual step/skip controls. */
+.replay-date-jump{
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  min-width:0;
+}
+.replay-date-jump .atlas-date-field{
+  min-width:148px;
+  width:164px;
+  gap:4px;
+  font-size:11px;
+}
+.replay-date-jump .atlas-date-trigger{
+  min-height:38px;
+  padding:7px 9px;
+  font-size:12px;
+}
+.replay-date-jump .step-button{
+  min-height:38px;
+  white-space:nowrap;
+}
+.fullscreen-controls .replay-date-jump{
+  align-items:flex-end;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-field{
+  min-width:138px;
+  width:150px;
+  gap:4px;
+  font-size:10px;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-trigger{
+  min-height:36px;
+  padding:7px 8px;
+  font-size:11px;
+}
+@media(max-width:700px){
+  .replay-date-jump{flex:1;min-width:100%;align-items:flex-end}
+  .replay-date-jump .atlas-date-field{flex:1;width:auto;min-width:135px}
+  .fullscreen-controls .replay-date-jump{min-width:100%}
+}
