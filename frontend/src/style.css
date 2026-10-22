@@ -1083,11 +1083,61 @@ td{font-size:12px}
 }
 .toolbar>.replay-date-jump{
   align-self:center;
-  margin-top:0;
-  /* The label sits above the input, so lift the whole group to align
-     the input and action button bottoms with the toolbar's other controls. */
-  transform:translateY(-7px);
+  margin:0;
+  transform:none;
 }
+.replay-date-jump .atlas-date-label:empty{
+  display:none;
+}
+.replay-date-jump .atlas-date-field{
+  gap:0;
+}
+.toolbar{
+  align-items:center;
+}
+.toolbar select,
+.toolbar button,
+.toolbar .replay-date-jump .atlas-date-trigger,
+.toolbar .replay-date-jump .step-button{
+  box-sizing:border-box;
+  height:38px;
+  min-height:38px;
+}
+.toolbar .speed-control{
+  align-self:center;
+  height:38px;
+}
+.toolbar .speed-control select{
+  height:38px;
+  min-height:38px;
+}
+.toolbar .theme-toggle-toolbar,
+.toolbar .fullscreen-switch{
+  height:38px;
+  min-height:38px;
+  justify-content:center;
+}
+.fullscreen-controls{
+  align-items:center;
+}
+.fullscreen-controls>label,
+.fullscreen-controls>button,
+.fullscreen-controls>.replay-date-jump,
+.fullscreen-controls>.saved-session-select{
+  align-self:center;
+}
+.fullscreen-controls select,
+.fullscreen-controls button,
+.fullscreen-controls .replay-date-jump .atlas-date-trigger,
+.fullscreen-controls .replay-date-jump .step-button{
+  box-sizing:border-box;
+  height:36px;
+  min-height:36px;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-label:empty{
+  display:none;
+}
+
 .fullscreen-controls>.replay-date-jump{
   align-self:center;
 }
