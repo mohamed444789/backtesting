@@ -43,8 +43,8 @@ test('finds the first weekend gap after normal candles, not a later weekend', ()
   const { db, add } = setup();
   try {
     const wednesday = Date.UTC(2026, 4, 20, 12, 0) / 1000;
-    const thursday = wednesday + 24 * 60 * 60;
-    const friday = thursday + 24 * 60 * 60;
+    const thursday = wednesday + 60;
+    const friday = thursday + 60;
     const monday = friday + 3 * 24 * 60 * 60;
     add('EURUSD', thursday, friday, monday);
 
