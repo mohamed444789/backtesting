@@ -99,14 +99,15 @@ test('does not use another instrument to find the next Sunday candle', () => {
 test('uses the chart displayed date in Europe/Berlin when the UTC date has rolled over', () => {
   const { db, add } = setup();
   try {
-    // 22:30 UTC is already Saturday 00:30 in Berlin during summer time.
-    const cursor = Date.UTC(2026, 4, 22, 22, 30) / 1000;
-    const sunday = Date.UTC(2026, 4, 24, 21, 0) / 1000;
-    add('EURUSD', sunday);
+    // 22:30 UTC on Saturday is already Sunday 00:30 in Berlin during summer time.
+    // The target should therefore be the Sunday a week later, not the day starting in UTC.
+    const cursor = Date.UTC(2026, 4, 23, 22, 30) / 1000;
+    const nextSunday = Date.UTC(2026, 4, 31, 21, 0) / 1000;
+    add('EURUSD', nextSunday);
 
     assert.deepEqual(findNextSundayCandle(db, 'EURUSD', cursor, null), {
-      time: sunday,
-      targetSunday: '2026-05-24',
+      time: nextSunday,
+      targetSunday: '2026-05-31',
     });
   } finally {
     db.close();
