@@ -1284,3 +1284,89 @@ td{font-size:12px}
   .fullscreen-mini-stats span{font-size:9px}
   .fullscreen-mini-stats b{font-size:13px}
 }
+
+
+/* Match normal chart session metrics to the fullscreen card design.
+   Keep the Session trades panel in its existing document position. */
+.replay-session-stats{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin:12px 0 18px;
+}
+.replay-session-stats .replay-stat{
+  min-width:0;
+  padding:12px 14px;
+  border:1px solid #2a394a;
+  border-radius:7px;
+  background:linear-gradient(180deg,#172431 0%,#111b26 100%);
+}
+.replay-session-stats .replay-stat>div{
+  display:block;
+  color:#92a4b9;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.3px;
+}
+.replay-session-stats .replay-stat>b{
+  display:block;
+  margin:6px 0 0;
+  font:600 18px 'Space Grotesk',sans-serif;
+  line-height:1.25;
+  font-variant-numeric:tabular-nums;
+}
+.replay-session-stats .metric-balance{
+  background:linear-gradient(180deg,#17352f 0%,#122720 100%);
+  border-color:#285348;
+}
+.replay-session-stats .metric-balance>b{color:#6ee7b7}
+.replay-session-stats .metric-wins{
+  background:linear-gradient(180deg,#15372b 0%,#11271f 100%);
+  border-color:#245a46;
+}
+.replay-session-stats .metric-wins>b{color:#5ee0a0}
+.replay-session-stats .metric-losses{
+  background:linear-gradient(180deg,#3a232b 0%,#261920 100%);
+  border-color:#5b343b;
+}
+.replay-session-stats .metric-losses>b{color:#ff9299}
+.replay-session-stats .metric-win-rate{
+  background:linear-gradient(180deg,#15372b 0%,#11271f 100%);
+  border-color:#245a46;
+}
+.replay-session-stats .metric-win-rate>b{color:#5ee0a0}
+.replay-session-stats .metric-loss-rate{
+  background:linear-gradient(180deg,#3a232b 0%,#261920 100%);
+  border-color:#5b343b;
+}
+.replay-session-stats .metric-loss-rate>b{color:#ff9299}
+.replay-session-stats .metric-profit-factor{
+  background:linear-gradient(180deg,#1c2d47 0%,#141f31 100%);
+  border-color:#385078;
+}
+.replay-session-stats .metric-profit-factor>b{color:#9ec5ff}
+.theme-light .replay-session-stats .replay-stat{
+  background:#fff;
+  border-color:#dbe3ec;
+  box-shadow:0 1px 2px #0f172a0a;
+}
+.theme-light .replay-session-stats .replay-stat>div{color:#64748b}
+.theme-light .replay-session-stats .metric-balance{background:#ecfdf5;border-color:#a7f3d0}
+.theme-light .replay-session-stats .metric-balance>b{color:#047857}
+.theme-light .replay-session-stats .metric-wins,
+.theme-light .replay-session-stats .metric-win-rate{background:#f0fdf4;border-color:#bbf7d0}
+.theme-light .replay-session-stats .metric-wins>b,
+.theme-light .replay-session-stats .metric-win-rate>b{color:#15803d}
+.theme-light .replay-session-stats .metric-losses,
+.theme-light .replay-session-stats .metric-loss-rate{background:#fff1f2;border-color:#fecdd3}
+.theme-light .replay-session-stats .metric-losses>b,
+.theme-light .replay-session-stats .metric-loss-rate>b{color:#be123c}
+.theme-light .replay-session-stats .metric-profit-factor{background:#eff6ff;border-color:#bfdbfe}
+.theme-light .replay-session-stats .metric-profit-factor>b{color:#1d4ed8}
+@media(max-width:1050px){
+  .replay-session-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .replay-session-stats .replay-stat{padding:10px}
+  .replay-session-stats .replay-stat>b{font-size:16px}
+}
+@media(max-width:600px){
+  .replay-session-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+}
