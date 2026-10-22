@@ -125,9 +125,11 @@ try{
       if(!values.length)continue;
       const extreme=values.reduce((best:any,x:any)=>g.field==='high'?(Number(x.high)>Number(best.high)?x:best):(Number(x.low)<Number(best.low)?x:best),values[0]);
       const price=Number(extreme[g.field]);
-      const line=chart.current.addSeries(LineSeries,{color:g.color,lineWidth:1,lineStyle:LineStyle.Solid,priceLineVisible:false,lastValueVisible:true,crosshairMarkerVisible:false,title:g.title});
-      const startTime=Number(extreme.time),endTime=Number(chartData[chartData.length-1].time);
-      line.setData(startTime<endTime?[{time:startTime,value:price},{time:endTime,value:price}]:[{time:startTime,value:price}]);
+      const line=chart.current.addSeries(LineSeries,{color:g.color,lineWidth:3,lineStyle:LineStyle.Solid,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,title:g.title});
+      const startTime=Number(extreme.time),latestTime=Number(chartData[chartData.length-1].time);
+      const step=chartData.length>1?Math.max(1,latestTime-Number(chartData[chartData.length-2].time)):60;
+      const endTime=latestTime+step*20;
+      line.setData(startTime<latestTime?[{time:startTime,value:price},{time:latestTime,value:price},{time:endTime,value:price}]:[{time:startTime,value:price},{time:endTime,value:price}]);
       previousPeriodLines.current.push(line);
     }
   }
