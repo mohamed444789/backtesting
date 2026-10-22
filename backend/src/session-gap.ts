@@ -4,8 +4,6 @@ export type DateCandleTarget = {
 };
 
 const BERLIN_TIME_ZONE = 'Europe/Berlin';
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 export function isValidDateOnly(value: unknown): value is string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split('-').map(Number);
