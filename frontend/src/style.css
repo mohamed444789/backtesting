@@ -1237,3 +1237,40 @@ td{font-size:12px}
   .fullscreen-mini-stats{gap:6px}
   .fullscreen-mini-stats>div{flex:1;min-width:0;padding:7px 8px}
 }
+
+
+/* Additional per-session performance ratios. */
+.fullscreen-mini-stats .metric-win-rate{
+  border-color:#245a46;
+  background:linear-gradient(180deg,#15372b 0%,#11271f 100%);
+}
+.fullscreen-mini-stats .metric-win-rate b{color:#5ee0a0}
+.fullscreen-mini-stats .metric-loss-rate{
+  border-color:#5b343b;
+  background:linear-gradient(180deg,#3a232b 0%,#261920 100%);
+}
+.fullscreen-mini-stats .metric-loss-rate b{color:#ff9299}
+.fullscreen-mini-stats .metric-profit-factor{
+  border-color:#385078;
+  background:linear-gradient(180deg,#1c2d47 0%,#141f31 100%);
+}
+.fullscreen-mini-stats .metric-profit-factor b{color:#9ec5ff}
+.theme-light .fullscreen-mini-stats .metric-win-rate{
+  background:#f0fdf4;border-color:#bbf7d0;
+}
+.theme-light .fullscreen-mini-stats .metric-win-rate b{color:#15803d}
+.theme-light .fullscreen-mini-stats .metric-loss-rate{
+  background:#fff1f2;border-color:#fecdd3;
+}
+.theme-light .fullscreen-mini-stats .metric-loss-rate b{color:#be123c}
+.theme-light .fullscreen-mini-stats .metric-profit-factor{
+  background:#eff6ff;border-color:#bfdbfe;
+}
+.theme-light .fullscreen-mini-stats .metric-profit-factor b{color:#1d4ed8}
+@media(min-width:1200px){
+  .fullscreen-mini-stats>div{min-width:62px;padding:6px 8px}
+}
+@media(max-width:1050px){
+  .fullscreen-mini-stats{flex-wrap:wrap;max-width:64vw;justify-content:flex-end}
+  .fullscreen-mini-stats>div{min-width:54px;padding:5px 6px}
+}
