@@ -1,4 +1,4 @@
-import{spawn}from'node:child_process';import{fileURLToPath}from'node:url';import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{describeDownloadError,sanitizeLogMessage}from'./download-utils.js';import{parseCandleCsv}from'./csv-import.js';import{aggregate,valid,exitHit,pnl}from'./core.js';import{findNextSundayCandle}from'./session-gap.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
+import{spawn}from'node:child_process';import{fileURLToPath}from'node:url';import express from'express';import helmet from'helmet';import cors from'cors';import multer from'multer';import path from'node:path';import fs from'node:fs';import{db}from'./db.js';import{describeDownloadError,sanitizeLogMessage}from'./download-utils.js';import{parseCandleCsv}from'./csv-import.js';import{aggregate,valid,exitHit,pnl}from'./core.js';import{findFirstCandleOnDate,isValidDateOnly,dateInBerlin}from'./session-gap.js';const app=express(),root=process.env.DATA_DIR||'./data';fs.mkdirSync(path.join(root,'dukascopy-cache'),{recursive:true});fs.mkdirSync(path.join(root,'dukascopy-legacy-cache'),{recursive:true});app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'}}));app.use(cors({origin:false}));app.use(express.json({limit:'2mb'}));const port=Number(process.env.PORT||8080);
 type AppLog={id:number;time:string;level:string;scope:string;message:string};
 const logBuffer:AppLog[]=[];const logClients=new Set<any>();const cancelledDownloads=new Set<number>();const pythonDownloadProcesses=new Map<number,ReturnType<typeof spawn>>();const downloadTasks=new Map<number,Promise<void>>();let downloadQueueTail:Promise<void>=Promise.resolve();let nextLogId=1;
 function appLog(level:string,scope:string,message:string){const entry:AppLog={id:nextLogId++,time:new Date().toISOString().slice(11,23),level,scope,message:sanitizeLogMessage(message)};logBuffer.push(entry);if(logBuffer.length>500)logBuffer.shift();const payload='data: '+JSON.stringify(entry)+'\n\n';for(const client of logClients){try{client.write(payload)}catch{logClients.delete(client)}}}
@@ -81,12 +81,12 @@ app.post('/api/sessions',(q,r)=>{const b=q.body||{};if(!Number.isFinite(Number(b
 app.patch('/api/sessions/:id',(q,r)=>{const id=Number(q.params.id),name=String(q.body?.name??'').trim();if(!name)return r.status(400).json({error:'Session name is required'});if(name.length>120)return r.status(400).json({error:'Session name must be 120 characters or fewer'});const result=db.prepare('update sessions set name=? where id=?').run(name,id);if(!result.changes)return r.status(404).json({error:'Session not found'});r.json(db.prepare('select * from sessions where id=?').get(id))});
 app.delete('/api/sessions/:id',(q,r)=>{const id=Number(q.params.id);if(!db.prepare('select id from sessions where id=?').get(id))return r.status(404).json({error:'Session not found'});db.transaction(()=>{db.prepare('delete from journal_notes where trade_id in (select id from trades where session_id=?)').run(id);db.prepare('delete from trades where session_id=?').run(id);db.prepare('delete from orders where session_id=?').run(id);db.prepare('delete from drawings where session_id=?').run(id);db.prepare('delete from sessions where id=?').run(id)})();r.json({ok:true,id})});app.get('/api/sessions/:id/visible',(q,r)=>{const s:any=db.prepare('select * from sessions where id=?').get(Number(q.params.id));if(!s)return r.status(404).json({error:'Session not found'});r.json({session:s,candles:db.prepare('select time,open,high,low,close,volume from candles where symbol=? and time<=? order by time').all(s.symbol,s.cursor)})});
 
-function advanceReplaySession(id:number,requestedCount:number){
+function advanceReplaySession(id:number,requestedCount:number,untilTime?:number){
  const s:any=db.prepare('select * from sessions where id=?').get(id);
  if(!s)return null;
  const requested=Number(requestedCount||1);
  const n=Math.min(10000,Math.max(1,Number.isFinite(requested)?Math.floor(requested):1));
- const cs=db.prepare('select time,open,high,low,close,volume from candles where symbol=? and time>? and (? is null or time<=?) order by time limit ?').all(s.symbol,s.cursor,s.end_time??null,s.end_time??null,n) as any[];
+ const cs=db.prepare('select time,open,high,low,close,volume from candles where symbol=? and time>? and (? is null or time<=?) and (? is null or time<=?) order by time limit ?').all(s.symbol,s.cursor,s.end_time??null,s.end_time??null,untilTime??null,untilTime??null,n) as any[];
  if(!cs.length)return{session:s,candles:[],done:true};
  db.transaction(()=>{
   db.prepare('update sessions set cursor=? where id=?').run(cs.at(-1).time,id);
@@ -117,42 +117,30 @@ app.post('/api/sessions/:id/step',(q,r)=>{
  r.json(result);
 });
 
-app.post('/api/sessions/:id/skip-session',(q,r)=>{
+
+app.post('/api/sessions/:id/jump-date',(q,r)=>{
  const id=Number(q.params.id),s:any=db.prepare('select * from sessions where id=?').get(id);
  if(!s)return r.status(404).json({error:'Session not found'});
- const cursor=Number(s.cursor),endTime=s.end_time==null?null:Number(s.end_time);
- const target=findNextSundayCandle(db,String(s.symbol),cursor,endTime);
- if(!target){
-  const next:any=db.prepare('select time from candles where symbol=? and time>? and (? is null or time<=?) order by time limit 1').get(s.symbol,cursor,endTime,endTime);
-  return r.json({
-   session:s,
-   skipped:false,
-   done:!next,
-   message:'No stored candle was found on or after the next Sunday before this session\'s end date. Check historical-data coverage or extend the replay end date.'
-  });
- }
- const targetTime=target.time;
- const targetCount=Number((db.prepare('select count(*) as n from candles where symbol=? and time>? and time<=?').get(s.symbol,cursor,targetTime) as any)?.n||0);
- if(targetCount<1)return r.status(409).json({error:'The next Sunday target was found, but no candles are available to advance to it. Refresh the session and try again.'});
+ const selectedDate=q.body?.date;
+ if(!isValidDateOnly(selectedDate))return r.status(400).json({error:'Choose a valid calendar date in YYYY-MM-DD format.'});
+ const cursor=Number(s.cursor),cursorDate=dateInBerlin(cursor);
+ if(selectedDate<cursorDate)return r.status(400).json({error:'You can only jump forward. The selected date '+selectedDate+' is before the current replay date '+cursorDate+'. Create a new session to replay earlier dates.'});
+ const endTime=s.end_time==null?null:Number(s.end_time);
+ const target=findFirstCandleOnDate(db,String(s.symbol),selectedDate,cursor,endTime);
+ if(!target)return r.status(422).json({error:'No available 1-minute candle was found on '+selectedDate+' after the current replay position. The replay was not changed. Saturdays, market holidays, and dates outside downloaded history may have no candles.'});
+ const targetCount=Number((db.prepare('select count(*) as n from candles where symbol=? and time>? and time<=?').get(s.symbol,cursor,target.time) as any)?.n||0);
+ if(targetCount<1)return r.status(409).json({error:'A candle was found for '+selectedDate+', but there are no candles available to advance to it. Refresh the session and try again.'});
  let remaining=targetCount,processed=0;
  while(remaining>0){
-  const batch=advanceReplaySession(id,Math.min(10000,remaining));
+  const batch=advanceReplaySession(id,Math.min(10000,remaining),target.time);
   if(!batch||!batch.candles.length)break;
   const count=batch.candles.length;
   remaining-=count;processed+=count;
  }
- if(remaining>0)return r.status(409).json({error:'Replay advanced through '+processed+' candle row(s), but the remaining history changed during the skip. Try Skip to Sunday again.'});
+ if(remaining>0)return r.status(409).json({error:'Replay advanced through '+processed+' candle row(s), but the remaining history changed during the date jump. Refresh the session before trying again.'});
  const latest:any=db.prepare('select * from sessions where id=?').get(id);
  const next:any=db.prepare('select time from candles where symbol=? and time>? and (? is null or time<=?) order by time limit 1').get(s.symbol,latest.cursor,endTime,endTime);
- r.json({
-  session:latest,
-  skipped:true,
-  skippedCandles:processed,
-  targetSunday:target.targetSunday,
-  targetTime,
-  done:!next,
-  message:'Skipped to the first available candle on or after Sunday '+target.targetSunday+'.'
- });
+ r.json({session:latest,jumped:true,targetDate:selectedDate,targetTime:target.time,processedCandles:processed,done:!next,message:'Moved to the first available M1 candle on '+selectedDate+'.'});
 });
 app.post('/api/orders',(q,r)=>{const b=q.body||{},s:any=db.prepare('select * from sessions where id=?').get(Number(b.sessionId));if(!s)return r.status(404).json({error:'Session not found'});if(!['buy','sell'].includes(b.side)||!['market','limit','stop'].includes(b.type)||!(Number(b.lots)>0))return r.status(400).json({error:'Invalid order fields'});const c:any=db.prepare('select close,time from candles where symbol=? and time<=? order by time desc limit 1').get(s.symbol,s.cursor);if(!c)return r.status(422).json({error:'Step replay forward to reveal a price first'});const price=b.type==='market'?c.close:Number(b.price);if(!(price>0))return r.status(400).json({error:'Invalid price'});if(b.sl!=null&&((b.side==='buy'&&Number(b.sl)>=price)||(b.side==='sell'&&Number(b.sl)<=price)))return r.status(400).json({error:'Stop-loss is on the wrong side of entry'});let id:any;if(b.type==='market')id=db.prepare('insert into trades(session_id,symbol,side,entry_time,entry,sl,tp,lots,initial_risk) values(?,?,?,?,?,?,?,?,?)').run(s.id,s.symbol,b.side,c.time,price,b.sl??null,b.tp??null,Number(b.lots),Math.abs(price-Number(b.sl||price))*Number(b.lots)*100000).lastInsertRowid;else id=db.prepare('insert into orders(session_id,symbol,side,type,price,lots,sl,tp) values(?,?,?,?,?,?,?,?)').run(s.id,s.symbol,b.side,b.side+'_'+b.type,price,Number(b.lots),b.sl??null,b.tp??null).lastInsertRowid;r.status(201).json({id})});
 app.get('/api/trades',(_q,r)=>r.json(db.prepare('select * from trades order by entry_time desc limit 1000').all()));app.get('/api/sessions/:id/trades',(q,r)=>r.json(db.prepare('select * from trades where session_id=? order by entry_time desc').all(Number(q.params.id))));app.post('/api/sessions/:sessionId/trades/:tradeId/close',(q,r)=>{const sessionId=Number(q.params.sessionId),tradeId=Number(q.params.tradeId),s:any=db.prepare('select * from sessions where id=?').get(sessionId);if(!s)return r.status(404).json({error:'Session not found'});const t:any=db.prepare('select * from trades where id=? and session_id=?').get(tradeId,sessionId);if(!t)return r.status(404).json({error:'Trade not found in this session'});if(t.status!=='open')return r.status(409).json({error:'Trade is already closed'});const c:any=db.prepare('select close,time from candles where symbol=? and time<=? order by time desc limit 1').get(s.symbol,s.cursor);if(!c)return r.status(422).json({error:'No revealed candle available at the replay cursor'});const profit=pnl(t.side,t.entry,c.close,t.lots);const result=db.transaction(()=>{const changed=db.prepare("update trades set exit_time=?,exit=?,pnl=?,status='closed' where id=? and session_id=? and status='open'").run(c.time,c.close,profit,tradeId,sessionId);if(changed.changes!==1)throw Error('Trade is already closed');db.prepare('update sessions set balance=balance+? where id=?').run(profit,sessionId);return{trade:db.prepare('select * from trades where id=?').get(tradeId),session:db.prepare('select * from sessions where id=?').get(sessionId)}})();r.json(result)});app.patch('/api/trades/:id',(q,r)=>{const b=q.body||{},id=Number(q.params.id),t:any=db.prepare('select * from trades where id=?').get(id);if(!t)return r.status(404).json({error:'Trade not found'});const hasSL=Object.prototype.hasOwnProperty.call(b,'sl'),hasTP=Object.prototype.hasOwnProperty.call(b,'tp');if((hasSL||hasTP)&&t.status!=='open')return r.status(409).json({error:'Only open trades can have stop-loss or take-profit changed'});const nextSL=hasSL?(b.sl==null?null:Number(b.sl)):t.sl,nextTP=hasTP?(b.tp==null?null:Number(b.tp)):t.tp;if(hasSL&&nextSL!==null&&(!(nextSL>0)||!Number.isFinite(nextSL)||(t.side==='buy'?nextSL>=Number(t.entry):nextSL<=Number(t.entry))))return r.status(400).json({error:t.side==='buy'?'Stop-loss must be below entry for a buy trade':'Stop-loss must be above entry for a sell trade'});if(hasTP&&nextTP!==null&&(!(nextTP>0)||!Number.isFinite(nextTP)||(t.side==='buy'?nextTP<=Number(t.entry):nextTP>=Number(t.entry))))return r.status(400).json({error:t.side==='buy'?'Take-profit must be above entry for a buy trade':'Take-profit must be below entry for a sell trade'});const sets=['notes=coalesce(?,notes)','strategy=coalesce(?,strategy)','tags=coalesce(?,tags)'],values:any[]=[b.notes??null,b.strategy??null,b.tags?JSON.stringify(b.tags):null];if(hasSL){sets.push('sl=?','initial_risk=?');values.push(nextSL,Math.abs(Number(t.entry)-Number(nextSL??t.entry))*Number(t.lots)*100000)}if(hasTP){sets.push('tp=?');values.push(nextTP)}values.push(id);db.prepare('update trades set '+sets.join(',')+' where id=?').run(...values);r.json(db.prepare('select * from trades where id=?').get(id))});
