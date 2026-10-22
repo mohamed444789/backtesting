@@ -1048,7 +1048,7 @@ td{font-size:12px}
 /* Align replay date picker, action button, and toolbar controls on one baseline. */
 .replay-date-jump{
   align-items:flex-end;
-  align-self:flex-end;
+  align-self:center;
   padding-bottom:0;
   margin-bottom:0;
 }
@@ -1082,7 +1082,11 @@ td{font-size:12px}
   margin:0;
 }
 .toolbar>.replay-date-jump{
+  align-self:center;
   margin-top:0;
+  /* The label sits above the input, so lift the whole group to align
+     the input and action button bottoms with the toolbar's other controls. */
+  transform:translateY(-7px);
 }
 .fullscreen-controls>.replay-date-jump{
   align-self:center;
