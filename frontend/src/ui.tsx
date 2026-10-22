@@ -55,7 +55,7 @@ const onDrawingDoubleClick=()=>{window.setTimeout(()=>{try{const selected=manage
 document.addEventListener('dblclick',onDrawingDoubleClick,true);
 return()=>{document.removeEventListener('pointerdown',onPositionEntryPointerDown,true);document.removeEventListener('pointerup',onPositionEntryPointerUp,true);document.removeEventListener('pointercancel',onPositionEntryPointerUp,true);window.removeEventListener('blur',onPositionEntryWindowBlur);if(positionEntryMagnetPointer!==null)manager.setMagnet('weak');positionEntryMagnetPointer=null;document.removeEventListener('dblclick',onDrawingDoubleClick,true);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
 if(!series.current)return;
-const timeframeChanged=lastChartTf.current!==tf;lastChartTf.current=tf;const previousRange=chart.current?.timeScale().getVisibleLogicalRange();
+const timeframeChanged=lastChartTf.current!==tf;lastChartTf.current=tf;const previousRange=chart.current?.timeScale().getVisibleLogicalRange();const previousTimeRange=chart.current?.timeScale().getVisibleRange();
 const m=new Map<number,any>();
 for(const x of candles){
 const t=Math.floor(x.time/(tf*60))*(tf*60),a=m.get(t);
@@ -82,8 +82,9 @@ if(canUpdate){
   series.current.update(chartData[lastIndex]);
 }else{
   series.current.setData(chartData);
-  if(chartData.length&&timeframeChanged){
-    chart.current?.timeScale().scrollToRealTime();
+  if(chartData.length&&timeframeChanged&&previousTimeRange){
+    try{chart.current?.timeScale().setVisibleRange(previousTimeRange)}
+    catch{if(previousRange)chart.current?.timeScale().setVisibleLogicalRange(previousRange);else chart.current?.timeScale().fitContent()}
   }else if(chartData.length&&previousData.length===0){
     chart.current?.timeScale().fitContent();
   }else if(chartData.length&&previousRange){
