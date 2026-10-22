@@ -82,9 +82,13 @@ if(canUpdate){
   series.current.update(chartData[lastIndex]);
 }else{
   series.current.setData(chartData);
-  if(chartData.length&&timeframeChanged&&previousTimeRange){
-    try{chart.current?.timeScale().setVisibleRange(previousTimeRange)}
-    catch{if(previousRange)chart.current?.timeScale().setVisibleLogicalRange(previousRange);else chart.current?.timeScale().fitContent()}
+  if(chartData.length&&timeframeChanged&&previousRange&&previousData.length){
+    try{
+      const visibleBars=previousRange.to-previousRange.from;
+      const rightOffset=previousRange.to-(previousData.length-1);
+      const nextTo=(chartData.length-1)+rightOffset;
+      chart.current?.timeScale().setVisibleLogicalRange({from:nextTo-visibleBars,to:nextTo});
+    }catch{chart.current?.timeScale().fitContent()}
   }else if(chartData.length&&previousData.length===0){
     chart.current?.timeScale().fitContent();
   }else if(chartData.length&&previousRange){
