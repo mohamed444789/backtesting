@@ -1433,3 +1433,20 @@ td{font-size:12px}
   color:#047857;
   font-weight:600;
 }
+
+
+/* Make the order action reflect the selected trade direction. */
+.order-ticket-panel .sell-order-button{
+  background:#ef4444;
+  border-color:#dc2626;
+  color:#fff;
+}
+.order-ticket-panel .sell-order-button:hover{
+  background:#dc2626;
+  border-color:#b91c1c;
+}
+.order-ticket-panel .buy-order-button{
+  background:#32c99a;
+  border-color:#32c99a;
+  color:#06251b;
+}
