@@ -36,3 +36,32 @@
 .atlas-calendar-footer>button:hover:not(:disabled){background:#e5f3ff;border-color:#b9dcf4}
 .atlas-calendar-footer>button:disabled{opacity:.35;cursor:not-allowed}
 @media(max-width:700px){.atlas-calendar-popover{width:300px}.atlas-calendar-day{font-size:13px}.atlas-date-trigger{min-height:44px;font-size:16px}}
+
+
+/* Keep the selected date readable in the dark replay toolbar. */
+.replay-date-jump .atlas-date-label{
+  color:#dce6f2;
+}
+.replay-date-jump .atlas-date-trigger{
+  color:#dce6f2;
+  background:#0b121a;
+  border-color:#2a394a;
+}
+.replay-date-jump .atlas-date-trigger>span{
+  color:inherit;
+  opacity:1;
+}
+.replay-date-jump .atlas-date-trigger svg{
+  color:#a9b7c8;
+}
+.theme-light .replay-date-jump .atlas-date-label{
+  color:#475569;
+}
+.theme-light .replay-date-jump .atlas-date-trigger{
+  color:#1e293b;
+  background:#fff;
+  border-color:#cbd5e1;
+}
+.theme-light .replay-date-jump .atlas-date-trigger svg{
+  color:#52677d;
+}
