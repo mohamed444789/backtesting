@@ -1410,3 +1410,26 @@ td{font-size:12px}
 .theme-light .toolbar .normal-mini-stats .metric-profit-factor b{color:#1d4ed8}
 @media(max-width:1250px){.toolbar .normal-mini-stats{gap:3px}.toolbar .normal-mini-stats>div{min-width:48px;padding:5px 5px}.toolbar .normal-mini-stats .stat>div{font-size:8px}.toolbar .normal-mini-stats .stat>b,.toolbar .normal-mini-stats .stat strong{font-size:11px}}
 @media(max-width:950px){.toolbar .normal-mini-stats{order:20;flex:1 0 100%;margin-left:0;flex-wrap:wrap;justify-content:flex-start}.toolbar .normal-mini-stats>div{flex:1;min-width:70px}}
+
+
+/* Improve Session trades readability in light theme without changing dark mode. */
+.theme-light .tablewrap th{
+  color:#e2e8f0;
+  background:#1e293b;
+  border-color:#334155;
+  font-weight:700;
+}
+.theme-light .tablewrap td{
+  color:#334155;
+  border-color:#dbe3ec;
+}
+.theme-light .tablewrap tbody tr:nth-child(even){
+  background:#f8fafc;
+}
+.theme-light .tablewrap tbody tr:hover{
+  background:#eff6ff;
+}
+.theme-light .tablewrap td button{
+  color:#047857;
+  font-weight:600;
+}
