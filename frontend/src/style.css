@@ -1274,3 +1274,13 @@ td{font-size:12px}
   .fullscreen-mini-stats{flex-wrap:wrap;max-width:64vw;justify-content:flex-end}
   .fullscreen-mini-stats>div{min-width:54px;padding:5px 6px}
 }
+
+
+/* Slightly larger, easier-to-read fullscreen session metrics. */
+.fullscreen-mini-stats span{font-size:10px;letter-spacing:.3px}
+.fullscreen-mini-stats b{font-size:14px;line-height:1.25}
+.fullscreen-mini-stats>div{padding:7px 9px}
+@media(max-width:1050px){
+  .fullscreen-mini-stats span{font-size:9px}
+  .fullscreen-mini-stats b{font-size:13px}
+}
