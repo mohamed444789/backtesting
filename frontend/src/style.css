@@ -1370,3 +1370,43 @@ td{font-size:12px}
 @media(max-width:600px){
   .replay-session-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 }
+
+
+/* In normal replay mode, keep session metrics compact in the toolbar instead
+   of repeating the large dashboard cards beneath the chart. */
+.toolbar .normal-mini-stats{margin-left:auto;flex-wrap:nowrap;gap:5px;padding:0 4px;max-width:none;min-width:0}
+.toolbar .normal-mini-stats>div{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:58px;padding:6px 8px;border:1px solid #2a394a;border-radius:6px;background:linear-gradient(180deg,#172431 0%,#111b26 100%)}
+.toolbar .normal-mini-stats .stat>svg{display:none}
+.toolbar .normal-mini-stats .stat>div{display:block;color:#92a4b9;font-size:9px;font-weight:600;line-height:1.1;white-space:nowrap}
+.toolbar .normal-mini-stats .stat>b,
+.toolbar .normal-mini-stats .stat strong{display:block;margin:0;color:#e4ebf4;font-size:12px;font-weight:600;line-height:1.15;white-space:nowrap;font-variant-numeric:tabular-nums}
+.toolbar .normal-mini-stats .metric-balance{border-color:#285348;background:#17352f}
+.toolbar .normal-mini-stats .metric-balance b{color:#6ee7b7}
+.toolbar .normal-mini-stats .metric-wins{border-color:#245a46;background:#15372b}
+.toolbar .normal-mini-stats .metric-wins b{color:#5ee0a0}
+.toolbar .normal-mini-stats .metric-losses{border-color:#5b343b;background:#3a232b}
+.toolbar .normal-mini-stats .metric-losses b{color:#ff9299}
+.toolbar .normal-mini-stats .metric-win-rate{border-color:#245a46;background:#15372b}
+.toolbar .normal-mini-stats .metric-win-rate b{color:#5ee0a0}
+.toolbar .normal-mini-stats .metric-loss-rate{border-color:#5b343b;background:#3a232b}
+.toolbar .normal-mini-stats .metric-loss-rate b{color:#ff9299}
+.toolbar .normal-mini-stats .metric-profit-factor{border-color:#385078;background:#1c2d47}
+.toolbar .normal-mini-stats .metric-profit-factor b{color:#9ec5ff}
+.theme-light .toolbar .normal-mini-stats>div{background:#fff;border-color:#dbe3ec}
+.theme-light .toolbar .normal-mini-stats .stat>div{color:#64748b}
+.theme-light .toolbar .normal-mini-stats .stat>b,
+.theme-light .toolbar .normal-mini-stats .stat strong{color:#0f172a}
+.theme-light .toolbar .normal-mini-stats .metric-balance{background:#ecfdf5;border-color:#a7f3d0}
+.theme-light .toolbar .normal-mini-stats .metric-balance b{color:#047857}
+.theme-light .toolbar .normal-mini-stats .metric-wins,
+.theme-light .toolbar .normal-mini-stats .metric-win-rate{background:#f0fdf4;border-color:#bbf7d0}
+.theme-light .toolbar .normal-mini-stats .metric-wins b,
+.theme-light .toolbar .normal-mini-stats .metric-win-rate b{color:#15803d}
+.theme-light .toolbar .normal-mini-stats .metric-losses,
+.theme-light .toolbar .normal-mini-stats .metric-loss-rate{background:#fff1f2;border-color:#fecdd3}
+.theme-light .toolbar .normal-mini-stats .metric-losses b,
+.theme-light .toolbar .normal-mini-stats .metric-loss-rate b{color:#be123c}
+.theme-light .toolbar .normal-mini-stats .metric-profit-factor{background:#eff6ff;border-color:#bfdbfe}
+.theme-light .toolbar .normal-mini-stats .metric-profit-factor b{color:#1d4ed8}
+@media(max-width:1250px){.toolbar .normal-mini-stats{gap:3px}.toolbar .normal-mini-stats>div{min-width:48px;padding:5px 5px}.toolbar .normal-mini-stats .stat>div{font-size:8px}.toolbar .normal-mini-stats .stat>b,.toolbar .normal-mini-stats .stat strong{font-size:11px}}
+@media(max-width:950px){.toolbar .normal-mini-stats{order:20;flex:1 0 100%;margin-left:0;flex-wrap:wrap;justify-content:flex-start}.toolbar .normal-mini-stats>div{flex:1;min-width:70px}}
