@@ -1043,3 +1043,56 @@ td{font-size:12px}
   .replay-date-jump .atlas-date-field{flex:1;width:auto;min-width:135px}
   .fullscreen-controls .replay-date-jump{min-width:100%}
 }
+
+
+/* Align replay date picker, action button, and toolbar controls on one baseline. */
+.replay-date-jump{
+  align-items:flex-end;
+  align-self:flex-end;
+  padding-bottom:0;
+  margin-bottom:0;
+}
+.replay-date-jump .atlas-date-field{
+  align-self:flex-end;
+  gap:4px;
+  margin:0;
+}
+.replay-date-jump .atlas-date-label{
+  display:block;
+  line-height:14px;
+  min-height:14px;
+  margin:0;
+  padding:0;
+}
+.replay-date-jump .atlas-date-picker{
+  display:block;
+  margin:0;
+}
+.replay-date-jump .atlas-date-trigger{
+  display:flex;
+  box-sizing:border-box;
+  height:38px;
+  min-height:38px;
+}
+.replay-date-jump .step-button{
+  align-self:flex-end;
+  box-sizing:border-box;
+  height:38px;
+  min-height:38px;
+  margin:0;
+}
+.toolbar>.replay-date-jump{
+  margin-top:0;
+}
+.fullscreen-controls>.replay-date-jump{
+  align-self:center;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-label{
+  line-height:12px;
+  min-height:12px;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-trigger,
+.fullscreen-controls .replay-date-jump .step-button{
+  height:36px;
+  min-height:36px;
+}
