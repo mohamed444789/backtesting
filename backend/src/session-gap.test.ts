@@ -43,10 +43,17 @@ test('finds the first weekend gap after normal candles, not a later weekend', ()
   const { db, add } = setup();
   try {
     const wednesday = Date.UTC(2026, 4, 20, 12, 0) / 1000;
-    const thursday = wednesday + 60;
-    const friday = thursday + 60;
-    const monday = friday + 3 * 24 * 60 * 60;
-    add('EURUSD', thursday, friday, monday);
+    const normalSessionTimes = [
+      Date.UTC(2026, 4, 20, 21, 0) / 1000,
+      Date.UTC(2026, 4, 21, 6, 0) / 1000,
+      Date.UTC(2026, 4, 21, 15, 0) / 1000,
+      Date.UTC(2026, 4, 22, 0, 0) / 1000,
+      Date.UTC(2026, 4, 22, 9, 0) / 1000,
+      Date.UTC(2026, 4, 22, 18, 0) / 1000,
+    ];
+    const friday = normalSessionTimes[normalSessionTimes.length - 1];
+    const monday = Date.UTC(2026, 4, 25, 0, 0) / 1000;
+    add('EURUSD', ...normalSessionTimes, monday);
 
     assert.deepEqual(findNextSessionGap(db, 'EURUSD', wednesday, null), {
       time: monday,
