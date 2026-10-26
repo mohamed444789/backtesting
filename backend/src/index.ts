@@ -121,11 +121,13 @@ app.post('/api/sessions/:id/step',(q,r)=>{
 app.post('/api/sessions/:id/jump-date',(q,r)=>{
  const id=Number(q.params.id),s:any=db.prepare('select * from sessions where id=?').get(id);
  if(!s)return r.status(404).json({error:'Session not found'});
- const selectedDate=q.body?.date,selectedTime=q.body?.time??'00:00';
+ const selectedDate=q.body?.date,rawTime=q.body?.time,selectedTime=rawTime==null||rawTime===''?'00:00':rawTime;
  if(!isValidDateOnly(selectedDate))return r.status(400).json({error:'Choose a valid calendar date in YYYY-MM-DD format.'});
  if(typeof selectedTime!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(selectedTime))return r.status(400).json({error:'Choose a valid time in HH:MM format.'});
  const cursor=Number(s.cursor),cursorDate=dateInBerlin(cursor);
  if(selectedDate<cursorDate)return r.status(400).json({error:'You can only jump forward. The selected date '+selectedDate+' is before the current replay date '+cursorDate+'. Create a new session to replay earlier dates.'});
+ const cursorClock=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(cursor*1000));
+ if(selectedDate===cursorDate&&selectedTime<=cursorClock)return r.status(400).json({error:'Choose a time later than the current replay cursor ('+cursorClock+' Berlin time), or select a later date.'});
  const endTime=s.end_time==null?null:Number(s.end_time);
  const target=findFirstCandleOnDate(db,String(s.symbol),selectedDate,cursor,endTime,selectedTime);
  if(!target)return r.status(422).json({error:'No available 1-minute candle was found on '+selectedDate+' at or after '+selectedTime+' Berlin time and after the current replay position. The replay was not changed. Saturdays, market holidays, and dates outside downloaded history may have no candles.'});
