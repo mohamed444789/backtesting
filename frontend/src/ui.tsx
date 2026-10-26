@@ -329,7 +329,7 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
    <td className="trade-price">{t.entry??'—'}</td>
    <td className="trade-price">{t.exit??'—'}</td>
    <td className="trade-numeric">{t.lots??'—'}</td>
-   <td className={'trade-pnl '+(t.status!=='closed'||!Number.isFinite(pnl)?'pnl-neutral':pnl>0?'pnl-positive':pnl<0?'pnl-negative':'pnl-neutral')}>{t.status==='closed'&&Number.isFinite(pnl)?fmt(pnl):'—'}</td>
+   <td className={'trade-pnl '+(t.status!=='closed'||!Number.isFinite(pnl)?'pnl-neutral':pnl>0?'pnl-positive':pnl<0?'pnl-negative':'pnl-neutral')}>{t.status==='closed'&&t.pnl!=null&&Number.isFinite(pnl)?fmt(pnl):'—'}</td>
    <td><span className={'trade-outcome outcome-'+outcomeClass(result)}>{result}</span></td>
    <td><button className={'trade-journal-button '+(hasJournal?'has-journal':'')} onClick={()=>edit(t)}>{hasJournal?'Open journal':'＋ Add notes'}</button></td>
    <td>{close&&t.status==='open'?<button className="trade-close-button" onClick={()=>close(t)}>Close trade</button>:'—'}</td>
