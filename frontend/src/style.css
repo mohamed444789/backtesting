@@ -2379,3 +2379,79 @@ main .content:has(.the5ers-trades-page){max-width:none;width:100%;margin:0;paddi
  .app .the5ers-trades-page .trade-performance-card>strong{font-size:20px}
  .app .the5ers-trades-page .trade-performance-card:last-child{grid-column:1/-1;justify-self:center;width:calc(50% - 4px)}
 }
+
+
+/* Performance overview cards matching the supplied dashboard screenshot. */
+.app .the5ers-trades-page .trade-performance-heading{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  margin:0 12px 12px;
+}
+.app .the5ers-trades-page .trade-performance-heading h2{
+  margin:0;
+  color:#14213a;
+  font:700 14px/1.25 Arial,Helvetica,sans-serif;
+  letter-spacing:0;
+}
+.app .the5ers-trades-page .trade-performance-heading>span{
+  color:#6b7c98;
+  font:600 10px/1.2 Arial,Helvetica,sans-serif;
+  letter-spacing:.09em;
+}
+.app .the5ers-trades-page .trade-overview-stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:13px;
+  margin:0 12px 20px;
+}
+.app .the5ers-trades-page .trade-overview-stats .stat{
+  min-width:0;
+  min-height:124px;
+  padding:16px;
+  border:1px solid #dbe3ee;
+  border-radius:7px;
+  background:#fff;
+  box-shadow:0 1px 2px #0f172a05;
+}
+.app .the5ers-trades-page .trade-overview-stats .stat>div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:#7c8dab;
+  font:400 12px/1.2 Arial,Helvetica,sans-serif;
+}
+.app .the5ers-trades-page .trade-overview-stats .stat>div>span{
+  display:grid;
+  place-items:center;
+  flex:0 0 30px;
+  width:30px;
+  height:30px;
+  border-radius:6px;
+  background:#193632;
+  color:#56d8b3;
+}
+.app .the5ers-trades-page .trade-overview-stats .stat>div>span svg{width:16px;height:16px}
+.app .the5ers-trades-page .trade-overview-stats .stat>b{
+  display:block;
+  margin:12px 0 7px;
+  color:#13213d;
+  font:700 24px/1 Georgia,'Times New Roman',serif;
+  letter-spacing:0;
+}
+.app .the5ers-trades-page .trade-overview-stats .stat>small{
+  color:#536a91;
+  font:400 10px/1.2 Arial,Helvetica,sans-serif;
+}
+@media(max-width:900px){
+ .app .the5ers-trades-page .trade-overview-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .app .the5ers-trades-page .trade-overview-stats .stat{min-height:112px}
+}
+@media(max-width:620px){
+ .app .the5ers-trades-page .trade-performance-heading{margin-left:3px;margin-right:3px;gap:9px}
+ .app .the5ers-trades-page .trade-overview-stats{margin-left:3px;margin-right:3px;gap:8px}
+ .app .the5ers-trades-page .trade-overview-stats .stat{padding:12px;min-height:105px}
+ .app .the5ers-trades-page .trade-overview-stats .stat>b{font-size:22px}
+ .app .the5ers-trades-page .trade-overview-stats .stat>div>span{width:27px;height:27px;flex-basis:27px}
+}
