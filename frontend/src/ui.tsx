@@ -294,6 +294,13 @@ return()=>{
    </div>
   </div>
  </div>
+ <div className="trade-performance-strip" aria-label="Closed trade performance">
+  <div className="trade-performance-card perf-closed"><span>Closed trades</span><strong>{closedTradeStats.closed}</strong></div>
+  <div className="trade-performance-card perf-wins"><span>W</span><strong>{closedTradeStats.wins}</strong></div>
+  <div className="trade-performance-card perf-losses"><span>L</span><strong>{closedTradeStats.losses}</strong></div>
+  <div className="trade-performance-card perf-winrate"><span>W Rate</span><strong>{closedTradeStats.winRate.toFixed(1)}%</strong></div>
+  <div className="trade-performance-card perf-factor"><span>F Factor</span><strong>{closedTradeStats.profitFactor===null?'—':closedTradeStats.profitFactor===Infinity?'∞':closedTradeStats.profitFactor.toFixed(2)}</strong></div>
+ </div>
  <section className="trade-ledger-panel">
   <Trades trades={trades.filter((t:any)=>tradeJournalFilter==='all'||(tradeJournalFilter==='journaled'?(String(t.notes||'').trim()||String(t.strategy||'').trim()):(!String(t.notes||'').trim()&&!String(t.strategy||'').trim())))} edit={t=>{ED(t);NT(t.notes||'');STG(t.strategy||'')}}/>
  </section>
