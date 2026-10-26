@@ -27,13 +27,14 @@ export function dateInBerlin(timestampSeconds: number): string {
 }
 
 /**
- * Convert a Berlin local midnight to UTC epoch milliseconds. Iterating the
+ * Convert a Berlin local wall time to UTC epoch milliseconds. Iterating the
  * timezone offset avoids depending on the server's local timezone and handles
  * CET/CEST changes for dates either side of daylight-saving transitions.
  */
-function berlinMidnightUtcMs(date: string): number {
+function berlinWallTimeUtcMs(date: string, time = '00:00'): number {
   const [year, month, day] = date.split('-').map(Number);
-  const desiredWallTime = Date.UTC(year, month - 1, day);
+  const [hour, minute] = time.split(':').map(Number);
+  const desiredWallTime = Date.UTC(year, month - 1, day, hour, minute);
   let guess = desiredWallTime;
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: BERLIN_TIME_ZONE,
@@ -61,7 +62,7 @@ function berlinMidnightUtcMs(date: string): number {
 }
 
 /**
- * Return the first stored BID M1 candle on the selected Berlin calendar date
+ * Return the first stored BID M1 candle at or after the selected Berlin date/time
  * that is strictly after the current replay cursor and inside the session end.
  * It deliberately never falls forward to another date when the selected day
  * has no candles, so Saturdays/holidays return null without moving the session.
@@ -72,16 +73,17 @@ export function findFirstCandleOnDate(
   date: string,
   cursor: number,
   endTime: number | null,
+  time = '00:00',
 ): DateCandleTarget | null {
-  if (!isValidDateOnly(date)) return null;
+  if (!isValidDateOnly(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
 
-  const dayStart = Math.floor(berlinMidnightUtcMs(date) / 1000);
+  const targetTime = Math.floor(berlinWallTimeUtcMs(date, time) / 1000);
   const nextDate = new Date(Date.UTC(
     Number(date.slice(0, 4)),
     Number(date.slice(5, 7)) - 1,
     Number(date.slice(8, 10)) + 1,
   )).toISOString().slice(0, 10);
-  const nextDayStart = Math.floor(berlinMidnightUtcMs(nextDate) / 1000);
+  const nextDayStart = Math.floor(berlinWallTimeUtcMs(nextDate) / 1000);
 
   const row = db.prepare(`
     SELECT time
@@ -94,7 +96,7 @@ export function findFirstCandleOnDate(
       AND (? IS NULL OR time <= ?)
     ORDER BY time
     LIMIT 1
-  `).get(symbol, dayStart, nextDayStart, cursor, endTime, endTime) as { time: number } | undefined;
+  `).get(symbol, targetTime, nextDayStart, cursor, endTime, endTime) as { time: number } | undefined;
 
   return row ? { time: Number(row.time), date } : null;
 }
