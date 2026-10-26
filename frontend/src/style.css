@@ -1739,3 +1739,194 @@ td{font-size:12px}
   .trades-journal-wrap .trades-grid{min-width:1050px}
   .trades-journal-wrap .trades-grid tbody td{padding:10px}
 }
+
+
+/* The5ers-inspired Trader Hub: charcoal surfaces, lilac details and a sharp lime accent. */
+.the5ers-trades-page{
+  --hub-bg:#0a0a0e;
+  --hub-panel:#121218;
+  --hub-panel-raised:#17171f;
+  --hub-border:#292833;
+  --hub-muted:#92919f;
+  --hub-text:#f4f3f8;
+  --hub-lilac:#b58aff;
+  --hub-lime:#d9ff4b;
+  --hub-green:#55dda3;
+  --hub-red:#ff798b;
+  margin:-3px -3px 0;
+  color:var(--hub-text);
+}
+.trade-page-intro{padding:4px 1px 22px}
+.trade-page-eyebrow,.trade-section-eyebrow{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#8c8a98;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.16em;
+}
+.trade-page-eyebrow>span{width:7px;height:7px;border-radius:2px;background:var(--hub-lime);box-shadow:0 0 13px #d9ff4b55}
+.trade-page-eyebrow i{font-style:normal;color:#555360}
+.trade-page-title-row{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:16px}
+.trade-page-title-row h1{margin:0;color:var(--hub-text);font:650 32px/1.12 'Space Grotesk',sans-serif;letter-spacing:-.045em}
+.trade-page-title-row p{margin:9px 0 0;color:var(--hub-muted);font-size:12px;line-height:1.6}
+.trade-market-chip{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;border:1px solid #34323d;border-radius:5px;background:#15151c;padding:9px 12px;color:#b3b0c1;font-size:9px;font-weight:800;letter-spacing:.08em}
+.trade-market-chip>span{width:6px;height:6px;background:var(--hub-lime);border-radius:50%;box-shadow:0 0 10px #d9ff4b66}
+.the5ers-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:22px}
+.trade-overview-card{
+  position:relative;
+  overflow:hidden;
+  min-width:0;
+  min-height:132px;
+  padding:17px 19px 15px;
+  border:1px solid var(--hub-border);
+  border-radius:9px;
+  background:linear-gradient(145deg,#17171f 0%,#111116 76%);
+  box-shadow:0 8px 26px #00000014;
+}
+.trade-overview-card:after{content:"";position:absolute;right:-26px;top:-38px;width:106px;height:106px;border-radius:50%;background:var(--hub-accent,#b58aff);opacity:.065;filter:blur(1px);pointer-events:none}
+.overview-total{--hub-accent:var(--hub-lilac)}
+.overview-journaled{--hub-accent:var(--hub-lime)}
+.overview-review{--hub-accent:#ff9b7a}
+.trade-metric-label{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#aaa8b7;font-size:11px;font-weight:600}
+.trade-metric-label svg{color:var(--hub-accent);flex-shrink:0}
+.trade-overview-card>strong{display:block;position:relative;margin:13px 0 5px;color:var(--hub-text);font:650 30px/1 'Space Grotesk',sans-serif;letter-spacing:-.045em}
+.overview-journaled>strong{color:var(--hub-lime)}
+.trade-metric-foot{color:#777684;font-size:10px}
+.trade-ledger-panel{min-width:0;overflow:hidden;border:1px solid var(--hub-border);border-radius:10px;background:#101015;box-shadow:0 15px 36px #00000018}
+.trade-ledger-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 21px 20px;border-bottom:1px solid #26252e;background:linear-gradient(110deg,#17171e 0%,#121217 62%,#17131f 100%)}
+.trade-section-eyebrow{color:var(--hub-lilac);font-size:8px;letter-spacing:.18em}
+.trade-ledger-head h2{margin:7px 0 0;color:#f4f3f8;font:600 21px/1.2 'Space Grotesk',sans-serif;letter-spacing:-.025em}
+.trade-ledger-head p{margin:7px 0 0;color:#858391;font-size:11px;line-height:1.5}
+.trade-export-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;min-height:38px;padding:0 13px;border:1px solid #393444;border-radius:6px;background:#201b2a;color:#d3baff;font-size:10px;font-weight:750;transition:background .15s,border-color .15s,transform .15s}
+.trade-export-button:hover{background:#2b233b;border-color:#7052a1;transform:translateY(-1px)}
+.trade-ledger-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid #26252e;background:#121218}
+.trade-filter-set{display:inline-flex;align-items:center;gap:4px;padding:4px;border:1px solid #292833;border-radius:7px;background:#0b0b0f}
+.trade-filter-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:31px;padding:0 10px;border:1px solid transparent;border-radius:5px;background:transparent;color:#92909f;font-size:10px;font-weight:700;white-space:nowrap;transition:background .14s,color .14s,border-color .14s}
+.trade-filter-button:hover{color:#e9e7ef;background:#1b1a23}
+.trade-filter-button[aria-pressed="true"]{background:#d9ff4b;border-color:#d9ff4b;color:#151609;box-shadow:0 2px 8px #d9ff4b1f}
+.trade-filter-button>span{display:inline-grid;place-items:center;min-width:19px;height:18px;padding:0 4px;border-radius:4px;background:#25242d;color:#aaa7b7;font-size:9px;font-variant-numeric:tabular-nums}
+.trade-filter-button[aria-pressed="true"]>span{background:#bfe333;color:#262a10}
+.trade-ledger-hint{display:inline-flex;align-items:center;gap:7px;color:#7e7c8b;font-size:10px}
+.trade-hint-dot{width:5px;height:5px;border-radius:50%;background:var(--hub-lilac);box-shadow:0 0 8px #b58aff66}
+.trade-table-legend{display:flex;align-items:center;gap:15px;flex-wrap:wrap;padding:11px 20px;background:#0f0f14;border-bottom:1px solid #24232c}
+.trade-table-legend>span{display:inline-flex;align-items:center;gap:6px;color:#a4a1b0;font-size:9px;font-weight:650}
+.trade-table-legend>span>i{width:7px;height:7px;border-radius:2px;display:inline-block}
+.trade-table-legend .legend-tp{background:#55dda3;box-shadow:0 0 8px #55dda344}
+.trade-table-legend .legend-sl{background:#ff798b;box-shadow:0 0 8px #ff798b44}
+.trade-table-legend .trade-table-legend-note{margin-left:auto;color:#777583;font-weight:450}
+.the5ers-trades-page .trades-journal-wrap{
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:#101015;
+  box-shadow:none;
+}
+.the5ers-trades-page .trades-journal-wrap .trades-grid{min-width:1120px}
+.the5ers-trades-page .trades-journal-wrap .trades-grid thead th{background:#191820;border-color:#2a2933;color:#8c899a}
+.the5ers-trades-page .trades-journal-wrap .trade-sort-button{min-height:43px;padding:0 12px;color:#9592a3;font-size:9px;letter-spacing:.09em}
+.the5ers-trades-page .trades-journal-wrap .trade-sort-button:hover,
+.the5ers-trades-page .trades-journal-wrap .trade-sort-button:focus-visible{background:#24212f;color:#fff;outline:none}
+.the5ers-trades-page .trades-journal-wrap .trade-sort-indicator{background:#25232e;color:#8d899f}
+.the5ers-trades-page .trades-journal-wrap .trade-sort-button:hover .trade-sort-indicator,
+.the5ers-trades-page .trades-journal-wrap [aria-sort="ascending"] .trade-sort-indicator,
+.the5ers-trades-page .trades-journal-wrap [aria-sort="descending"] .trade-sort-indicator{background:#3a2a4d;color:#d9bdff}
+.the5ers-trades-page .trades-journal-wrap .trades-grid tbody td{padding:13px 12px;border-bottom:1px solid #22212a;color:#c9c6d3;font-size:11px}
+.the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr:nth-child(even){background:#121218}
+.the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr:hover td{background:#1d1b26}
+.the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.tp-hit-row td{background:linear-gradient(90deg,#12352b 0%,#101015 92%);border-bottom-color:#254a3c}
+.the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.tp-hit-row:hover td{background:#163a2f}
+.the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.sl-hit-row td{background:linear-gradient(90deg,#3a202b 0%,#101015 92%);border-bottom-color:#5b303e}
+.the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.sl-hit-row:hover td{background:#45242f}
+.the5ers-trades-page .trades-journal-wrap .trade-pair{color:#f3f1f8;font-weight:750;letter-spacing:.015em}
+.the5ers-trades-page .trades-journal-wrap .trade-date{color:#a09cac;font-size:10px!important}
+.the5ers-trades-page .trades-journal-wrap .direction-long{color:#1b1c0e;background:var(--hub-lime);border-color:var(--hub-lime);font-weight:850}
+.the5ers-trades-page .trades-journal-wrap .direction-short{color:#e1caff;background:#30233e;border-color:#55406a}
+.the5ers-trades-page .trades-journal-wrap .pnl-positive{color:var(--hub-lime)!important}
+.the5ers-trades-page .trades-journal-wrap .pnl-negative{color:#ff8999!important}
+.the5ers-trades-page .trades-journal-wrap .pnl-neutral{color:#817f8d!important}
+.the5ers-trades-page .trades-journal-wrap .outcome-tp-hit,
+.the5ers-trades-page .trades-journal-wrap .outcome-win{color:#75ebba;background:#13382b;border-color:#28684b;box-shadow:none}
+.the5ers-trades-page .trades-journal-wrap .outcome-sl-hit,
+.the5ers-trades-page .trades-journal-wrap .outcome-loss{color:#ff9eab;background:#43232d;border-color:#763c4a;box-shadow:none}
+.the5ers-trades-page .trades-journal-wrap .outcome-open{color:#d4b3ff;background:#2b2038;border-color:#503668}
+.the5ers-trades-page .trades-journal-wrap .outcome-break-even{color:#c3bfce;background:#25242d;border-color:#3a3844}
+.the5ers-trades-page .trades-journal-wrap .trade-journal-button,
+.the5ers-trades-page .trades-journal-wrap .trade-close-button{min-height:29px;padding:5px 9px;border-radius:5px;border-color:#373540;background:#1b1a22;color:#d8d4e1;font-size:10px}
+.the5ers-trades-page .trades-journal-wrap .trade-journal-button:hover{background:#292438;border-color:#665080}
+.the5ers-trades-page .trades-journal-wrap .trade-journal-button.has-journal{background:#252033;border-color:#59436f;color:#d9c0ff}
+.the5ers-trades-page .trades-journal-wrap .trade-close-button{background:#38202a;border-color:#633540;color:#ffadba}
+.the5ers-trades-page .trades-journal-wrap .trades-empty{height:112px;color:#868392!important}
+.theme-light .the5ers-trades-page{--hub-bg:#f8f9fc;--hub-panel:#fff;--hub-panel-raised:#f4f5fa;--hub-border:#dfe2ec;--hub-muted:#6c7180;--hub-text:#191923}
+.theme-light .trade-page-eyebrow{color:#727184}
+.theme-light .trade-page-title-row h1{color:#181720}
+.theme-light .trade-market-chip{background:#fff;border-color:#e2e0e9;color:#686779}
+.theme-light .the5ers-stat-grid .trade-overview-card{background:linear-gradient(145deg,#fff,#f5f3fb);border-color:#e2deed;box-shadow:0 8px 24px #20203a08}
+.theme-light .trade-metric-label{color:#666578}
+.theme-light .trade-overview-card>strong{color:#1b1a24}
+.theme-light .overview-journaled>strong{color:#536b00}
+.theme-light .trade-metric-foot{color:#79798a}
+.theme-light .trade-ledger-panel{background:#fff;border-color:#e0deea;box-shadow:0 12px 30px #20203a08}
+.theme-light .trade-ledger-head{background:linear-gradient(110deg,#f5f0ff 0%,#fff 70%,#f8f8e9 100%);border-color:#e2ddec}
+.theme-light .trade-ledger-head h2{color:#191822}
+.theme-light .trade-ledger-head p{color:#777687}
+.theme-light .trade-export-button{background:#f1eaff;border-color:#dbcbff;color:#6235a1}
+.theme-light .trade-ledger-toolbar{background:#fff;border-color:#e8e5ef}
+.theme-light .trade-filter-set{background:#f4f3f8;border-color:#e1dfea}
+.theme-light .trade-filter-button{color:#656477}
+.theme-light .trade-filter-button:hover{background:#e8e4f1;color:#2d2938}
+.theme-light .trade-filter-button[aria-pressed="true"]{background:#cbf542;border-color:#cbf542;color:#20220d}
+.theme-light .trade-filter-button>span{background:#e1dfe9;color:#625e70}
+.theme-light .trade-filter-button[aria-pressed="true"]>span{background:#b3d72c;color:#25270e}
+.theme-light .trade-table-legend{background:#faf9fc;border-color:#e7e3ed}
+.theme-light .trade-table-legend>span{color:#676475}
+.theme-light .trade-table-legend .trade-table-legend-note{color:#858293}
+.theme-light .the5ers-trades-page .trades-journal-wrap{background:#fff}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid thead th{background:#f0edf6;border-color:#e0dbe9;color:#6c687a}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-sort-button{color:#696578}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-sort-button:hover,
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-sort-button:focus-visible{background:#e6dff1;color:#282333}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid tbody td{color:#414052;border-color:#ebe8f0}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr:nth-child(even){background:#faf9fc}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr:hover td{background:#f4f0fb}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.tp-hit-row td{background:linear-gradient(90deg,#e9f9ef,#fff 90%);border-bottom-color:#d0edd9}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.tp-hit-row:hover td{background:#dff7e8}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.sl-hit-row td{background:linear-gradient(90deg,#fff0f2,#fff 90%);border-bottom-color:#f0d3d9}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trades-grid tbody tr.sl-hit-row:hover td{background:#ffe5e9}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-pair{color:#191823}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-date{color:#747184}
+.theme-light .the5ers-trades-page .trades-journal-wrap .direction-long{color:#27300a;background:#d9ff4b;border-color:#c0df38}
+.theme-light .the5ers-trades-page .trades-journal-wrap .direction-short{color:#62359b;background:#f1eaff;border-color:#dfcffc}
+.theme-light .the5ers-trades-page .trades-journal-wrap .pnl-positive{color:#497000!important}
+.theme-light .the5ers-trades-page .trades-journal-wrap .pnl-negative{color:#c62949!important}
+.theme-light .the5ers-trades-page .trades-journal-wrap .outcome-tp-hit,
+.theme-light .the5ers-trades-page .trades-journal-wrap .outcome-win{color:#087344;background:#e8fbf1;border-color:#b0e9cc}
+.theme-light .the5ers-trades-page .trades-journal-wrap .outcome-sl-hit,
+.theme-light .the5ers-trades-page .trades-journal-wrap .outcome-loss{color:#b4233b;background:#fff0f2;border-color:#ffc4ce}
+.theme-light .the5ers-trades-page .trades-journal-wrap .outcome-open{color:#643ba1;background:#f4edff;border-color:#dfd0ff}
+.theme-light .the5ers-trades-page .trades-journal-wrap .outcome-break-even{color:#555264;background:#f4f3f7;border-color:#e1dfea}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-journal-button{background:#f6f3fc;border-color:#e2d9f2;color:#5e4384}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-journal-button.has-journal{background:#f1eaff;border-color:#dbcaff;color:#6235a1}
+.theme-light .the5ers-trades-page .trades-journal-wrap .trade-close-button{background:#fff1f3;border-color:#ffd1d8;color:#b4233b}
+@media(max-width:900px){
+ .the5ers-trades-page{margin:0}
+ .trade-page-title-row h1{font-size:28px}
+ .the5ers-stat-grid{gap:9px}
+ .trade-overview-card{padding:14px;min-height:122px}
+ .trade-ledger-head{padding:18px}
+ .trade-table-legend .trade-table-legend-note{flex-basis:100%;margin-left:0}
+}
+@media(max-width:600px){
+ .trade-page-title-row{align-items:flex-start;flex-direction:column}
+ .trade-market-chip{align-self:flex-start}
+ .trade-page-title-row h1{font-size:26px}
+ .the5ers-stat-grid{grid-template-columns:1fr;gap:8px}
+ .trade-overview-card{min-height:102px}
+ .trade-overview-card>strong{font-size:27px;margin:9px 0 4px}
+ .trade-ledger-head{align-items:flex-start;flex-direction:column}
+ .trade-export-button{align-self:flex-start}
+ .trade-ledger-toolbar{align-items:flex-start;flex-direction:column}
+ .trade-filter-set{max-width:100%;flex-wrap:wrap}
+ .trade-filter-button{padding:0 8px}
+}
