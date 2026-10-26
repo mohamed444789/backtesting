@@ -1450,3 +1450,113 @@ td{font-size:12px}
   border-color:#32c99a;
   color:#06251b;
 }
+
+
+/* Unified replay toolbar control sizing and alignment. */
+.toolbar{
+  align-items:center;
+  gap:10px;
+}
+.toolbar>select,
+.toolbar .speed-control select,
+.toolbar .saved-session-select{
+  box-sizing:border-box;
+  height:44px;
+  min-height:44px;
+  padding:0 12px;
+  border-radius:6px;
+  align-self:center;
+}
+.toolbar>button{
+  box-sizing:border-box;
+  height:44px;
+  min-height:44px;
+  justify-content:center;
+  padding:0 14px;
+  border-radius:6px;
+  font-size:12px;
+  white-space:nowrap;
+}
+.toolbar .replay-date-jump{
+  display:flex;
+  align-items:center;
+  align-self:center;
+  gap:8px;
+  margin:0;
+  padding:0;
+}
+.toolbar .replay-date-jump .atlas-date-field{
+  align-self:center;
+  margin:0;
+}
+.toolbar .replay-date-jump .atlas-date-trigger,
+.toolbar .replay-date-jump .replay-time-input,
+.toolbar .replay-date-jump .step-button{
+  box-sizing:border-box;
+  height:44px;
+  min-height:44px;
+  align-self:center;
+  border-radius:6px;
+}
+.toolbar .replay-date-jump .atlas-date-trigger{
+  display:flex;
+  align-items:center;
+}
+.toolbar .replay-date-jump .replay-time-input{
+  width:122px;
+  min-width:122px;
+  margin:0;
+  padding:0 10px;
+  font:inherit;
+  font-size:12px;
+}
+.toolbar .replay-date-jump .step-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 14px;
+  font-size:12px;
+}
+.toolbar .speed-control{
+  align-self:center;
+  gap:8px;
+  line-height:1;
+}
+.toolbar .speed-control select{
+  height:44px;
+  min-height:44px;
+}
+.toolbar .theme-toggle-toolbar{
+  height:44px;
+  min-height:44px;
+  align-self:center;
+  justify-content:center;
+  padding:0 12px;
+}
+.fullscreen-controls{
+  align-items:center;
+}
+.fullscreen-controls .replay-date-jump{
+  align-items:center;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-trigger,
+.fullscreen-controls .replay-date-jump .replay-time-input,
+.fullscreen-controls .replay-date-jump .step-button,
+.fullscreen-controls select,
+.fullscreen-controls button{
+  box-sizing:border-box;
+  min-height:40px;
+}
+.fullscreen-controls .replay-date-jump .replay-time-input{
+  width:116px;
+  min-width:116px;
+  height:40px;
+  margin:0;
+  padding:0 10px;
+  border-radius:6px;
+}
+@media(max-width:950px){
+  .toolbar{align-items:center;flex-wrap:wrap}
+  .toolbar .replay-date-jump{flex-wrap:wrap}
+  .toolbar .normal-mini-stats{align-items:stretch}
+}
