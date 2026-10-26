@@ -1560,3 +1560,182 @@ td{font-size:12px}
   .toolbar .replay-date-jump{flex-wrap:wrap}
   .toolbar .normal-mini-stats{align-items:stretch}
 }
+
+
+/* Trades & Journal: compact, sortable, outcome-aware trading ledger. */
+.trades-journal-wrap{
+  margin-top:14px;
+  border:1px solid #26384b;
+  border-radius:14px;
+  background:#0c1420;
+  box-shadow:0 12px 30px #00000012;
+  scrollbar-color:#34465b transparent;
+}
+.trades-journal-wrap .trades-grid{
+  width:100%;
+  min-width:1100px;
+  border-collapse:separate;
+  border-spacing:0;
+  font-variant-numeric:tabular-nums;
+}
+.trades-journal-wrap .trades-grid thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  padding:0;
+  background:#111e2d;
+  border-bottom:1px solid #2b3e52;
+  color:#9eb0c5;
+  font-size:10px;
+  font-weight:750;
+  letter-spacing:.075em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.trades-journal-wrap .trade-sort-button{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:9px;
+  width:100%;
+  min-height:44px;
+  padding:0 13px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  text-align:left;
+  letter-spacing:inherit;
+  text-transform:inherit;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease;
+}
+.trades-journal-wrap .trade-sort-button:hover,
+.trades-journal-wrap .trade-sort-button:focus-visible{
+  background:#1a2a3c;
+  color:#f1f6fc;
+  outline:none;
+}
+.trade-sort-indicator{
+  display:inline-grid;
+  place-items:center;
+  width:16px;
+  height:16px;
+  flex:0 0 16px;
+  border-radius:5px;
+  background:#1a2a3c;
+  color:#7790aa;
+  font-size:12px;
+  line-height:1;
+}
+.trades-journal-wrap .trade-sort-button:hover .trade-sort-indicator,
+.trades-journal-wrap [aria-sort="ascending"] .trade-sort-indicator,
+.trades-journal-wrap [aria-sort="descending"] .trade-sort-indicator{
+  background:#24466a;
+  color:#b9dcff;
+}
+.trades-journal-wrap .trades-grid tbody td{
+  padding:12px 13px;
+  border-bottom:1px solid #1c2a39;
+  color:#d4deea;
+  font-size:12px;
+  line-height:1.45;
+  white-space:nowrap;
+  transition:background .13s ease;
+}
+.trades-journal-wrap .trades-grid tbody tr:last-child td{border-bottom:0}
+.trades-journal-wrap .trades-grid tbody tr:nth-child(even){background:#0f1926}
+.trades-journal-wrap .trades-grid tbody tr:hover td{background:#17283a}
+.trades-journal-wrap .trades-grid tbody tr.tp-hit-row td{background:linear-gradient(90deg,#0d2c26b8,#0c1420 85%);border-bottom-color:#204f43}
+.trades-journal-wrap .trades-grid tbody tr.tp-hit-row:hover td{background:#12392f}
+.trades-journal-wrap .trades-grid tbody tr.sl-hit-row td{background:linear-gradient(90deg,#351d27b8,#0c1420 85%);border-bottom-color:#62313f}
+.trades-journal-wrap .trades-grid tbody tr.sl-hit-row:hover td{background:#462530}
+.trades-journal-wrap .trade-pair{color:#f2f7fd;font-weight:750;letter-spacing:.02em}
+.trades-journal-wrap .trade-date{color:#a8b8ca;font-size:11px!important}
+.trades-journal-wrap .trade-price,
+.trades-journal-wrap .trade-numeric{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px!important}
+.trades-journal-wrap .trade-direction,
+.trades-journal-wrap .trade-outcome{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:25px;
+  padding:3px 9px;
+  border:1px solid transparent;
+  border-radius:7px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.035em;
+  line-height:1.1;
+}
+.trades-journal-wrap .direction-long{color:#70e2b0;background:#12382f;border-color:#245c48}
+.trades-journal-wrap .direction-short{color:#ff9aab;background:#3c202b;border-color:#663343}
+.trades-journal-wrap .trade-pnl{font-weight:800;text-align:right}
+.trades-journal-wrap .pnl-positive{color:#55e1a4!important}
+.trades-journal-wrap .pnl-negative{color:#ff8394!important}
+.trades-journal-wrap .pnl-neutral{color:#8293a7!important}
+.trades-journal-wrap .outcome-tp-hit{color:#74edb8;background:#103b2d;border-color:#266a4e;box-shadow:inset 0 0 0 1px #174b38}
+.trades-journal-wrap .outcome-sl-hit{color:#ff9aa8;background:#481e2b;border-color:#773346;box-shadow:inset 0 0 0 1px #5b2635}
+.trades-journal-wrap .outcome-win{color:#70e2b0;background:#12382f;border-color:#245c48}
+.trades-journal-wrap .outcome-loss{color:#ff9aab;background:#3c202b;border-color:#663343}
+.trades-journal-wrap .outcome-open{color:#9cc8ff;background:#182e49;border-color:#2a4a70}
+.trades-journal-wrap .outcome-break-even{color:#c3ceda;background:#202c3a;border-color:#394a5e}
+.trades-journal-wrap .trade-journal-button,
+.trades-journal-wrap .trade-close-button{
+  min-height:29px;
+  padding:5px 9px;
+  border:1px solid #35485d;
+  border-radius:7px;
+  background:#172536;
+  color:#d8e7f7;
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:transform .14s ease,background .14s ease,border-color .14s ease;
+}
+.trades-journal-wrap .trade-journal-button:hover,
+.trades-journal-wrap .trade-close-button:hover{transform:translateY(-1px);background:#20364d;border-color:#4c6885}
+.trades-journal-wrap .trade-journal-button.has-journal{background:#162b42;border-color:#2d5276;color:#b6d8ff}
+.trades-journal-wrap .trade-close-button{background:#3a2028;border-color:#6b3541;color:#ffb4bc}
+.trades-journal-wrap .trade-close-button:hover{background:#542832;border-color:#944450}
+.trades-journal-wrap .trades-empty{height:94px;text-align:center;color:#8fa2b9!important;font-size:13px!important}
+.theme-light .trades-journal-wrap{background:#fff;border-color:#dce5ef;box-shadow:0 10px 28px #0f172a0a}
+.theme-light .trades-journal-wrap .trades-grid thead th{background:#edf3f9;border-color:#d5e0eb;color:#5c6e83}
+.theme-light .trades-journal-wrap .trade-sort-button:hover,
+.theme-light .trades-journal-wrap .trade-sort-button:focus-visible{background:#dfeaf5;color:#102033}
+.theme-light .trade-sort-indicator{background:#e0e9f3;color:#61758b}
+.theme-light .trades-journal-wrap .trade-sort-button:hover .trade-sort-indicator,
+.theme-light .trades-journal-wrap [aria-sort="ascending"] .trade-sort-indicator,
+.theme-light .trades-journal-wrap [aria-sort="descending"] .trade-sort-indicator{background:#c8def4;color:#1d4d7a}
+.theme-light .trades-journal-wrap .trades-grid tbody td{color:#34465b;border-color:#e4ebf2}
+.theme-light .trades-journal-wrap .trades-grid tbody tr:nth-child(even){background:#f8fafc}
+.theme-light .trades-journal-wrap .trades-grid tbody tr:hover td{background:#edf5fc}
+.theme-light .trades-journal-wrap .trades-grid tbody tr.tp-hit-row td{background:#ecfbf3;border-bottom-color:#c8efda}
+.theme-light .trades-journal-wrap .trades-grid tbody tr.tp-hit-row:hover td{background:#ddf8e9}
+.theme-light .trades-journal-wrap .trades-grid tbody tr.sl-hit-row td{background:#fff0f1;border-bottom-color:#f5cdd3}
+.theme-light .trades-journal-wrap .trades-grid tbody tr.sl-hit-row:hover td{background:#ffe1e5}
+.theme-light .trades-journal-wrap .trade-pair{color:#13263c}
+.theme-light .trades-journal-wrap .trade-date{color:#64778d}
+.theme-light .trades-journal-wrap .direction-long{color:#067647;background:#e8fbf1;border-color:#a8e7c7}
+.theme-light .trades-journal-wrap .direction-short{color:#b4233b;background:#fff0f2;border-color:#ffc1cb}
+.theme-light .trades-journal-wrap .pnl-positive{color:#078455!important}
+.theme-light .trades-journal-wrap .pnl-negative{color:#c42743!important}
+.theme-light .trades-journal-wrap .pnl-neutral{color:#718096!important}
+.theme-light .trades-journal-wrap .outcome-tp-hit,
+.theme-light .trades-journal-wrap .outcome-win{color:#067647;background:#e8fbf1;border-color:#a8e7c7;box-shadow:none}
+.theme-light .trades-journal-wrap .outcome-sl-hit,
+.theme-light .trades-journal-wrap .outcome-loss{color:#b4233b;background:#fff0f2;border-color:#ffc1cb;box-shadow:none}
+.theme-light .trades-journal-wrap .outcome-open{color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}
+.theme-light .trades-journal-wrap .outcome-break-even{color:#475569;background:#f1f5f9;border-color:#dbe3ec}
+.theme-light .trades-journal-wrap .trade-journal-button,
+.theme-light .trades-journal-wrap .trade-close-button{background:#f8fafc;border-color:#cbd8e5;color:#334155}
+.theme-light .trades-journal-wrap .trade-journal-button.has-journal{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.theme-light .trades-journal-wrap .trade-close-button{background:#fff1f2;border-color:#fecdd3;color:#be123c}
+@media(max-width:720px){
+  .trades-journal-wrap{border-radius:10px}
+  .trades-journal-wrap .trades-grid{min-width:1050px}
+  .trades-journal-wrap .trades-grid tbody td{padding:10px}
+}
