@@ -392,7 +392,7 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
   ['Exit price',selectedTrade.exit??'—'],
   ['Realized P&L',isClosed?pnlText:'—',isClosed?(pnlValue>0?'positive':pnlValue<0?'negative':'neutral'):'neutral']
  ]:[];
- const screenshots=detailMedia.filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\\s*/, '')}));
+ const screenshots=detailMedia.filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\s*/, '')}));
  return <>
   <div className="tablewrap trades-journal-wrap"><table className="trades-grid"><thead><tr>{columns.map(([key,label])=><th key={key} aria-sort={sortKey===key?(sortDir==='asc'?'ascending':'descending'):'none'}><button type="button" className="trade-sort-button" onClick={()=>sort(key)} title={'Sort by '+label}>{label}<span className="trade-sort-indicator">{sortKey===key?(sortDir==='asc'?'↑':'↓'):'↕'}</span></button></th>)}<th>Action</th></tr></thead><tbody>{sorted.length===0?<tr><td colSpan={10} className="trades-empty">No trades yet. Your executed trades will appear here.</td></tr>:sorted.map(t=>{
    const result=outcome(t),hasJournal=Boolean(String(t.notes||'').trim()||String(t.strategy||'').trim()),side=sideLabel(t),rowClass=result==='TP hit'?'tp-hit-row':result==='SL hit'?'sl-hit-row':'';
