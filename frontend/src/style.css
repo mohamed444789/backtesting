@@ -5263,3 +5263,121 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-frequency-grid>.fx-frequency-metric{transition:none}
  .app .fx-analytics-frequency-grid>.fx-frequency-metric:hover{transform:none}
 }
+
+
+/* Side comparison: win rate and trade count share the top row; Long is green,
+   Short is red regardless of whether its net P&L is positive or negative. */
+.app .fx-analytics-side-columns .fx-side-card{
+ align-items:stretch;
+ padding:13px 10px 11px;
+ min-height:302px;
+}
+.app .fx-analytics-side-columns .fx-side-card-topline{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:5px;
+ min-height:23px;
+ width:100%;
+ padding:0 2px;
+}
+.app .fx-analytics-side-columns .fx-side-card-rate{
+ color:#087f5b;
+ font-size:12px;
+ line-height:1.2;
+ font-weight:800;
+ font-variant-numeric:tabular-nums;
+ white-space:nowrap;
+}
+.app .fx-analytics-side-columns .fx-side-card-trades{
+ color:#16815f;
+ font-size:9px;
+ font-weight:650;
+ text-align:right;
+ white-space:nowrap;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot{
+ margin-top:7px;
+ flex-basis:132px;
+ height:132px;
+ min-height:132px;
+ border-bottom-color:#bdebd5;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(16,185,129,.09) calc(25% - 1px),rgba(16,185,129,.09) 25%);
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot>i{
+ width:min(40px,70%);
+ background:linear-gradient(180deg,#34d399,#059669);
+ box-shadow:0 0 0 1px rgba(5,150,105,.12);
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-label{
+ margin-top:10px;
+ color:#087f5b;
+ font-size:11px;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-pnl{
+ margin-top:6px;
+ font-size:12px;
+ line-height:1.2;
+ font-weight:800;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-wl{
+ padding-top:4px;
+ color:#16815f;
+ font-size:9px;
+}
+.app .fx-analytics-side-columns .fx-side-card.fx-side-long{
+ border-color:#bdebd5;
+ background:linear-gradient(160deg,#edfbf4 0%,#f8fffb 100%);
+}
+.app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-side-card-rate,
+.app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-side-card-trades,
+.app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-analytics-vertical-label,
+.app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-side-card-wl{color:#087f5b}
+.app .fx-analytics-side-columns .fx-side-card.fx-side-short{
+ border-color:#f4c7cc;
+ background:linear-gradient(160deg,#fff0f1 0%,#fff8f8 100%);
+}
+.app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-side-card-rate,
+.app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-side-card-trades,
+.app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-analytics-vertical-label,
+.app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-side-card-wl{color:#c93643}
+.app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-analytics-vertical-plot{
+ border-bottom-color:#f4c7cc;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(226,76,82,.08) calc(25% - 1px),rgba(226,76,82,.08) 25%);
+}
+.app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#fb7185,#e24c52);
+ box-shadow:0 0 0 1px rgba(226,76,82,.14);
+}
+.app .fx-analytics-side-columns .fx-side-card:hover{transform:translateY(-2px)}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-long{
+ border-color:#1d5c43;
+ background:linear-gradient(160deg,#10271f 0%,#122c23 100%);
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-side-card-rate,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-side-card-trades,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-analytics-vertical-label,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-long .fx-side-card-wl{color:#6ee7b7}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-short{
+ border-color:#6f2b37;
+ background:linear-gradient(160deg,#2b171d 0%,#321a21 100%);
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-side-card-rate,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-side-card-trades,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-analytics-vertical-label,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-side-card-wl{color:#fda4af}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.fx-side-short .fx-analytics-vertical-plot{
+ border-bottom-color:#6f2b37;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(251,113,133,.08) calc(25% - 1px),rgba(251,113,133,.08) 25%);
+}
+@media(max-width:620px){
+ .app .fx-analytics-side-columns{gap:12px}
+ .app .fx-analytics-side-columns .fx-side-card{padding:10px 7px;min-height:285px}
+ .app .fx-analytics-side-columns .fx-side-card-topline{gap:3px}
+ .app .fx-analytics-side-columns .fx-side-card-rate{font-size:11px}
+ .app .fx-analytics-side-columns .fx-side-card-trades{font-size:8px}
+ .app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot{flex-basis:120px;height:120px;min-height:120px}
+}
+@media(prefers-reduced-motion:reduce){
+ .app .fx-analytics-side-columns .fx-side-card:hover{transform:none}
+}
