@@ -7049,3 +7049,22 @@ td {
     font-size: 12px;
   }
 }
+
+
+/* Make the Time cards' session range and W/L summary easier to read. */
+.app .fx-analytics-time-columns .fx-time-card > small {
+  font-size: 12px;
+  line-height: 1.35;
+}
+.app .fx-analytics-time-columns .fx-time-card .fx-time-card-wl {
+  font-size: 11px;
+  line-height: 1.35;
+}
+@media (max-width: 620px) {
+  .app .fx-analytics-time-columns .fx-time-card > small {
+    font-size: 10px;
+  }
+  .app .fx-analytics-time-columns .fx-time-card .fx-time-card-wl {
+    font-size: 10px;
+  }
+}
