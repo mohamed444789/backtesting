@@ -7068,3 +7068,17 @@ td {
     font-size: 10px;
   }
 }
+
+
+/* Make weekly P&L figures the focal point of the calendar summary column. */
+.fx-session-week-pnl > strong {
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 850;
+  letter-spacing: -0.035em;
+}
+@media (max-width: 620px) {
+  .fx-session-week-pnl > strong {
+    font-size: 18px;
+  }
+}
