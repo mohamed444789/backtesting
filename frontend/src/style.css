@@ -6214,3 +6214,138 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
     min-height: 260px;
   }
 }
+
+
+/* Make profitable/losing calendar dates unambiguous, even while selected. */
+.fx-session-day.profit-day,
+.fx-session-day.profit-day:not(.selected) {
+  border-color: #86dcb3;
+  background: linear-gradient(145deg, #dcfce7 0%, #f0fdf4 100%);
+  box-shadow: inset 4px 0 0 #10b981;
+}
+.fx-session-day.loss-day,
+.fx-session-day.loss-day:not(.selected) {
+  border-color: #f3a4ad;
+  background: linear-gradient(145deg, #ffe1e5 0%, #fff1f2 100%);
+  box-shadow: inset 4px 0 0 #ef4444;
+}
+.fx-session-day.profit-day > strong {
+  color: #047857;
+  font-weight: 800;
+}
+.fx-session-day.loss-day > strong {
+  color: #be123c;
+  font-weight: 800;
+}
+.theme-dark .fx-session-day.profit-day,
+.theme-dark .fx-session-day.profit-day:not(.selected) {
+  border-color: #1d8a60;
+  background: linear-gradient(145deg, #123c2b 0%, #10271f 100%);
+  box-shadow: inset 4px 0 0 #34d399;
+}
+.theme-dark .fx-session-day.loss-day,
+.theme-dark .fx-session-day.loss-day:not(.selected) {
+  border-color: #9f3949;
+  background: linear-gradient(145deg, #451d27 0%, #2b171d 100%);
+  box-shadow: inset 4px 0 0 #fb7185;
+}
+.theme-dark .fx-session-day.profit-day > strong { color: #6ee7b7; }
+.theme-dark .fx-session-day.loss-day > strong { color: #fda4af; }
+
+/* Selected-day trade list shown directly beside the calendar. */
+.fx-session-day-trades-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 5px;
+  padding-top: 12px;
+  border-top: 1px solid #e1e7ef;
+}
+.fx-session-day-trades-list h4 {
+  margin: 0 0 2px;
+  color: #344256;
+  font-size: 11px;
+  font-weight: 750;
+}
+.fx-session-day-trade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid #e6ebf2;
+  border-radius: 7px;
+  background: #fff;
+}
+.fx-session-day-trade-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  min-width: 0;
+}
+.fx-session-day-trade-main > strong {
+  color: #273449;
+  font-size: 10px;
+  font-weight: 750;
+}
+.fx-session-day-trade-main > span {
+  color: #64748b;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.fx-session-day-trade-main > .fx-day-trade-side {
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 9px;
+  font-weight: 800;
+}
+.fx-session-day-trade-main > .fx-day-trade-side.buy {
+  color: #047857;
+  background: #d1fae5;
+}
+.fx-session-day-trade-main > .fx-day-trade-side.sell {
+  color: #be123c;
+  background: #ffe4e6;
+}
+.fx-session-day-trade-row > strong {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.fx-session-day-trade-row > .fx-day-trade-open,
+.fx-session-day-trade-row > .fx-day-trade-flat {
+  color: #64748b;
+}
+.fx-session-day-trades-empty {
+  margin: 0;
+  padding: 10px;
+  border-radius: 7px;
+  background: #fff;
+  color: #8290a2;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.theme-dark .fx-session-day-trades-list { border-top-color: #263343; }
+.theme-dark .fx-session-day-trades-list h4 { color: #e4ebf4; }
+.theme-dark .fx-session-day-trade-row,
+.theme-dark .fx-session-day-trades-empty {
+  border-color: #2a3747;
+  background: #131d29;
+}
+.theme-dark .fx-session-day-trade-main > strong { color: #e4ebf4; }
+.theme-dark .fx-session-day-trade-main > span,
+.theme-dark .fx-session-day-trade-row > .fx-day-trade-open,
+.theme-dark .fx-session-day-trade-row > .fx-day-trade-flat { color: #9aa9bb; }
+.theme-dark .fx-session-day-trade-main > .fx-day-trade-side.buy {
+  color: #6ee7b7;
+  background: #123126;
+}
+.theme-dark .fx-session-day-trade-main > .fx-day-trade-side.sell {
+  color: #fda4af;
+  background: #3b2028;
+}
+.theme-dark .fx-session-day-trades-empty { color: #9aa9bb; }
