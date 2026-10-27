@@ -6049,7 +6049,7 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   gap: 6px;
 }
 .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
-  width: 85%;
+  width: 94%;
 }
 @media (max-width: 1050px) {
   .app .fx-analytics-insights-grid > .fx-analytics-day-card {
@@ -6057,6 +6057,6 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
     padding-right: 12px;
   }
   .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
-    width: 92%;
+    width: 96%;
   }
 }
