@@ -8160,3 +8160,31 @@ td {
   align-items: center;
   justify-content: center;
 }
+
+
+/* TradingView-inspired selected-drawing toolbar and color palette. */
+.selected-drawing-toolbar{gap:5px;padding:5px 7px;border:1px solid #d1d5db;border-radius:9px;background:#fff;color:#131722;box-shadow:0 2px 8px #00000020;min-height:38px}
+.selected-drawing-title{display:none}
+.selected-drawing-toolbar button{box-sizing:border-box;display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;min-height:34px;padding:0;border:1px solid transparent;border-radius:6px;background:#fff;color:#131722;cursor:pointer}
+.selected-drawing-toolbar button:hover{background:#f0f3fa;border-color:#d1d5db}
+.selected-drawing-toolbar .drawing-color-control{position:relative;display:flex;align-items:center}
+.selected-drawing-toolbar .drawing-color-trigger{position:relative;gap:0}
+.drawing-color-indicator{position:absolute;left:7px;right:7px;bottom:3px;height:3px;border-radius:1px;border:1px solid #00000012}
+.selected-drawing-toolbar .drawing-lock-button.is-locked{background:#131722;border-color:#131722;color:#fff}
+.selected-drawing-toolbar .drawing-lock-button.is-locked:hover{background:#2a2e39;border-color:#2a2e39;color:#fff}
+.selected-drawing-toolbar .drawing-lock-button.is-unlocked{background:#fff;border-color:#d1d5db;color:#131722}
+.selected-drawing-toolbar .selected-drawing-delete{color:#131722}
+.selected-drawing-toolbar .selected-drawing-delete:disabled{opacity:.35}
+.tradingview-color-palette{position:absolute;top:calc(100% + 8px);left:-4px;z-index:50;width:236px;padding:10px;background:#fff;border:1px solid #d1d5db;border-radius:8px;box-shadow:0 6px 20px #00000026;display:flex;flex-direction:column;gap:8px}
+.drawing-color-swatches{display:flex;flex-direction:column;gap:4px}
+.drawing-color-row,.drawing-color-swatches.grayscale{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}
+.tradingview-color-palette button{position:relative;display:block;flex:none;width:18px;height:18px;min-height:18px;padding:0;border:1px solid #0000000d;border-radius:2px;box-shadow:none}
+.tradingview-color-palette button:hover{outline:2px solid #64748b;outline-offset:1px;z-index:2}
+.tradingview-color-palette button.active{outline:2px solid #2962ff;outline-offset:2px;z-index:3}
+.theme-dark .selected-drawing-toolbar{border-color:#3b4655;background:#fff;color:#131722;box-shadow:0 3px 12px #00000055}
+.theme-dark .selected-drawing-toolbar button{background:#fff;color:#131722}
+.theme-dark .selected-drawing-toolbar button:hover{background:#e9edf5}
+.theme-dark .selected-drawing-toolbar .drawing-lock-button.is-locked{background:#131722;border-color:#131722;color:#fff}
+.theme-dark .selected-drawing-toolbar .drawing-lock-button.is-unlocked{background:#fff;border-color:#d1d5db;color:#131722}
+.theme-dark .tradingview-color-palette{background:#fff;border-color:#d1d5db}
+@media(max-width:600px){.selected-drawing-toolbar{left:8px;right:8px;transform:none;max-width:none;gap:4px;padding:4px;justify-content:center}.selected-drawing-toolbar button{flex-basis:32px;width:32px;height:32px;min-height:32px}.tradingview-color-palette{width:224px;left:-58px}.tradingview-color-palette button{width:17px;height:17px;min-height:17px}}
