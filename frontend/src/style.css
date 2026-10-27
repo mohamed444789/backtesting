@@ -6184,14 +6184,14 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 }
 
 
-/* Match Time cards to weekday card dimensions and spacing at desktop/tablet sizes. */
+/* Match Time card bottom spacing to Side and Day at desktop sizes. */
 .app .fx-analytics-time-columns {
   width: 70%;
   gap: 6px;
 }
 .app .fx-analytics-time-columns .fx-time-card {
-  height: 305px;
-  min-height: 305px;
+  height: 314px;
+  min-height: 314px;
   box-sizing: border-box;
 }
 @media (max-width: 1050px) {
