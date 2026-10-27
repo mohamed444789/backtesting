@@ -3550,3 +3550,117 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .app-header-bar .theme-toggle{padding:6px 7px!important;font-size:10px}
  .app .content{padding:16px 9px}
 }
+
+
+/* Session analysis page: selector, session-only statistics, P&L calendar,
+   selected-day summary and the shared trade journal table. */
+.fx-session-detail-page{color:#172033}
+.fx-session-page-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 22px}
+.fx-page-eyebrow{font-size:10px;letter-spacing:1px;font-weight:700;color:#7c8ba0}
+.fx-session-page-heading h1{font:600 28px 'Space Grotesk',sans-serif;letter-spacing:-.6px;margin:5px 0}
+.fx-session-page-heading p{font-size:13px;color:#7b8798;margin:0}
+.fx-session-new-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;background:#1765ed;border:1px solid #1765ed;border-radius:8px;color:#fff;font-size:12px;font-weight:600;white-space:nowrap}
+.fx-session-new-button:hover{background:#0d55d8}
+.fx-session-selector-card{display:flex;align-items:flex-end;gap:20px;padding:18px 20px;margin-bottom:18px;background:#fff;border:1px solid #e4e9f0;border-radius:13px;box-shadow:0 2px 8px #0f172a06}
+.fx-session-select-wrap{display:flex;flex-direction:column;gap:8px;flex:1;min-width:240px;max-width:480px}
+.fx-session-select-wrap label{font-size:12px;color:#526176;font-weight:600}
+.fx-session-select-wrap select{width:100%;height:43px;padding:0 12px;border:1px solid #d7dee8;border-radius:8px;background:#fff;color:#1f2937;font-size:13px}
+.fx-session-selector-meta{display:flex;flex-direction:column;gap:5px;padding-bottom:3px;min-width:160px}
+.fx-session-selector-meta>span{font-size:12px;font-weight:600;color:#344256}
+.fx-session-selector-meta>small{font-size:10px;color:#7b8798;line-height:1.4}
+.fx-session-selector-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto}
+.fx-session-open-action,.fx-session-delete-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #dbe3ed;border-radius:8px;padding:10px 12px;background:#fff;color:#475569;font-size:11px;font-weight:600;white-space:nowrap}
+.fx-session-open-action{background:#edf4ff;border-color:#c9dcff;color:#1d5ed2}
+.fx-session-delete-action{background:#fff6f5;border-color:#ffd7d2;color:#d94841}
+.fx-session-delete-action:disabled{opacity:.45;cursor:not-allowed}
+.fx-session-summary-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:5px 2px 18px}
+.fx-session-summary-header h2{font:600 22px 'Space Grotesk',sans-serif;letter-spacing:-.4px;margin:0 0 5px;color:#172033}
+.fx-session-summary-header p{font-size:12px;color:#7b8798;margin:0}
+.fx-session-balance{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.fx-session-balance span{font-size:11px;color:#8290a2}
+.fx-session-balance strong{font-size:25px;font-weight:600;letter-spacing:-.3px;color:#172033;font-variant-numeric:tabular-nums}
+.fx-session-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.fx-session-stat{display:flex;flex-direction:column;gap:9px;min-width:0;padding:18px 19px;background:#fff;border:1px solid #e4e9f0;border-radius:12px;box-shadow:0 2px 8px #0f172a06}
+.fx-session-stat>span{font-size:12px;color:#64748b;font-weight:600}
+.fx-session-stat>strong{font-size:27px;line-height:1.25;letter-spacing:-.5px;color:#172033;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.fx-session-stat>small{font-size:11px;line-height:1.4;color:#8995a6}
+.fx-pnl-positive{color:#079669!important}
+.fx-pnl-negative{color:#e24c52!important}
+.fx-session-calendar-card,.fx-session-trades-card{background:#fff;border:1px solid #e4e9f0;border-radius:13px;box-shadow:0 2px 8px #0f172a06;padding:20px;margin-bottom:20px;min-width:0}
+.fx-session-calendar-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:17px}
+.fx-session-calendar-heading h2,.fx-session-trades-heading h2{font-size:17px;font-weight:600;line-height:1.4;margin:0 0 4px;color:#172033}
+.fx-session-calendar-heading p,.fx-session-trades-heading p{font-size:11px;color:#8290a2;margin:0}
+.fx-calendar-month-controls{display:flex;align-items:center;gap:7px}
+.fx-calendar-month-controls>button{width:33px;height:34px;border:1px solid #dce3ec;border-radius:7px;background:#fff;color:#536174;font-size:22px;line-height:1}
+.fx-calendar-month-controls>input{height:34px;max-width:155px;padding:0 8px;border:1px solid #dce3ec;border-radius:7px;background:#fff;color:#344256;font-size:11px}
+.fx-session-month-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;padding:13px;background:#f8fafc;border:1px solid #eef1f5;border-radius:9px}
+.fx-session-month-summary>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fx-session-month-summary span{font-size:10px;color:#7b8798}
+.fx-session-month-summary strong{font-size:18px;font-weight:650;color:#344256;font-variant-numeric:tabular-nums}
+.fx-session-calendar-layout{display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:18px;align-items:stretch}
+.fx-session-calendar-main{min-width:0}
+.fx-session-weekdays,.fx-session-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.fx-session-weekdays{margin-bottom:6px}
+.fx-session-weekdays>div{text-align:center;padding:7px 1px;color:#8491a3;font-size:10px;font-weight:700}
+.fx-session-day{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;min-height:88px;padding:9px 8px;border:1px solid #e8edf3;border-radius:7px;background:#fff;color:#526176;text-align:left;transition:border-color .12s,background .12s}
+.fx-session-day:hover{border-color:#9bbcff;background:#f7faff}
+.fx-session-day.selected{border:2px solid #2563eb;padding:8px 7px;background:#f2f7ff}
+.fx-session-day-number{font-size:12px;font-weight:650;color:#344256}
+.fx-session-day>small{font-size:9px;color:#8290a2}
+.fx-session-day>strong{font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.fx-session-day.profit-day>strong{color:#079669}
+.fx-session-day.loss-day>strong{color:#e24c52}
+.fx-session-day.selected .fx-session-day-number{color:#1d5ed2}
+.fx-session-day-empty{margin-top:auto;color:#d0d7e2;font-size:10px}
+.fx-session-day.blank{visibility:hidden;border:0;background:transparent}
+.fx-session-daily-summary{display:flex;flex-direction:column;gap:10px;min-width:0;padding:16px;background:#f8fafc;border:1px solid #e8edf3;border-radius:10px}
+.fx-session-daily-summary h3{font-size:14px;line-height:1.45;font-weight:600;margin:0;color:#344256}
+.fx-session-daily-summary>strong{font-size:29px;line-height:1.2;letter-spacing:-.6px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.fx-session-daily-summary>small{font-size:10px;color:#8290a2}
+.fx-daily-summary-divider{height:1px;background:#e1e7ef;margin:3px 0}
+.fx-session-daily-summary>div:not(.fx-daily-summary-divider){display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:#64748b}
+.fx-session-daily-summary>div b{font-size:12px;color:#344256;font-variant-numeric:tabular-nums}
+.fx-session-trades-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.fx-session-trades-heading>span{border-radius:20px;background:#edf4ff;color:#215dc8;padding:6px 10px;font-size:10px;font-weight:700;white-space:nowrap}
+.fx-session-trades-card .tablewrap,.fx-session-trades-card .trades-journal-wrap{max-width:100%;overflow-x:auto}
+.fx-session-empty-state{display:flex;min-height:280px;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;border:1px dashed #ccd6e3;border-radius:14px;background:#fff;color:#8491a3}
+.fx-session-empty-state h2{font-size:18px;color:#344256;margin:0}
+.fx-session-empty-state p{font-size:12px;margin:0 0 5px}
+.theme-dark .fx-session-selector-card,.theme-dark .fx-session-stat,.theme-dark .fx-session-calendar-card,.theme-dark .fx-session-trades-card,.theme-dark .fx-session-empty-state{background:#101821;border-color:#263343;box-shadow:none;color:#e4ebf4}
+.theme-dark .fx-session-select-wrap select,.theme-dark .fx-calendar-month-controls>input,.theme-dark .fx-calendar-month-controls>button,.theme-dark .fx-session-open-action,.theme-dark .fx-session-delete-action{background:#17212d;border-color:#334155;color:#cbd5e1}
+.theme-dark .fx-session-summary-header h2,.theme-dark .fx-session-balance strong,.theme-dark .fx-session-stat>strong,.theme-dark .fx-session-calendar-heading h2,.theme-dark .fx-session-trades-heading h2{color:#e4ebf4}
+.theme-dark .fx-session-month-summary,.theme-dark .fx-session-daily-summary{background:#0c141d;border-color:#263343}
+.theme-dark .fx-session-month-summary strong,.theme-dark .fx-session-daily-summary h3,.theme-dark .fx-session-daily-summary>div b{color:#cbd5e1}
+.theme-dark .fx-session-day{background:#101821;border-color:#2a3747;color:#cbd5e1}
+.theme-dark .fx-session-day-number{color:#cbd5e1}
+.theme-dark .fx-session-day.selected{background:#172d49;border-color:#4d8aff}
+.theme-dark .fx-daily-summary-divider{background:#2b3746}
+@media(max-width:1120px){
+ .fx-session-selector-card{align-items:stretch;flex-wrap:wrap}
+ .fx-session-select-wrap{max-width:none;flex-basis:100%}
+ .fx-session-selector-meta{flex:1}
+ .fx-session-calendar-layout{grid-template-columns:minmax(0,1fr)}
+ .fx-session-daily-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center}
+ .fx-session-daily-summary .fx-page-eyebrow,.fx-session-daily-summary h3,.fx-session-daily-summary>strong,.fx-session-daily-summary>small,.fx-daily-summary-divider{grid-column:1/-1}
+ .fx-daily-summary-divider{width:100%}
+}
+@media(max-width:760px){
+ .fx-session-page-heading{align-items:flex-start;flex-direction:column}
+ .fx-session-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .fx-session-stat{padding:14px}
+ .fx-session-stat>strong{font-size:23px}
+ .fx-session-summary-header h2{font-size:19px}
+ .fx-session-balance strong{font-size:19px}
+ .fx-session-calendar-card,.fx-session-trades-card{padding:12px}
+ .fx-session-calendar-heading{align-items:flex-start;flex-direction:column}
+ .fx-session-month-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fx-session-weekdays,.fx-session-calendar-grid{gap:3px}
+ .fx-session-day{min-height:65px;padding:6px 3px;gap:5px;border-radius:5px}
+ .fx-session-day.selected{padding:5px 2px}
+ .fx-session-day-number{font-size:10px}
+ .fx-session-day>small{font-size:8px}
+ .fx-session-day>strong{font-size:9px}
+ .fx-session-daily-summary{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px}
+ .fx-session-selector-actions{margin-left:0;justify-content:flex-start}
+ .fx-session-trades-heading{align-items:flex-start}
+}
