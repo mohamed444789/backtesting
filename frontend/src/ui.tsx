@@ -350,7 +350,7 @@ const deleteChartJournalScreenshot=async(filename:string)=>{
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Error(data.error||'Screenshot deletion failed');
   const rows=await api('/trades/'+encodeURIComponent(journalTradeId)+'/journal-notes');
-  const screenshots=(Array.isArray(rows)?rows:[]).filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\\s*/, '')}));
+  const screenshots=(Array.isArray(rows)?rows:[]).filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\s*/, '')}));
   setJournalScreenshots(screenshots);
   setJournalGalleryOpen(false);
   setJournalGalleryIndex(index=>Math.min(index,Math.max(0,screenshots.length-1)));
