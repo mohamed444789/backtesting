@@ -3189,3 +3189,97 @@ main .content:has(.the5ers-trades-page){max-width:none;width:100%;margin:0;paddi
   font-size:11px;
  }
 }
+
+
+/* FXReplay-like vertical columns for Win Rate and Trades by Symbol,
+   and restore Time Invested in the upper-left KPI position. */
+.fx-replay-time-invested-stat{grid-column:1;grid-row:1}
+.fx-replay-historical-stat{grid-column:2;grid-row:1}
+.fx-replay-trades-stat{grid-column:1;grid-row:2}
+.fx-replay-overall-win-stat{grid-column:2;grid-row:2}
+.fx-replay-time-chart{grid-column:3;grid-row:1 / span 2;min-height:306px}
+.fx-replay-time-invested-stat>strong{display:flex;align-items:baseline;gap:5px}
+.fx-replay-time-invested-stat>strong small{font-size:13px;font-weight:500;color:#4b5563;margin-right:5px}
+.fx-replay-column-chart{
+ display:flex;
+ align-items:stretch;
+ gap:16px;
+ width:100%;
+ height:260px;
+ padding:7px 3px 0;
+ overflow-x:auto;
+}
+.fx-replay-column{
+ display:flex;
+ flex:1 0 58px;
+ min-width:0;
+ flex-direction:column;
+ align-items:stretch;
+ text-align:center;
+}
+.fx-replay-column-value{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ height:24px;
+ flex:0 0 24px;
+ color:#536174;
+ font-size:12px;
+ font-weight:600;
+ font-variant-numeric:tabular-nums;
+}
+.fx-replay-column-plot{
+ flex:1;
+ min-height:0;
+ display:flex;
+ align-items:flex-end;
+ justify-content:center;
+ border-bottom:1px solid #cbd5e1;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),#e9edf3 calc(25% - 1px),#e9edf3 25%);
+}
+.fx-replay-column-plot>i{
+ display:block;
+ width:min(42px,68%);
+ min-height:2px;
+ border-radius:5px 5px 0 0;
+ background:linear-gradient(180deg,#1769ff,#78a9ff);
+ box-shadow:0 0 0 1px #1769ff25;
+}
+.fx-replay-symbol-column-chart .fx-replay-column-plot>i{
+ background:linear-gradient(90deg,#e9b9f1,#c832dc);
+ box-shadow:0 0 0 1px #c832dc25;
+}
+.fx-replay-column>small{
+ display:block;
+ width:100%;
+ min-height:31px;
+ padding:7px 2px 0;
+ overflow:hidden;
+ color:#718096;
+ font-size:10px;
+ line-height:1.2;
+ text-overflow:ellipsis;
+ white-space:nowrap;
+}
+.fx-replay-charts-grid>.fx-replay-chart-card{min-height:340px}
+.fx-replay-charts-grid>.fx-replay-chart-card .fx-replay-empty-chart{min-height:250px}
+.theme-dark .fx-replay-column-value{color:#cbd5e1}
+.theme-dark .fx-replay-column-plot{border-bottom-color:#475569;background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),#2b3746 calc(25% - 1px),#2b3746 25%)}
+.theme-dark .fx-replay-column>small{color:#9aa9bb}
+@media(max-width:1250px){
+ .fx-replay-hero-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto}
+ .fx-replay-time-invested-stat{grid-column:1;grid-row:1}
+ .fx-replay-historical-stat{grid-column:2;grid-row:1}
+ .fx-replay-trades-stat{grid-column:1;grid-row:2}
+ .fx-replay-overall-win-stat{grid-column:2;grid-row:2}
+ .fx-replay-time-chart{grid-column:1 / -1;grid-row:3;min-height:230px}
+ .fx-replay-time-chart .fx-replay-bars{min-height:140px}
+ .fx-replay-time-chart .fx-replay-bar-track{min-height:110px}
+}
+@media(max-width:760px){
+ .fx-replay-hero-grid{grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+ .fx-replay-time-invested-stat,.fx-replay-historical-stat,.fx-replay-trades-stat,.fx-replay-overall-win-stat,.fx-replay-time-chart{grid-column:1;grid-row:auto}
+ .fx-replay-time-chart{min-height:220px}
+ .fx-replay-column-chart{height:220px;gap:10px}
+ .fx-replay-charts-grid>.fx-replay-chart-card{min-height:270px;padding:17px}
+}
