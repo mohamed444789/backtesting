@@ -6687,3 +6687,322 @@ td {
     font-size: 10px;
   }
 }
+
+
+/* Comfortable typography scale: bring the default reading size closer to 125% browser zoom,
+   while keeping the existing responsive layout and card geometry intact. */
+body {
+  font-size: 16px;
+  line-height: 1.55;
+}
+header,
+.app .workspace-tabs,
+.app .app-local-pill {
+  font-size: 15px;
+}
+.nav {
+  font-size: 15px;
+  line-height: 1.55;
+}
+.heading h1,
+.fx-session-page-heading h1,
+.trade-page-title-row h1,
+.tb-title-line h1 {
+  font-size: 39px;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+.heading p,
+.fx-session-page-heading p,
+.trade-page-title-row p {
+  font-size: 17px;
+  line-height: 1.6;
+}
+.app .fx-analytics-insight-heading h2,
+.fx-session-calendar-heading h2,
+.fx-session-trades-heading h2,
+.fx-replay-card-title h3,
+.tb-panel-head h2,
+.historical-console-heading h2 {
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+.app .fx-analytics-insight-heading p,
+.fx-session-calendar-heading p,
+.fx-session-trades-heading p,
+.tb-panel-head p {
+  font-size: 15px;
+  line-height: 1.55;
+}
+h3 {
+  font-size: 19px;
+  line-height: 1.4;
+}
+.primary,
+.secondary,
+.fx-session-new-button,
+.fx-session-open-action,
+.fx-session-rename-action,
+.fx-session-delete-action,
+button.primary,
+button.secondary {
+  font-size: 15px;
+  line-height: 1.4;
+}
+input,
+select,
+textarea {
+  font-size: 16px;
+  line-height: 1.45;
+}
+.form label,
+.fx-session-select-wrap label {
+  font-size: 15px;
+  line-height: 1.45;
+}
+.notice,
+.empty p,
+.row,
+.quick,
+.quick small,
+.banner p,
+.banner b {
+  font-size: 15px;
+  line-height: 1.6;
+}
+th {
+  font-size: 14px;
+  line-height: 1.4;
+}
+td {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.stat>div,
+.fx-session-stat>span,
+.fx-stat-label {
+  font-size: 15px;
+  line-height: 1.45;
+}
+.stat>b,
+.fx-session-stat>strong,
+.fx-replay-stat>strong {
+  font-size: 36px;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+.stat>small,
+.fx-session-stat>small,
+.fx-replay-stat>small {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.fx-page-eyebrow,
+.navtitle,
+.heading small {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.fx-session-calendar-card,
+.fx-session-trades-card,
+.app .fx-analytics-insight-card {
+  padding: 24px;
+}
+.fx-session-calendar-heading,
+.fx-session-trades-heading {
+  margin-bottom: 22px;
+}
+.fx-session-weekdays>div,
+.fx-session-weekly-heading {
+  font-size: 14px;
+  line-height: 1.4;
+}
+.fx-session-day {
+  gap: 9px;
+  min-height: 104px;
+  padding: 12px 11px;
+}
+.fx-session-day.selected {
+  padding: 11px 10px;
+}
+.fx-session-day-number {
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 750;
+}
+.fx-session-day>small {
+  font-size: 12px;
+  line-height: 1.35;
+}
+.fx-session-day>strong {
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+.fx-session-month-summary span,
+.fx-session-daily-summary>div:not(.fx-daily-summary-divider),
+.fx-session-daily-summary>small {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.fx-session-month-summary strong,
+.fx-session-daily-summary>div b {
+  font-size: 16px;
+  line-height: 1.3;
+}
+.fx-session-daily-summary {
+  padding: 20px;
+  gap: 13px;
+}
+.fx-session-daily-summary h3 {
+  font-size: 19px;
+  line-height: 1.45;
+}
+.fx-session-daily-summary>strong {
+  font-size: 38px;
+  line-height: 1.12;
+}
+.fx-session-day-trades-list h4 {
+  font-size: 15px;
+  line-height: 1.4;
+}
+.fx-session-day-trade-main > strong,
+.fx-session-day-trade-main > span {
+  font-size: 14px;
+  line-height: 1.4;
+}
+.fx-session-day-trade-main > .fx-day-trade-side {
+  font-size: 12px;
+}
+.fx-session-day-trade-row > strong {
+  font-size: 15px;
+}
+.fx-session-day-trades-empty {
+  font-size: 14px;
+  line-height: 1.55;
+}
+.app .fx-analytics-insight-heading h2 {
+  font-size: 24px;
+}
+.app .fx-analytics-side-columns .fx-side-card-rate,
+.app .fx-analytics-time-columns .fx-time-card-rate {
+  font-size: 16px;
+}
+.app .fx-analytics-side-columns .fx-side-card-trades,
+.app .fx-analytics-time-columns .fx-time-card-trades {
+  font-size: 12px;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-label,
+.app .fx-analytics-time-columns .fx-time-card-period .fx-analytics-vertical-label,
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+  font-size: 13px;
+  line-height: 1.3;
+}
+.app .fx-analytics-day-columns .fx-day-card-rate {
+  font-size: 13px;
+}
+.app .fx-analytics-day-columns .fx-day-card-trades {
+  font-size: 11px;
+}
+.app .fx-analytics-day-columns .fx-day-card .fx-day-card-pnl {
+  font-size: 13px;
+}
+.app .fx-analytics-overview-details>div>span {
+  font-size: 13px;
+}
+.app .fx-analytics-overview-details>div>strong {
+  font-size: 24px;
+}
+.app .fx-analytics-frequency-overview-heading h3,
+.app .fx-analytics-overview-details-heading h3,
+.app .fx-analytics-frequency-overview-title h3 {
+  font-size: 18px;
+}
+.app .fx-analytics-frequency-overview .fx-analytics-frequency-grid>.fx-frequency-metric>strong {
+  font-size: 30px;
+}
+.app .fx-analytics-frequency-overview .fx-analytics-frequency-grid>.fx-frequency-metric>small {
+  font-size: 12px;
+}
+@media (max-width: 1050px) {
+  .heading h1,
+  .fx-session-page-heading h1,
+  .trade-page-title-row h1,
+  .tb-title-line h1 {
+    font-size: 34px;
+  }
+  .app .fx-analytics-insight-card,
+  .fx-session-calendar-card,
+  .fx-session-trades-card {
+    padding: 20px;
+  }
+  .fx-session-day {
+    min-height: 92px;
+    padding: 10px 8px;
+  }
+  .fx-session-day.selected {
+    padding: 9px 7px;
+  }
+  .fx-session-day-number {
+    font-size: 15px;
+  }
+}
+@media (max-width: 620px) {
+  body { font-size: 15px; }
+  .heading h1,
+  .fx-session-page-heading h1,
+  .trade-page-title-row h1,
+  .tb-title-line h1 {
+    font-size: 29px;
+  }
+  .heading p,
+  .fx-session-page-heading p,
+  .trade-page-title-row p {
+    font-size: 15px;
+  }
+  .app .fx-analytics-insight-heading h2,
+  .fx-session-calendar-heading h2,
+  .fx-session-trades-heading h2 {
+    font-size: 20px;
+  }
+  .fx-session-calendar-card,
+  .fx-session-trades-card,
+  .app .fx-analytics-insight-card {
+    padding: 15px;
+  }
+  .fx-session-weekdays>div,
+  .fx-session-weekly-heading {
+    font-size: 12px;
+  }
+  .fx-session-day {
+    min-height: 76px;
+    padding: 7px 4px;
+    gap: 6px;
+  }
+  .fx-session-day.selected {
+    padding: 6px 3px;
+  }
+  .fx-session-day-number {
+    font-size: 13px;
+  }
+  .fx-session-day>small {
+    font-size: 9px;
+  }
+  .fx-session-day>strong {
+    font-size: 11px;
+  }
+  .app .fx-analytics-side-columns .fx-side-card-rate,
+  .app .fx-analytics-time-columns .fx-time-card-rate {
+    font-size: 14px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card-rate {
+    font-size: 11px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card-trades {
+    font-size: 9px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+    font-size: 10px;
+  }
+}
