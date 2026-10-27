@@ -5603,14 +5603,15 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  white-space:nowrap;
 }
 .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot{
- margin-top:5px;
+ margin-top:17px;
  flex-basis:112px;
  height:112px;
  min-height:112px;
  border-radius:4px 4px 0 0;
 }
 .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label{
- margin-top:8px;
+ margin-top:auto;
+ padding-top:10px;
  font-size:10px;
 }
 .app .fx-analytics-day-columns .fx-day-card>small{
@@ -5950,4 +5951,18 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
     height: 120px;
     min-height: 120px;
   }
+}
+
+
+/* Full weekday names and bottom-aligned day summaries. */
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+  white-space: nowrap;
+  font-size: 10px;
+}
+.app .fx-analytics-day-columns .fx-day-card > small,
+.app .fx-analytics-day-columns .fx-day-card .fx-day-card-pnl {
+  flex-shrink: 0;
+}
+@media (max-width: 1050px) {
+  .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label { font-size: 9px; }
 }
