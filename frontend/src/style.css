@@ -5057,3 +5057,209 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-time-columns .fx-analytics-vertical-column:hover,
  .app .fx-analytics-breakdown-grid>div:hover{transform:none}
 }
+
+
+/* Elevated Average Trade Frequency card and icon-led statistic tiles. */
+.app .fx-analytics-frequency-card{
+ position:relative;
+ overflow:hidden;
+ padding:22px;
+ border-top:3px solid #2563eb;
+ background:
+  radial-gradient(ellipse at 100% 0%,rgba(219,234,254,.42) 0%,rgba(255,255,255,0) 36%),
+  #fff;
+}
+.app .fx-analytics-frequency-card .fx-analytics-insight-heading{
+ align-items:center;
+ margin-bottom:16px;
+ padding-bottom:17px;
+}
+.app .fx-analytics-frequency-card .fx-analytics-insight-heading h2{
+ font-size:19px;
+ letter-spacing:-.35px;
+}
+.app .fx-analytics-frequency-card .fx-analytics-heading-icon{
+ width:38px;
+ height:38px;
+ flex-basis:38px;
+ border:1px solid #d8e6ff;
+ border-radius:11px;
+ background:linear-gradient(145deg,#f0f6ff,#e6efff);
+ color:#2563eb;
+ box-shadow:0 3px 8px rgba(37,99,235,.08);
+}
+.app .fx-analytics-frequency-grid{
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:11px;
+}
+.app .fx-analytics-frequency-grid>.fx-frequency-metric{
+ position:relative;
+ gap:8px;
+ min-height:105px;
+ padding:13px 14px 12px;
+ overflow:hidden;
+ border:1px solid #e3eaf4;
+ border-radius:11px;
+ background:linear-gradient(150deg,#fff 0%,#f8faff 100%);
+ box-shadow:0 2px 6px rgba(25,45,75,.025);
+ transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.app .fx-analytics-frequency-grid>.fx-frequency-metric::before{
+ position:absolute;
+ content:"";
+ left:0;
+ top:12px;
+ bottom:12px;
+ width:3px;
+ border-radius:0 3px 3px 0;
+ background:#8bafff;
+ opacity:.95;
+}
+.app .fx-analytics-frequency-grid>.fx-frequency-metric:hover{
+ transform:translateY(-2px);
+ border-color:#c9d9f3;
+ box-shadow:0 7px 16px rgba(25,45,75,.075);
+}
+.app .fx-frequency-metric-head{
+ display:flex;
+ align-items:center;
+ gap:8px;
+ min-width:0;
+}
+.app .fx-frequency-metric-head>span:last-child{
+ color:#63748d;
+ font-size:11px;
+ font-weight:600;
+ line-height:1.35;
+}
+.app .fx-frequency-metric-icon{
+ display:grid;
+ flex:0 0 28px;
+ width:28px;
+ height:28px;
+ place-items:center;
+ border-radius:8px;
+ background:#edf3ff;
+ color:#2864ed;
+}
+.app .fx-frequency-active::before{background:#2563eb}
+.app .fx-frequency-calendar::before{background:#0ea5e9}
+.app .fx-frequency-week::before{background:#10b981}
+.app .fx-frequency-month::before{background:#8b5cf6}
+.app .fx-frequency-calendar .fx-frequency-metric-icon{background:#eaf6ff;color:#1686c9}
+.app .fx-frequency-week .fx-frequency-metric-icon{background:#eaf8f0;color:#079669}
+.app .fx-frequency-month .fx-frequency-metric-icon{background:#f1edff;color:#7653cf}
+.app .fx-analytics-frequency-grid>.fx-frequency-metric>strong{
+ margin-left:36px;
+ font-size:29px;
+ line-height:1.05;
+ letter-spacing:-.7px;
+ font-weight:750;
+ color:#172033;
+}
+.app .fx-analytics-frequency-grid>.fx-frequency-metric>small{
+ margin-left:36px;
+ color:#8492a6;
+ font-size:10px;
+ line-height:1.35;
+}
+.app .fx-analytics-frequency-total{
+ margin-top:15px;
+ padding:15px 15px 0;
+ border-top:1px solid #e8edf5;
+}
+.app .fx-frequency-total-label{
+ display:flex;
+ align-items:center;
+ gap:9px;
+}
+.app .fx-frequency-total-icon{
+ display:grid;
+ flex:0 0 31px;
+ width:31px;
+ height:31px;
+ place-items:center;
+ border-radius:9px;
+ background:#edf3ff;
+ color:#2864ed;
+}
+.app .fx-frequency-total-label>div{
+ display:flex;
+ flex-direction:column;
+ gap:3px;
+}
+.app .fx-frequency-total-label>div>span{
+ color:#526176;
+ font-size:11px;
+ font-weight:650;
+}
+.app .fx-frequency-total-label>div>small{
+ color:#8996a8;
+ font-size:9px;
+}
+.app .fx-analytics-frequency-total>strong{
+ display:grid;
+ place-items:center;
+ min-width:40px;
+ min-height:36px;
+ padding:0 11px;
+ border:1px solid #d5e4ff;
+ border-radius:9px;
+ background:linear-gradient(145deg,#f1f6ff,#e6efff);
+ color:#2563eb;
+ font-size:20px;
+ font-weight:800;
+ font-variant-numeric:tabular-nums;
+}
+.theme-dark .app .fx-analytics-frequency-card{
+ background:radial-gradient(ellipse at 100% 0%,rgba(37,99,235,.09) 0%,rgba(16,24,33,0) 40%),#101821;
+ border-color:#263343;
+ border-top-color:#3b82f6;
+}
+.theme-dark .app .fx-analytics-frequency-card .fx-analytics-insight-heading{border-color:#263343}
+.theme-dark .app .fx-analytics-frequency-card .fx-analytics-heading-icon{
+ border-color:#2b4771;
+ background:#172d49;
+ color:#8bb6ff;
+ box-shadow:none;
+}
+.theme-dark .app .fx-analytics-frequency-grid>.fx-frequency-metric{
+ border-color:#29394d;
+ background:linear-gradient(150deg,#131f2c 0%,#101821 100%);
+ box-shadow:none;
+}
+.theme-dark .app .fx-analytics-frequency-grid>.fx-frequency-metric:hover{
+ border-color:#405a7a;
+ background:#162333;
+ box-shadow:0 7px 16px rgba(0,0,0,.18);
+}
+.theme-dark .app .fx-frequency-metric-head>span:last-child{color:#b5c2d2}
+.theme-dark .app .fx-frequency-metric-icon{background:#192d48;color:#8bb6ff}
+.theme-dark .app .fx-frequency-calendar .fx-frequency-metric-icon{background:#133042;color:#7dd3fc}
+.theme-dark .app .fx-frequency-week .fx-frequency-metric-icon{background:#123126;color:#34d399}
+.theme-dark .app .fx-frequency-month .fx-frequency-metric-icon{background:#2c2344;color:#b8a0ff}
+.theme-dark .app .fx-analytics-frequency-grid>.fx-frequency-metric>strong{color:#f1f5f9}
+.theme-dark .app .fx-analytics-frequency-grid>.fx-frequency-metric>small{color:#9aa9bb}
+.theme-dark .app .fx-analytics-frequency-total{border-color:#263343}
+.theme-dark .app .fx-frequency-total-label>div>span{color:#cbd5e1}
+.theme-dark .app .fx-frequency-total-label>div>small{color:#9aa9bb}
+.theme-dark .app .fx-frequency-total-icon{background:#172d49;color:#8bb6ff}
+.theme-dark .app .fx-analytics-frequency-total>strong{
+ border-color:#2b4771;
+ background:#172d49;
+ color:#8bb6ff;
+}
+@media(max-width:620px){
+ .app .fx-analytics-frequency-card{padding:15px}
+ .app .fx-analytics-frequency-grid{gap:8px}
+ .app .fx-analytics-frequency-grid>.fx-frequency-metric{min-height:100px;padding:11px 10px}
+ .app .fx-analytics-frequency-grid>.fx-frequency-metric>strong{font-size:25px;margin-left:32px}
+ .app .fx-analytics-frequency-grid>.fx-frequency-metric>small{margin-left:32px;font-size:9px}
+ .app .fx-frequency-metric-icon{width:25px;height:25px;flex-basis:25px}
+ .app .fx-frequency-metric-head>span:last-child{font-size:10px}
+ .app .fx-analytics-frequency-total{padding:12px 2px 0}
+}
+@media(prefers-reduced-motion:reduce){
+ .app .fx-analytics-frequency-grid>.fx-frequency-metric{transition:none}
+ .app .fx-analytics-frequency-grid>.fx-frequency-metric:hover{transform:none}
+}
