@@ -5982,3 +5982,19 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot {
   margin-top: 3px;
 }
+
+
+/* Keep category names at the lower edge of each card, with the pillar above them. */
+.app .fx-analytics-side-columns .fx-analytics-vertical-label,
+.app .fx-analytics-time-columns .fx-time-card-period,
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+  margin-top: auto;
+  padding-top: 8px;
+  flex-shrink: 0;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot,
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
