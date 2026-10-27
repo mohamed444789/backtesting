@@ -7006,3 +7006,19 @@ td {
     font-size: 10px;
   }
 }
+
+
+/* Compact Average Trade Frequency after removing footnotes and icons. */
+.app .fx-analytics-frequency-overview .fx-frequency-metric-head {
+  gap: 0;
+}
+.app .fx-analytics-frequency-overview .fx-frequency-metric-head > span:last-child {
+  font-size: 14px;
+  line-height: 1.4;
+}
+.app .fx-analytics-frequency-overview .fx-analytics-frequency-grid > .fx-frequency-metric > strong {
+  margin-left: 0;
+}
+.app .fx-analytics-frequency-overview .fx-analytics-frequency-grid > .fx-frequency-metric {
+  min-height: 92px;
+}
