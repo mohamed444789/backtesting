@@ -352,8 +352,8 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
   if(!galleryOpen)return;
   const onKeyDown=(event:KeyboardEvent)=>{
    if(event.key==='Escape')setGalleryOpen(false);
-   else if(event.key==='ArrowLeft')setGalleryIndex(index=>Math.max(0,index-1));
-   else if(event.key==='ArrowRight')setGalleryIndex(index=>Math.min(screenshots.length-1,index+1));
+   else if(event.key==='ArrowLeft'){event.preventDefault();setGalleryIndex(index=>(index-1+screenshots.length)%screenshots.length);}
+   else if(event.key==='ArrowRight'){event.preventDefault();setGalleryIndex(index=>(index+1)%screenshots.length);}
   };
   window.addEventListener('keydown',onKeyDown);
   return()=>window.removeEventListener('keydown',onKeyDown);
@@ -415,6 +415,8 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
   ['Realized P&L',isClosed?pnlText:'—',isClosed?(pnlValue>0?'positive':pnlValue<0?'negative':'neutral'):'neutral']
  ]:[];
  const screenshots=detailMedia.filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\s*/, '')}));
+ const activeScreenshot=screenshots[galleryIndex];
+ const openGallery=(index:number)=>{setGalleryIndex(index);setGalleryOpen(true)};
  return <>
   <div className="tablewrap trades-journal-wrap"><table className="trades-grid"><thead><tr>{columns.map(([key,label])=><th key={key} aria-sort={sortKey===key?(sortDir==='asc'?'ascending':'descending'):'none'}><button type="button" className="trade-sort-button" onClick={()=>sort(key)} title={'Sort by '+label}>{label}<span className="trade-sort-indicator">{sortKey===key?(sortDir==='asc'?'↑':'↓'):'↕'}</span></button></th>)}<th>Action</th></tr></thead><tbody>{sorted.length===0?<tr><td colSpan={10} className="trades-empty">No trades yet. Your executed trades will appear here.</td></tr>:sorted.map(t=>{
    const result=outcome(t),hasJournal=Boolean(String(t.notes||'').trim()||String(t.strategy||'').trim()),side=sideLabel(t),rowClass=result==='TP hit'?'tp-hit-row':result==='SL hit'?'sl-hit-row':'';
@@ -449,8 +451,8 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
      {detailTab==='media'&&<div className="trade-detail-media">
       <div className="trade-media-gallery">
        {detailMediaLoading?<p>Loading media…</p>:screenshots.length?<div className="trade-media-grid">{screenshots.map((item:any,index:number)=><div className="trade-media-thumb" key={item.id}>
-        <button className="trade-media-preview" type="button" onClick={()=>{setGalleryIndex(index);setGalleryOpen(true)}} aria-label={'Open screenshot '+(index+1)}><img src={'/trade-media/'+encodeURIComponent(item.filename)} alt="Trade screenshot"/><span className="trade-media-timeframe">▧ 1min</span></button>
-        <div className="trade-media-thumb-actions"><button type="button" title="View fullscreen" aria-label="View fullscreen" onClick={()=>{setGalleryIndex(index);setGalleryOpen(true)}}>⤢</button><button type="button" className="danger" title="Delete screenshot" aria-label="Delete screenshot" onClick={()=>void deleteMedia(item.filename)}>▤</button></div>
+        <button className="trade-media-preview" type="button" onClick={()=>openGallery(index)} aria-label={'Open screenshot '+(index+1)}><img src={'/trade-media/'+encodeURIComponent(item.filename)} alt="Trade screenshot"/><span className="trade-media-timeframe">▧ 1min</span></button>
+        <div className="trade-media-thumb-actions"><button type="button" title="View fullscreen" aria-label="View fullscreen" onClick={()=>openGallery(index)}><Maximize2 size={16} strokeWidth={2}/></button><button type="button" className="danger" title="Delete screenshot" aria-label="Delete screenshot" onClick={()=>void deleteMedia(item.filename)}><Trash2 size={15} strokeWidth={2}/></button></div>
         <span className="trade-media-caption">{item.created_at||item.filename}</span>
        </div>)}</div>:<div className="trade-detail-empty"><b>No media yet</b><p>Upload a screenshot of the chart or your setup.</p></div>}
        <div className="trade-media-upload-bar"><label className="trade-media-upload-icon" title={detailUploading?'Uploading screenshot':'Upload screenshot'} aria-label="Upload screenshot">{detailUploading?'…':<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m0 0L7 8m5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={detailUploading} onChange={uploadMedia}/></label></div>
@@ -467,11 +469,11 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
     </section>
    </div>
    {galleryOpen&&screenshots.length>0&&<div className="trade-media-lightbox" role="dialog" aria-modal="true" aria-label="Screenshot gallery" onClick={e=>{if(e.target===e.currentTarget)setGalleryOpen(false)}}>
-    <header className="trade-media-lightbox-header"><strong>Gallery</strong><span>{galleryIndex+1} of {screenshots.length}</span><button type="button" aria-label="Close gallery" title="Close gallery" onClick={()=>setGalleryOpen(false)}>×</button></header>
+    <header className="trade-media-lightbox-header"><strong>Gallery</strong><span>{galleryIndex+1} of {screenshots.length}</span><button type="button" aria-label="Close gallery" title="Close gallery (Esc)" onClick={()=>setGalleryOpen(false)}>×</button></header>
     <div className="trade-media-lightbox-stage">
-     <button type="button" className="trade-media-arrow previous" aria-label="Previous image" disabled={galleryIndex<=0} onClick={()=>setGalleryIndex(n=>Math.max(0,n-1))}>‹</button>
+     <button type="button" className="trade-media-arrow previous" aria-label="Previous image" title="Previous image (←)" onClick={()=>setGalleryIndex(n=>(n-1+screenshots.length)%screenshots.length)}>‹</button>
      <img src={'/trade-media/'+encodeURIComponent(screenshots[galleryIndex]?.filename||'')} alt={'Trade screenshot '+(galleryIndex+1)}/>
-     <button type="button" className="trade-media-arrow next" aria-label="Next image" disabled={galleryIndex>=screenshots.length-1} onClick={()=>setGalleryIndex(n=>Math.min(screenshots.length-1,n+1))}>›</button>
+     <button type="button" className="trade-media-arrow next" aria-label="Next image" title="Next image (→)" onClick={()=>setGalleryIndex(n=>(n+1)%screenshots.length)}>›</button>
     </div>
     <div className="trade-media-lightbox-thumbs">{screenshots.map((item:any,index:number)=><button type="button" key={item.id} className={index===galleryIndex?'active':''} aria-label={'Show image '+(index+1)} onClick={()=>setGalleryIndex(index)}><img src={'/trade-media/'+encodeURIComponent(item.filename)} alt=""/></button>)}</div>
    </div>}
