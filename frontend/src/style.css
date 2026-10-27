@@ -6069,8 +6069,13 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 }
 
 
-/* Match Side and Time scorecards to the centered, narrower weekday layout. */
-.app .fx-analytics-side-columns,
+/* Center the Side cards in a compact group; keep the four Time cards wider. */
+.app .fx-analytics-side-columns {
+  width: 56%;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 8px;
+}
 .app .fx-analytics-time-columns {
   width: 74%;
   margin-left: auto;
@@ -6083,7 +6088,10 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   min-width: 0;
 }
 @media (max-width: 1050px) {
-  .app .fx-analytics-side-columns,
+  .app .fx-analytics-side-columns {
+    width: 78%;
+    gap: 6px;
+  }
   .app .fx-analytics-time-columns {
     width: 92%;
     gap: 5px;
