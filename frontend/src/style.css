@@ -5665,3 +5665,53 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-day-columns .fx-day-card{transition:none}
  .app .fx-analytics-day-columns .fx-day-card:hover{transform:none}
 }
+
+
+/* Stack win rate over trade count above each analysis pillar. */
+.app .fx-analytics-side-columns .fx-side-card-topline,
+.app .fx-analytics-time-columns .fx-time-card-topline,
+.app .fx-analytics-day-columns .fx-day-card-topline{
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ gap:3px;
+ min-height:39px;
+ width:100%;
+ padding:0 1px;
+}
+.app .fx-analytics-side-columns .fx-side-card-rate,
+.app .fx-analytics-time-columns .fx-time-card-rate,
+.app .fx-analytics-day-columns .fx-day-card-rate{
+ display:block;
+ width:100%;
+ text-align:center;
+ font-size:12px;
+ line-height:1.2;
+ font-weight:800;
+ font-variant-numeric:tabular-nums;
+}
+.app .fx-analytics-side-columns .fx-side-card-trades,
+.app .fx-analytics-time-columns .fx-time-card-trades,
+.app .fx-analytics-day-columns .fx-day-card-trades{
+ display:block;
+ width:100%;
+ text-align:center;
+ font-size:9px;
+ line-height:1.25;
+ font-weight:650;
+ white-space:nowrap;
+}
+.app .fx-analytics-day-columns .fx-day-card-topline{min-height:35px}
+.app .fx-analytics-day-columns .fx-day-card-rate{font-size:10px}
+.app .fx-analytics-day-columns .fx-day-card-trades{font-size:8px}
+@media(max-width:620px){
+ .app .fx-analytics-side-columns .fx-side-card-topline,
+ .app .fx-analytics-time-columns .fx-time-card-topline{min-height:36px}
+ .app .fx-analytics-side-columns .fx-side-card-rate,
+ .app .fx-analytics-time-columns .fx-time-card-rate{font-size:11px}
+ .app .fx-analytics-side-columns .fx-side-card-trades,
+ .app .fx-analytics-time-columns .fx-time-card-trades{font-size:8px}
+ .app .fx-analytics-day-columns .fx-day-card-rate{font-size:9px}
+ .app .fx-analytics-day-columns .fx-day-card-trades{font-size:7px}
+}
