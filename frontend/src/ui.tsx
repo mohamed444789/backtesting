@@ -357,7 +357,7 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
   };
   window.addEventListener('keydown',onKeyDown);
   return()=>window.removeEventListener('keydown',onKeyDown);
- },[galleryOpen,screenshots.length]);
+ },[galleryOpen,detailMedia.length]);
  useEffect(()=>{
   if(!selectedTrade)return;
   setDetailNotes(String(selectedTrade.notes||''));
