@@ -3878,3 +3878,76 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .fx-session-month-summary{grid-template-columns:minmax(0,1fr)}
  .fx-session-month-summary>.fx-month-kpi{min-height:105px}
 }
+
+
+/* Weekly P&L column appended after Sunday in the session calendar. */
+.fx-session-weekdays,
+.fx-session-calendar-grid{
+ grid-template-columns:repeat(7,minmax(0,1fr)) minmax(96px,.95fr);
+}
+.fx-session-weekdays>.fx-session-weekly-heading{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ padding:7px 4px;
+ border-left:1px solid #e4e9f0;
+ color:#526176;
+ font-size:10px;
+ font-weight:750;
+ white-space:normal;
+}
+.fx-session-week-pnl{
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ justify-content:center;
+ gap:7px;
+ min-width:0;
+ min-height:88px;
+ padding:10px 9px;
+ border:1px solid #e5eaf1;
+ border-radius:7px;
+ background:linear-gradient(160deg,#f8fafc,#fff);
+}
+.fx-session-week-pnl>small{
+ color:#8491a3;
+ font-size:10px;
+ font-weight:600;
+}
+.fx-session-week-pnl>strong{
+ max-width:100%;
+ overflow:hidden;
+ color:#526176;
+ font-size:12px;
+ font-weight:750;
+ font-variant-numeric:tabular-nums;
+ white-space:nowrap;
+ text-overflow:ellipsis;
+}
+.fx-session-week-pnl>span{
+ color:#8491a3;
+ font-size:10px;
+ white-space:nowrap;
+}
+.fx-session-week-pnl.profit-week{
+ border-color:#c7efdf;
+ background:linear-gradient(155deg,#f0fbf6,#fff);
+}
+.fx-session-week-pnl.profit-week>strong{color:#079669}
+.fx-session-week-pnl.loss-week{
+ border-color:#f8d5d5;
+ background:linear-gradient(155deg,#fff4f4,#fff);
+}
+.fx-session-week-pnl.loss-week>strong{color:#e24c52}
+.theme-dark .fx-session-weekdays>.fx-session-weekly-heading{border-color:#2b3746;color:#b4c0d0}
+.theme-dark .fx-session-week-pnl{background:#101821;border-color:#2b3746}
+.theme-dark .fx-session-week-pnl>small,.theme-dark .fx-session-week-pnl>span{color:#9aa9bb}
+.theme-dark .fx-session-week-pnl>strong{color:#cbd5e1}
+.theme-dark .fx-session-week-pnl.profit-week{background:#10271f;border-color:#1d5c43}
+.theme-dark .fx-session-week-pnl.profit-week>strong{color:#34d399}
+.theme-dark .fx-session-week-pnl.loss-week{background:#2b171d;border-color:#6f2b37}
+.theme-dark .fx-session-week-pnl.loss-week>strong{color:#fb7185}
+@media(max-width:850px){
+ .fx-session-calendar-main{overflow-x:auto;padding-bottom:3px}
+ .fx-session-weekdays,.fx-session-calendar-grid{min-width:780px}
+}
