@@ -430,10 +430,12 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
      </div>}
     </aside>
     <section className="trade-detail-journal">
-     <div className="trade-detail-journal-heading"><div><small>TRADE JOURNAL</small><h3>Thoughts & execution</h3><p>Record the reason for the trade, your execution and what you learned.</p></div><span className="trade-detail-status">{isClosed?'CLOSED':'OPEN'}</span></div>
-     <label className="trade-detail-strategy">Strategy / setup<input value={detailStrategy} onChange={e=>setDetailStrategy(e.target.value)} placeholder="e.g. London breakout"/></label>
-     <textarea className="trade-detail-notes" value={detailNotes} onChange={e=>setDetailNotes(e.target.value)} placeholder="Enter text or type '/' for commands…"/>
-     <div className="trade-detail-journal-footer"><div className="trade-detail-shortcuts"><span>Start with shortcuts</span><button onClick={()=>setDetailNotes(v=>(v.trim()?v.trim()+'\n\n':'')+'Plan:\nSetup:\nRisk:\nExecution:\nLesson:')}>◉ /templates</button></div><div className="trade-detail-save-area">{detailFeedback&&<span role="status">{detailFeedback}</span>}<button className="trade-detail-save" onClick={saveDetails} disabled={detailSaving}>{detailSaving?'Saving…':'Save journal'}</button></div></div>
+     <textarea aria-label="Trade journal editor" className="trade-detail-notes" value={detailNotes} onChange={e=>setDetailNotes(e.target.value)} onBlur={()=>{if(selectedTrade&&(detailNotes!==String(selectedTrade.notes||'')))void saveDetails()}} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();void saveDetails()}}} placeholder="Enter text or type '/' for commands"/>
+     <div className="trade-detail-journal-footer">
+      <div className="trade-detail-shortcuts"><span>Start with shortcuts</span><button title="Insert a journal template" onClick={()=>setDetailNotes(v=>(v.trim()?v.trim()+'\n\n':'')+'Plan:\nSetup:\nRisk:\nExecution:\nLesson:')}>◉ /templates</button></div>
+      <div className="trade-detail-save-area">{detailFeedback&&<span role="status">{detailFeedback}</span>}{detailSaving&&<span role="status">Saving…</span>}</div>
+     </div>
+     <button className="trade-detail-ai" title="Journal assistant" aria-label="Journal assistant" onClick={()=>setDetailNotes(v=>(v.trim()?v.trim()+'\n\n':'')+'Review this trade: ')}><span>✦</span></button>
     </section>
    </div>
   </div>}
