@@ -5381,3 +5381,18 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 @media(prefers-reduced-motion:reduce){
  .app .fx-analytics-side-columns .fx-side-card:hover{transform:none}
 }
+
+
+/* Win-rate percentage uses the 50% threshold independently of Long/Short card colors. */
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-rate.fx-rate-good{
+ color:#079669!important;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-rate.fx-rate-bad{
+ color:#e24c52!important;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card .fx-side-card-rate.fx-rate-good{
+ color:#34d399!important;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card .fx-side-card-rate.fx-rate-bad{
+ color:#fb7185!important;
+}
