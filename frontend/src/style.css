@@ -5926,12 +5926,14 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   box-sizing: border-box;
 }
 .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
-  min-height: 278px;
+  width: 88%;
+  justify-self: center;
+  min-height: 305px;
 }
 .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-plot {
-  flex-basis: 125px;
-  height: 125px;
-  min-height: 125px;
+  flex-basis: 135px;
+  height: 135px;
+  min-height: 135px;
 }
 @media (max-width: 1050px) {
   .app .fx-analytics-insights-grid > .fx-analytics-day-card {
@@ -5940,11 +5942,12 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
     min-height: 0;
   }
   .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
-    min-height: 250px;
+    width: 94%;
+    min-height: 270px;
   }
   .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-plot {
-    flex-basis: 115px;
-    height: 115px;
-    min-height: 115px;
+    flex-basis: 120px;
+    height: 120px;
+    min-height: 120px;
   }
 }
