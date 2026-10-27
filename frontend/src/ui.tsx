@@ -349,6 +349,16 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
  const outcomeClass=(text:string)=>text.toLowerCase().replace(/[^a-z]+/g,'-').replace(/-$/,'');
  const refreshMedia=async(id:number)=>{setDetailMediaLoading(true);try{const rows=await api('/trades/'+id+'/journal-notes');setDetailMedia(Array.isArray(rows)?rows:[])}catch(e:any){setDetailMedia([]);setDetailFeedback(e.message||'Could not load media')}finally{setDetailMediaLoading(false)}};
  useEffect(()=>{
+  if(!galleryOpen)return;
+  const onKeyDown=(event:KeyboardEvent)=>{
+   if(event.key==='Escape')setGalleryOpen(false);
+   else if(event.key==='ArrowLeft')setGalleryIndex(index=>Math.max(0,index-1));
+   else if(event.key==='ArrowRight')setGalleryIndex(index=>Math.min(screenshots.length-1,index+1));
+  };
+  window.addEventListener('keydown',onKeyDown);
+  return()=>window.removeEventListener('keydown',onKeyDown);
+ },[galleryOpen,screenshots.length]);
+ useEffect(()=>{
   if(!selectedTrade)return;
   setDetailNotes(String(selectedTrade.notes||''));
   setDetailStrategy(String(selectedTrade.strategy||''));
