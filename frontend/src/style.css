@@ -3664,3 +3664,125 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .fx-session-selector-actions{margin-left:0;justify-content:flex-start}
  .fx-session-trades-heading{align-items:flex-start}
 }
+
+
+/* Session performance dashboard KPI cards */
+.fx-session-summary-header{padding-bottom:16px}
+.fx-session-stat-grid{
+ display:grid;
+ grid-template-columns:repeat(7,minmax(0,1fr));
+ gap:12px;
+ margin-bottom:22px;
+}
+.fx-session-stat{
+ position:relative;
+ gap:12px;
+ min-height:150px;
+ padding:17px 16px 15px;
+ overflow:hidden;
+ border:1px solid #e7ebf2;
+ border-radius:14px;
+ background:linear-gradient(160deg,#fff 0%,#fbfcfe 100%);
+ box-shadow:0 4px 14px rgba(25,45,75,.045);
+ transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+.fx-session-stat:hover{
+ transform:translateY(-2px);
+ border-color:#d6e2f3;
+ box-shadow:0 8px 22px rgba(25,45,75,.075);
+}
+.fx-stat-label{
+ display:flex;
+ align-items:center;
+ gap:8px;
+ min-width:0;
+ color:#64748b;
+ font-size:12px;
+ line-height:1.25;
+ font-weight:650;
+}
+.fx-stat-label>span:last-child{white-space:nowrap}
+.fx-stat-icon{
+ display:grid;
+ place-items:center;
+ flex:0 0 31px;
+ width:31px;
+ height:31px;
+ border-radius:9px;
+ background:#edf3ff;
+ color:#2864ed;
+}
+.fx-session-stat>strong{
+ display:block;
+ margin-top:auto;
+ font-size:clamp(22px,1.6vw,29px);
+ line-height:1.18;
+ letter-spacing:-.6px;
+ font-weight:700;
+ color:#172033;
+ font-variant-numeric:tabular-nums;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+.fx-session-stat>small{
+ font-size:10px;
+ line-height:1.35;
+ color:#8a96a6;
+ overflow-wrap:anywhere;
+}
+.fx-stat-equity{border-top:3px solid #2864ed}
+.fx-stat-equity .fx-stat-icon{background:#edf3ff;color:#2864ed}
+.fx-stat-open .fx-stat-icon{background:#eef6ff;color:#3576c8}
+.fx-stat-closed .fx-stat-icon{background:#edf8f2;color:#0a9b70}
+.fx-stat-wins .fx-stat-icon{background:#eaf8f0;color:#079669}
+.fx-stat-wins>strong{color:#079669}
+.fx-stat-losses .fx-stat-icon{background:#fff0ef;color:#e24c52}
+.fx-stat-losses>strong{color:#e24c52}
+.fx-stat-winrate .fx-stat-icon{background:#f0edff;color:#7653cf}
+.fx-stat-factor .fx-stat-icon{background:#fff5e7;color:#c28118}
+.fx-stat-mini-track{
+ height:5px;
+ width:100%;
+ overflow:hidden;
+ border-radius:10px;
+ background:#e9edf4;
+ margin-top:-3px;
+}
+.fx-stat-mini-track>i{
+ display:block;
+ height:100%;
+ background:linear-gradient(90deg,#10b981,#34d399);
+ border-radius:10px;
+ transition:width .2s ease;
+}
+.theme-dark .fx-session-stat{
+ background:linear-gradient(160deg,#121d29 0%,#101821 100%);
+ border-color:#263343;
+ box-shadow:none;
+}
+.theme-dark .fx-session-stat:hover{border-color:#3a4e67;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+.theme-dark .fx-stat-label{color:#b4c0d0}
+.theme-dark .fx-session-stat>strong{color:#e4ebf4}
+.theme-dark .fx-stat-wins>strong{color:#34d399}
+.theme-dark .fx-stat-losses>strong{color:#fb7185}
+.theme-dark .fx-stat-icon{background:#19283a;color:#8bb6ff}
+.theme-dark .fx-stat-wins .fx-stat-icon{background:#123126;color:#34d399}
+.theme-dark .fx-stat-losses .fx-stat-icon{background:#3a2026;color:#fb7185}
+.theme-dark .fx-stat-winrate .fx-stat-icon{background:#2c2344;color:#b8a0ff}
+.theme-dark .fx-stat-factor .fx-stat-icon{background:#3a2c18;color:#f5c477}
+.theme-dark .fx-stat-mini-track{background:#263343}
+@media(max-width:1450px){
+ .fx-session-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .fx-session-stat{min-height:142px}
+}
+@media(max-width:850px){
+ .fx-session-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .fx-session-stat{min-height:132px;padding:14px}
+ .fx-stat-label{font-size:12px}
+ .fx-session-stat>strong{font-size:25px}
+}
+@media(max-width:420px){
+ .fx-session-stat-grid{grid-template-columns:minmax(0,1fr)}
+ .fx-session-stat{min-height:110px}
+}
