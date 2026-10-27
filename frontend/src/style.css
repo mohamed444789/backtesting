@@ -7108,3 +7108,22 @@ td {
     font-size: 9px;
   }
 }
+
+
+/* Match Performance by day metric labels to Performance by time (Berlin Time). */
+.app .fx-analytics-day-columns .fx-day-card-rate {
+  font-size: 16px;
+  line-height: 1.35;
+}
+.app .fx-analytics-day-columns .fx-day-card-trades {
+  font-size: 12px;
+  line-height: 1.35;
+}
+@media (max-width: 620px) {
+  .app .fx-analytics-day-columns .fx-day-card-rate {
+    font-size: 14px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card-trades {
+    font-size: 12px;
+  }
+}
