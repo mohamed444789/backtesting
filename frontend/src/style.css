@@ -4401,3 +4401,23 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-breakdown-grid>div{transition:none}
  .app .fx-analytics-breakdown-grid>div:hover{transform:none}
 }
+
+
+/* Keep Trades aligned to the same centered, padded content canvas as Analytics
+   and Sessions. A legacy trade-table rule had removed the parent padding. */
+.app main .content:has(.the5ers-trades-page.fx-trades-workspace){
+ width:100%;
+ max-width:1600px;
+ margin:0 auto;
+ padding:26px 28px 28px;
+}
+@media(max-width:850px){
+ .app main .content:has(.the5ers-trades-page.fx-trades-workspace){
+  padding:20px 14px;
+ }
+}
+@media(max-width:560px){
+ .app main .content:has(.the5ers-trades-page.fx-trades-workspace){
+  padding:16px 9px;
+ }
+}
