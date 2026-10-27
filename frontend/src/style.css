@@ -6144,3 +6144,18 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
     gap: 8px;
   }
 }
+
+
+/* Align the Side cards' bottom edges with the weekday cards and remove the
+   oversized empty strip beneath Long/Short. Let the plot absorb the extra height. */
+.app .fx-analytics-side-columns .fx-side-card {
+  height: 314px;
+  min-height: 314px;
+  align-self: stretch;
+  box-sizing: border-box;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 118px;
+}
