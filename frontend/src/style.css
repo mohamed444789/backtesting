@@ -7127,3 +7127,194 @@ td {
     font-size: 12px;
   }
 }
+
+
+/* Session trades table: match Trades page styling and center the P&L column. */
+.app .fx-session-trades-card .trades-journal-wrap {
+  margin: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  scrollbar-color: #b5b5bb #fff;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid {
+  width: 100%;
+  min-width: 1020px;
+  border-collapse: collapse;
+  border-spacing: 0;
+  background: #fff;
+  table-layout: auto;
+  text-align: left;
+  font: 12px/1.35 Arial, Helvetica, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 39px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 1px solid #d6d6d6;
+  background: #fff;
+  color: #77777e;
+  font: 400 12px/1.2 Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  white-space: nowrap;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-sort-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  width: auto;
+  min-width: 0;
+  min-height: 37px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #77777e;
+  font: 400 12px/1.2 Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-sort-button:hover,
+.app .fx-session-trades-card .trades-journal-wrap .trade-sort-button:focus-visible {
+  background: transparent;
+  color: #333;
+  outline: none;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-sort-indicator {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 16px;
+  flex: 0 0 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #aaaab0;
+  font-size: 12px;
+  line-height: 1;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody tr,
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody tr:nth-child(even),
+.app.theme-light .fx-session-trades-card .trades-journal-wrap .trades-grid tbody tr.tp-hit-row td,
+.app.theme-light .fx-session-trades-card .trades-journal-wrap .trades-grid tbody tr.sl-hit-row td,
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody tr.tp-hit-row td,
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody tr.sl-hit-row td {
+  background: #fff;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody td {
+  height: 48px;
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 1px solid #d8d8d8;
+  background: #fff;
+  color: #4e4e52;
+  font: 400 11px/1.35 Arial, Helvetica, sans-serif;
+  vertical-align: middle;
+  white-space: nowrap;
+  transition: background-color .12s ease;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody tr:hover td {
+  background: #fafaff;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-pair {
+  color: #4b4b50;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-date {
+  color: #66666c;
+  font-size: 11px !important;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-price,
+.app .fx-session-trades-card .trades-journal-wrap .trade-numeric {
+  color: #4d4d52;
+  font: 400 11px/1.35 Arial, Helvetica, sans-serif !important;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-direction,
+.app .fx-session-trades-card .trades-journal-wrap .trade-outcome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font: 400 11px/1.1 Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+.app .fx-session-trades-card .trades-journal-wrap .direction-long {
+  color: #245f2a;
+  background: #e5f5e6;
+  border-color: #00a823;
+}
+.app .fx-session-trades-card .trades-journal-wrap .direction-short {
+  color: #a3232b;
+  background: #fff0f0;
+  border-color: #ff343b;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trade-pnl {
+  min-width: 63px;
+  font: 400 12px/1.35 Arial, Helvetica, sans-serif !important;
+  text-align: center !important;
+}
+.app .fx-session-trades-card .trades-journal-wrap .pnl-positive {
+  color: #17a234 !important;
+}
+.app .fx-session-trades-card .trades-journal-wrap .pnl-negative {
+  color: #4d4d52 !important;
+}
+.app .fx-session-trades-card .trades-journal-wrap .pnl-neutral {
+  color: #77777e !important;
+}
+.app .fx-session-trades-card .trades-journal-wrap .outcome-tp-hit,
+.app .fx-session-trades-card .trades-journal-wrap .outcome-win {
+  color: #165f24;
+  background: #edf9ee;
+  border-color: #00aa26;
+}
+.app .fx-session-trades-card .trades-journal-wrap .outcome-sl-hit,
+.app .fx-session-trades-card .trades-journal-wrap .outcome-loss {
+  color: #a3232b;
+  background: #fff0f0;
+  border-color: #ff343b;
+}
+.app .fx-session-trades-card .trades-journal-wrap .outcome-open,
+.app .fx-session-trades-card .trades-journal-wrap .outcome-break-even {
+  color: #56565e;
+  background: #f8f8fb;
+  border-color: #bfc0ca;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid thead th:nth-child(7) {
+  text-align: center;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid thead th:nth-child(7) .trade-sort-button {
+  width: 100%;
+  justify-content: center;
+}
+.app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody td:nth-child(7) {
+  text-align: center !important;
+}
+@media (max-width: 620px) {
+  .app .fx-session-trades-card .trades-journal-wrap .trades-grid tbody td,
+  .app .fx-session-trades-card .trades-journal-wrap .trade-date,
+  .app .fx-session-trades-card .trades-journal-wrap .trade-price,
+  .app .fx-session-trades-card .trades-journal-wrap .trade-numeric,
+  .app .fx-session-trades-card .trades-journal-wrap .trade-pnl {
+    font-size: 13px !important;
+  }
+}
