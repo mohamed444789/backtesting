@@ -2921,3 +2921,48 @@ main .content:has(.the5ers-trades-page){max-width:none;width:100%;margin:0;paddi
     height:auto;
   }
 }
+
+
+/* FXReplay-style screenshot media gallery */
+.trade-detail-media{display:flex;flex:1;min-height:0;flex-direction:column;padding:0 20px 14px}
+.trade-media-gallery{display:flex;flex:1;min-height:0;flex-direction:column}
+.trade-media-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-content:start;overflow:auto;padding:7px 0 12px}
+.trade-media-thumb{position:relative;min-width:0}
+.trade-media-preview{position:relative;display:block;width:100%;padding:0;overflow:hidden;border:1px solid #34383e;border-radius:9px;background:#fff;cursor:pointer;aspect-ratio:16/9}
+.trade-media-preview img{display:block;width:100%;height:100%;object-fit:cover}
+.trade-media-timeframe{position:absolute;top:6px;left:6px;padding:3px 6px;border-radius:4px;background:#555;color:#fff;font-size:11px;line-height:1.2}
+.trade-media-thumb-actions{position:absolute;top:7px;right:7px;display:flex;gap:5px}
+.trade-media-thumb-actions button{display:grid;place-items:center;width:25px;height:25px;padding:0;border:0;border-radius:4px;background:#555;color:#fff;font-size:17px;line-height:1;cursor:pointer}
+.trade-media-thumb-actions button:hover{background:#30343a}
+.trade-media-thumb-actions button.danger{background:#555}
+.trade-media-thumb-actions button.danger:hover{background:#b42332}
+.trade-media-caption{display:block;overflow:hidden;margin-top:5px;color:#607796;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.trade-media-upload-bar{display:flex;flex:0 0 auto;justify-content:center;margin-top:auto;padding:10px 0 0;border-top:1px solid #424242}
+.trade-media-upload-icon{display:grid;place-items:center;width:36px;height:36px;border:1px solid #777;border-radius:50%;background:#fff;color:#52647d;cursor:pointer}
+.trade-media-upload-icon:hover{background:#f3f5f8;border-color:#3e526b}
+.trade-media-upload-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.trade-media-upload-icon input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
+.trade-media-lightbox{position:fixed;z-index:10000;inset:0;display:flex;flex-direction:column;box-sizing:border-box;padding:0 18px 16px;border:1px solid #d8e0e9;border-radius:14px;background:#fff;box-shadow:0 15px 50px #1d293926;color:#252b35}
+.trade-media-lightbox-header{display:flex;flex:0 0 50px;align-items:center;gap:20px;margin:0 -18px;padding:0 18px;border-bottom:1px solid #d8e0e9}
+.trade-media-lightbox-header strong{font-size:15px;font-weight:600}
+.trade-media-lightbox-header span{margin-left:auto;color:#687386;font-size:12px}
+.trade-media-lightbox-header button{width:28px;height:30px;border:0;background:transparent;color:#737b87;font-size:23px;cursor:pointer}
+.trade-media-lightbox-stage{position:relative;display:flex;flex:1;min-height:0;align-items:center;justify-content:center;margin-top:15px;overflow:hidden;border:1px solid #dce3ec;border-radius:5px;background:#fff}
+.trade-media-lightbox-stage>img{display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain}
+.trade-media-arrow{position:absolute;z-index:1;top:50%;display:grid;place-items:center;width:38px;height:48px;transform:translateY(-50%);border:1px solid #dbe2ea;border-radius:7px;background:#ffffffeb;color:#34445c;font-size:31px;line-height:1;cursor:pointer}
+.trade-media-arrow.previous{left:12px}
+.trade-media-arrow.next{right:12px}
+.trade-media-arrow:disabled{opacity:.2;cursor:default}
+.trade-media-lightbox-thumbs{display:flex;flex:0 0 84px;gap:9px;align-items:center;overflow-x:auto;padding:10px 0 0}
+.trade-media-lightbox-thumbs button{flex:0 0 96px;width:96px;height:64px;padding:2px;border:1px solid #d6dce5;border-radius:6px;background:#fff;cursor:pointer}
+.trade-media-lightbox-thumbs button.active{border:2px solid #1769ff;padding:1px}
+.trade-media-lightbox-thumbs img{width:100%;height:100%;object-fit:cover;border-radius:3px}
+@media(max-width:620px){
+ .trade-detail-media{padding:0 12px 12px}
+ .trade-media-lightbox{inset:0;padding:0 8px 10px;border-radius:0}
+ .trade-media-lightbox-header{margin:0 -8px;padding:0 12px}
+ .trade-media-arrow{width:30px;height:42px}
+ .trade-media-arrow.previous{left:5px}
+ .trade-media-arrow.next{right:5px}
+ .trade-media-lightbox-thumbs button{flex-basis:78px;width:78px;height:54px}
+}
