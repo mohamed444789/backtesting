@@ -3786,3 +3786,95 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .fx-session-stat-grid{grid-template-columns:minmax(0,1fr)}
  .fx-session-stat{min-height:110px}
 }
+
+
+/* Monthly performance KPIs reuse the Session Performance card language. */
+.fx-session-month-summary{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:12px;
+ margin:0 0 20px;
+ padding:0;
+ border:0;
+ border-radius:0;
+ background:transparent;
+}
+.fx-session-month-summary>.fx-month-kpi{
+ display:flex;
+ flex-direction:column;
+ gap:12px;
+ min-width:0;
+ min-height:132px;
+ padding:16px 16px 14px;
+ border:1px solid #e7ebf2;
+ border-radius:14px;
+ background:linear-gradient(160deg,#fff 0%,#fbfcfe 100%);
+ box-shadow:0 4px 14px rgba(25,45,75,.045);
+ transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+.fx-session-month-summary>.fx-month-kpi:hover{
+ transform:translateY(-2px);
+ border-color:#d6e2f3;
+ box-shadow:0 8px 22px rgba(25,45,75,.075);
+}
+.fx-session-month-summary .fx-stat-label{
+ display:flex;
+ align-items:center;
+ gap:8px;
+ font-size:12px;
+ line-height:1.25;
+ font-weight:650;
+ color:#64748b;
+}
+.fx-session-month-summary .fx-stat-icon{
+ display:grid;
+ place-items:center;
+ flex:0 0 31px;
+ width:31px;
+ height:31px;
+ border-radius:9px;
+ background:#edf3ff;
+ color:#2864ed;
+}
+.fx-session-month-summary .fx-month-kpi>strong{
+ display:block;
+ margin-top:auto;
+ font-size:clamp(22px,1.5vw,28px);
+ line-height:1.2;
+ letter-spacing:-.5px;
+ font-weight:700;
+ color:#172033;
+ font-variant-numeric:tabular-nums;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+.fx-session-month-summary .fx-month-kpi>small{
+ font-size:10px;
+ line-height:1.35;
+ color:#8a96a6;
+}
+.fx-session-month-summary .fx-month-pnl>strong.fx-pnl-positive{color:#079669}
+.fx-session-month-summary .fx-month-pnl>strong.fx-pnl-negative{color:#e24c52}
+.fx-session-month-summary .fx-month-kpi.fx-stat-wins>strong{color:#079669}
+.fx-session-month-summary .fx-month-kpi.fx-stat-losses>strong{color:#e24c52}
+.theme-dark .fx-session-month-summary>.fx-month-kpi{
+ background:linear-gradient(160deg,#121d29 0%,#101821 100%);
+ border-color:#263343;
+ box-shadow:none;
+}
+.theme-dark .fx-session-month-summary .fx-stat-label{color:#b4c0d0}
+.theme-dark .fx-session-month-summary .fx-month-kpi>strong{color:#e4ebf4}
+.theme-dark .fx-session-month-summary .fx-month-kpi.fx-stat-wins>strong{color:#34d399}
+.theme-dark .fx-session-month-summary .fx-month-kpi.fx-stat-losses>strong{color:#fb7185}
+.theme-dark .fx-session-month-summary .fx-month-pnl>strong.fx-pnl-positive{color:#34d399}
+.theme-dark .fx-session-month-summary .fx-month-pnl>strong.fx-pnl-negative{color:#fb7185}
+@media(max-width:850px){
+ .fx-session-month-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .fx-session-month-summary>.fx-month-kpi{min-height:122px;padding:14px}
+ .fx-session-month-summary .fx-month-kpi>strong{font-size:24px}
+}
+@media(max-width:420px){
+ .fx-session-month-summary{grid-template-columns:minmax(0,1fr)}
+ .fx-session-month-summary>.fx-month-kpi{min-height:105px}
+}
