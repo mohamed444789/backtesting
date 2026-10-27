@@ -16,7 +16,7 @@ useEffect(()=>{
  let active=true;
  setJournalMediaLoading(true);
  api('/trades/'+encodeURIComponent(journalTradeId)+'/journal-notes')
-  .then((rows:any)=>{if(!active)return;setJournalScreenshots((Array.isArray(rows)?rows:[]).filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\\s*/, '')})))})
+  .then((rows:any)=>{if(!active)return;setJournalScreenshots((Array.isArray(rows)?rows:[]).filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\s*/, '')})))})
   .catch(()=>{if(active)setJournalScreenshots([])})
   .finally(()=>{if(active)setJournalMediaLoading(false)});
  return()=>{active=false};
@@ -326,7 +326,7 @@ const captureChartJournalScreenshot=async()=>{
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw Error(data.error||'Screenshot upload failed');
   const rows=await api('/trades/'+encodeURIComponent(journalTradeId)+'/journal-notes');
-  setJournalScreenshots((Array.isArray(rows)?rows:[]).filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\\s*/, '')})));
+  setJournalScreenshots((Array.isArray(rows)?rows:[]).filter((item:any)=>String(item.body||'').startsWith('Screenshot:')).map((item:any)=>({...item,filename:String(item.body).replace(/^Screenshot:\s*/, '')})));
   setJournalPanelTab('media');setJournalFeedback('Chart screenshot saved');
  }catch(err:any){setJournalFeedback(err.message||'Could not capture chart screenshot')}
  finally{setJournalUploading(false)}
