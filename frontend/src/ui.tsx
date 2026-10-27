@@ -334,7 +334,7 @@ return()=>{
   <Trades trades={trades.filter((t:any)=>tradeJournalFilter==='all'||(tradeJournalFilter==='journaled'?(String(t.notes||'').trim()||String(t.strategy||'').trim()):(!String(t.notes||'').trim()&&!String(t.strategy||'').trim())))} edit={t=>{ED(t);NT(t.notes||'');STG(t.strategy||'')}} onUpdated={async()=>{T(await api('/trades'));A(await api('/analytics'))}}/>
  </section>
 </div>}{page==='Analytics'&&<div className="fx-analytics-workspace">
- <div className="fx-session-page-heading fx-analytics-page-heading"><div><span className="fx-page-eyebrow">WORKSPACE</span><h1>Analytics</h1><p>Review results across your trades and replay sessions.</p></div></div>
+ 
  <div className="fx-session-summary-header fx-analytics-performance-header"><div><span className="fx-page-eyebrow">TRADE PERFORMANCE</span><h2>Performance overview</h2></div></div>
  <div className="fx-session-stat-grid fx-shared-performance-kpis fx-analytics-kpi-grid" aria-label="Analytics performance overview">
   <article className="fx-session-stat fx-stat-equity"><div className="fx-stat-label"><span className="fx-stat-icon"><Wallet size={17}/></span><span>Equity</span></div><strong>{fmt(overviewEquity)}</strong><small>Current account balance</small></article>
