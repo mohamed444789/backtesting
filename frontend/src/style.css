@@ -5998,3 +5998,42 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   margin-top: 3px;
   flex-shrink: 0;
 }
+
+
+/* Final Analytics alignment: let the chart area fill the middle so the bar baseline
+   sits just above the category label, and keep the label + metrics at the card bottom. */
+.app .fx-analytics-side-columns .fx-side-card,
+.app .fx-analytics-time-columns .fx-time-card,
+.app .fx-analytics-day-columns .fx-day-card {
+  display: flex;
+  flex-direction: column;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-time-card .fx-analytics-vertical-plot,
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 90px;
+  margin-top: 3px;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-label,
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+  margin-top: 0;
+  padding-top: 5px;
+  flex-shrink: 0;
+}
+.app .fx-analytics-time-columns .fx-time-card .fx-time-card-period {
+  margin-top: 0;
+  padding-top: 5px;
+  flex-shrink: 0;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-pnl {
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-wl,
+.app .fx-analytics-time-columns .fx-time-card .fx-time-card-wl,
+.app .fx-analytics-day-columns .fx-day-card > small,
+.app .fx-analytics-day-columns .fx-day-card .fx-day-card-pnl {
+  flex-shrink: 0;
+}
