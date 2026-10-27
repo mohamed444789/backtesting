@@ -3951,3 +3951,18 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .fx-session-calendar-main{overflow-x:auto;padding-bottom:3px}
  .fx-session-weekdays,.fx-session-calendar-grid{min-width:780px}
 }
+
+
+/* Reuse the same custom date-picker interaction on Sessions as Replay Chart. */
+.fx-calendar-month-controls .atlas-date-field{gap:0;min-width:150px;width:165px}
+.fx-calendar-month-controls .atlas-date-label{display:none}
+.fx-calendar-month-controls .atlas-date-trigger{
+ min-height:34px;
+ padding:6px 9px;
+ border-radius:7px;
+ font-size:11px;
+ line-height:1.3;
+ gap:7px;
+}
+.fx-calendar-month-controls .atlas-date-trigger svg{width:15px;height:15px}
+.fx-calendar-month-controls .atlas-calendar-popover{z-index:10000}
