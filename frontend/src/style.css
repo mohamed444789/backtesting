@@ -6159,3 +6159,26 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   height: auto;
   min-height: 118px;
 }
+
+
+/* Align the Side and Time card bottoms and share the same W/L baseline. */
+.app .fx-analytics-time-columns .fx-time-card {
+  height: 314px;
+  min-height: 314px;
+  align-self: stretch;
+  box-sizing: border-box;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-wl,
+.app .fx-analytics-time-columns .fx-time-card .fx-time-card-wl {
+  margin-top: auto;
+  min-height: 17px;
+  padding-top: 4px;
+  line-height: 1.25;
+  flex-shrink: 0;
+}
+@media (max-width: 1050px) {
+  .app .fx-analytics-time-columns .fx-time-card {
+    height: 286px;
+    min-height: 286px;
+  }
+}
