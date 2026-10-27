@@ -3106,3 +3106,86 @@ main .content:has(.the5ers-trades-page){max-width:none;width:100%;margin:0;paddi
  .fx-replay-charts-grid>.fx-replay-chart-card{min-height:180px}
 }
 .theme-dark .fx-replay-duration b{color:#e4ebf4}
+
+
+/* Final dashboard refinement: vertically stack the analytics charts and
+   increase typography to match FXReplay's more spacious, readable cards. */
+.fx-replay-charts-grid{
+ grid-template-columns:minmax(0,1fr);
+ gap:18px;
+}
+.fx-replay-charts-grid>.fx-replay-chart-card{
+ min-height:290px;
+ padding:22px 24px;
+}
+.fx-replay-card-title{
+ margin-bottom:18px;
+}
+.fx-replay-card-title h3{
+ font-size:16px;
+ line-height:1.35;
+ font-weight:600;
+}
+.fx-replay-card-title>span{
+ font-size:11px;
+}
+.fx-replay-stat{
+ padding:21px 22px;
+ min-height:145px;
+}
+.fx-replay-stat-label{
+ font-size:13px;
+ line-height:1.4;
+}
+.fx-replay-stat>strong{
+ font-size:31px;
+ line-height:1.25;
+}
+.fx-replay-stat>small{
+ font-size:12px;
+ line-height:1.45;
+}
+.fx-replay-win-bars,.fx-replay-symbol-bars{
+ gap:16px;
+}
+.fx-replay-win-row,.fx-replay-symbol-row{
+ grid-template-columns:minmax(90px,150px) minmax(0,1fr) 44px;
+ gap:12px;
+ font-size:12px;
+}
+.fx-replay-win-row>div,.fx-replay-symbol-row>div{
+ height:12px;
+}
+.fx-replay-win-row>b,.fx-replay-symbol-row>b{
+ font-size:12px;
+}
+.fx-replay-time-chart .fx-replay-card-title h3{
+ font-size:16px;
+}
+.fx-replay-bar-col small{
+ font-size:10px;
+}
+.fx-replay-session-info>b{
+ font-size:13px;
+}
+.fx-replay-session-info>span{
+ font-size:11px;
+}
+.fx-replay-session-symbol,.fx-replay-open-session{
+ font-size:11px;
+}
+@media(max-width:760px){
+ .fx-replay-charts-grid>.fx-replay-chart-card{
+  min-height:220px;
+  padding:17px;
+ }
+ .fx-replay-stat{padding:17px}
+ .fx-replay-stat-label{font-size:12px}
+ .fx-replay-stat>strong{font-size:28px}
+ .fx-replay-stat>small{font-size:11px}
+ .fx-replay-win-row,.fx-replay-symbol-row{
+  grid-template-columns:minmax(65px,100px) minmax(0,1fr) 38px;
+  gap:8px;
+  font-size:11px;
+ }
+}
