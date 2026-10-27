@@ -6037,3 +6037,26 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 .app .fx-analytics-day-columns .fx-day-card .fx-day-card-pnl {
   flex-shrink: 0;
 }
+
+
+/* Match weekday card inset to the tighter Time panel, while slightly narrowing
+   each weekday card for a cleaner, more even row. */
+.app .fx-analytics-insights-grid > .fx-analytics-day-card {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+.app .fx-analytics-day-card .fx-analytics-day-columns {
+  gap: 6px;
+}
+.app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
+  width: 85%;
+}
+@media (max-width: 1050px) {
+  .app .fx-analytics-insights-grid > .fx-analytics-day-card {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
+    width: 92%;
+  }
+}
