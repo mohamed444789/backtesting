@@ -455,7 +455,7 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
         <div className="trade-media-thumb-actions"><button type="button" title="View fullscreen" aria-label="View fullscreen" onClick={()=>openGallery(index)}><Maximize2 size={16} strokeWidth={2}/></button><button type="button" className="danger" title="Delete screenshot" aria-label="Delete screenshot" onClick={()=>void deleteMedia(item.filename)}><Trash2 size={15} strokeWidth={2}/></button></div>
         <span className="trade-media-caption">{item.created_at||item.filename}</span>
        </div>)}</div>:<div className="trade-detail-empty"><b>No media yet</b><p>Upload a screenshot of the chart or your setup.</p></div>}
-       <div className="trade-media-upload-bar"><label className="trade-media-upload-icon" title={detailUploading?'Uploading screenshot':'Upload screenshot'} aria-label="Upload screenshot">{detailUploading?'…':<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m0 0L7 8m5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={detailUploading} onChange={uploadMedia}/></label></div>
+       <div className="trade-media-upload-bar"><label className="trade-media-upload-icon" title={detailUploading?'Uploading screenshot':'Upload screenshot'} aria-label="Upload screenshot">{detailUploading?'…':<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={detailUploading} onChange={uploadMedia}/></label></div>
       </div>
      </div>}
     </aside>
