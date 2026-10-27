@@ -3283,3 +3283,27 @@ main .content:has(.the5ers-trades-page){max-width:none;width:100%;margin:0;paddi
  .fx-replay-column-chart{height:220px;gap:10px}
  .fx-replay-charts-grid>.fx-replay-chart-card{min-height:270px;padding:17px}
 }
+
+
+/* Match FXReplay: Win Rate and Trades by Symbol sit beside each other
+   on desktop; retain the stacked layout on phones. */
+.fx-replay-charts-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  gap:18px;
+}
+.fx-replay-charts-grid>.fx-replay-chart-card{
+  min-width:0;
+  min-height:340px;
+}
+.fx-replay-column-chart{
+  height:260px;
+}
+@media(max-width:760px){
+  .fx-replay-charts-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .fx-replay-charts-grid>.fx-replay-chart-card{
+    min-height:270px;
+  }
+}
