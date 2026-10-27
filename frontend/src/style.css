@@ -5602,17 +5602,17 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  text-align:right;
  white-space:nowrap;
 }
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label{
+ margin-top:7px;
+ padding-top:0;
+ font-size:10px;
+}
 .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot{
- margin-top:17px;
+ margin-top:3px;
  flex-basis:112px;
  height:112px;
  min-height:112px;
  border-radius:4px 4px 0 0;
-}
-.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label{
- margin-top:auto;
- padding-top:10px;
- font-size:10px;
 }
 .app .fx-analytics-day-columns .fx-day-card>small{
  min-height:17px;
@@ -5965,4 +5965,20 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 }
 @media (max-width: 1050px) {
   .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label { font-size: 9px; }
+}
+
+
+/* Keep each pillar immediately below its category label in all three Analytics cards. */
+.app .fx-analytics-side-columns .fx-analytics-vertical-label,
+.app .fx-analytics-time-columns .fx-time-card-period,
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot {
+  margin-top: 3px;
+}
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot {
+  margin-top: 3px;
 }
