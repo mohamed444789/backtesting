@@ -7328,3 +7328,135 @@ td {
 .app .fullscreen-mini-stats > div:nth-child(4) { order: 5; } /* W */
 .app .fullscreen-mini-stats > div:nth-child(5) { order: 6; } /* L */
 .app .fullscreen-mini-stats > div:nth-child(2) { order: 7; } /* Open positions */
+
+
+/* Replay chart mini-stat cards: consistent sizing and visual treatment. */
+.app .fullscreen-mini-stats {
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+.app .fullscreen-mini-stats > div {
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
+  height: 54px;
+  min-height: 54px;
+  margin: 0;
+  padding: 5px 3px;
+  overflow: hidden;
+  border: 1px solid #dbe3ec;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 1px 2px #0f172a0a;
+}
+.app .fullscreen-mini-stats > div > span,
+.app .fullscreen-mini-stats > div > div {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 7.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-align: center;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.app .fullscreen-mini-stats > div > b {
+  display: block;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.app .fullscreen-mini-stats .metric-balance,
+.app .fullscreen-mini-stats .metric-wins,
+.app .fullscreen-mini-stats .metric-losses,
+.app .fullscreen-mini-stats .metric-win-rate,
+.app .fullscreen-mini-stats .metric-loss-rate,
+.app .fullscreen-mini-stats .metric-profit-factor {
+  background: #fff;
+  border-color: #dbe3ec;
+  box-shadow: 0 1px 2px #0f172a0a;
+}
+.app .fullscreen-mini-stats .metric-balance b,
+.app .fullscreen-mini-stats .metric-wins b,
+.app .fullscreen-mini-stats .metric-win-rate b {
+  color: #078455;
+}
+.app .fullscreen-mini-stats .metric-losses b,
+.app .fullscreen-mini-stats .metric-loss-rate b {
+  color: #c42743;
+}
+.app .fullscreen-mini-stats .metric-profit-factor b {
+  color: #2864ed;
+}
+.app.theme-dark .fullscreen-mini-stats > div {
+  border-color: #2a394a;
+  background: #172431;
+  box-shadow: none;
+}
+.app.theme-dark .fullscreen-mini-stats > div > span,
+.app.theme-dark .fullscreen-mini-stats > div > div {
+  color: #92a4b9;
+}
+.app.theme-dark .fullscreen-mini-stats .metric-balance,
+.app.theme-dark .fullscreen-mini-stats .metric-wins,
+.app.theme-dark .fullscreen-mini-stats .metric-losses,
+.app.theme-dark .fullscreen-mini-stats .metric-win-rate,
+.app.theme-dark .fullscreen-mini-stats .metric-loss-rate,
+.app.theme-dark .fullscreen-mini-stats .metric-profit-factor {
+  border-color: #2a394a;
+  background: #172431;
+}
+.app.theme-dark .fullscreen-mini-stats .metric-balance b,
+.app.theme-dark .fullscreen-mini-stats .metric-wins b,
+.app.theme-dark .fullscreen-mini-stats .metric-win-rate b {
+  color: #6ee7b7;
+}
+.app.theme-dark .fullscreen-mini-stats .metric-losses b,
+.app.theme-dark .fullscreen-mini-stats .metric-loss-rate b {
+  color: #ff9299;
+}
+.app.theme-dark .fullscreen-mini-stats .metric-profit-factor b {
+  color: #93c5fd;
+}
+@media (max-width: 760px) {
+  .app .fullscreen-mini-stats {
+    flex: 1 0 100%;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 6px 4px 0;
+  }
+  .app .fullscreen-mini-stats > div {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: 48px;
+    min-height: 48px;
+    padding: 4px 2px;
+  }
+  .app .fullscreen-mini-stats > div > span,
+  .app .fullscreen-mini-stats > div > div {
+    font-size: 7px;
+  }
+  .app .fullscreen-mini-stats > div > b {
+    font-size: 11px;
+  }
+}
