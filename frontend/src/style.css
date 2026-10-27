@@ -6365,3 +6365,325 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   overflow-y: auto;
   padding-right: 3px;
 }
+
+
+/* Typography refresh: stronger hierarchy, more generous sizing and improved readability. */
+body {
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+header {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.logo {
+  font-size: 20px;
+}
+.nav {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 550;
+}
+.navtitle,
+.heading small,
+.navtitle,
+.fx-page-eyebrow {
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.09em;
+}
+.heading h1,
+.fx-session-page-heading h1,
+.trade-page-title-row h1,
+.tb-title-line h1 {
+  font-size: 34px;
+  line-height: 1.14;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+}
+.heading p,
+.fx-session-page-heading p,
+.trade-page-title-row p {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.app .fx-analytics-insight-heading h2,
+.fx-session-calendar-heading h2,
+.fx-session-trades-heading h2,
+.fx-replay-card-title h3,
+.tb-panel-head h2,
+.historical-console-heading h2 {
+  font-size: 20px;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+.app .fx-analytics-insight-heading p,
+.fx-session-calendar-heading p,
+.fx-session-trades-heading p,
+.tb-panel-head p {
+  font-size: 13px;
+  line-height: 1.55;
+}
+h3 {
+  font-size: 17px;
+  line-height: 1.4;
+}
+h3 small {
+  font-size: 12px;
+}
+.primary,
+.secondary,
+.fx-session-new-button,
+.fx-session-open-action,
+.fx-session-rename-action,
+.fx-session-delete-action,
+button.primary,
+button.secondary {
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 650;
+}
+input,
+select,
+textarea {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.form label,
+.fx-session-select-wrap label {
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+.notice,
+.empty p,
+.row,
+.quick,
+.quick small,
+.banner p,
+.banner b {
+  font-size: 13px;
+  line-height: 1.55;
+}
+th {
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+}
+td {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.stat>div {
+  font-size: 13px;
+}
+.stat>b,
+.fx-session-stat>strong,
+.fx-replay-stat>strong {
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.stat>small,
+.fx-session-stat>small,
+.fx-replay-stat>small {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.fx-session-stat>span,
+.fx-stat-label {
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+.fx-session-calendar-card,
+.fx-session-trades-card {
+  padding: 23px;
+}
+.fx-session-calendar-heading,
+.fx-session-trades-heading {
+  margin-bottom: 20px;
+}
+.fx-session-weekdays>div,
+.fx-session-weekly-heading {
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 750;
+}
+.fx-session-day {
+  gap: 8px;
+  min-height: 96px;
+  padding: 11px 10px;
+}
+.fx-session-day.selected {
+  padding: 10px 9px;
+}
+.fx-session-day-number {
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 750;
+}
+.fx-session-day>small {
+  font-size: 10px;
+  line-height: 1.35;
+}
+.fx-session-day>strong {
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+.fx-session-day-empty {
+  font-size: 11px;
+}
+.fx-session-month-summary span,
+.fx-session-daily-summary>div:not(.fx-daily-summary-divider),
+.fx-session-daily-summary>small {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.fx-session-month-summary strong,
+.fx-session-daily-summary>div b {
+  font-size: 14px;
+  line-height: 1.3;
+}
+.fx-session-daily-summary {
+  padding: 18px;
+  gap: 12px;
+}
+.fx-session-daily-summary h3 {
+  font-size: 16px;
+  line-height: 1.45;
+}
+.fx-session-daily-summary>strong {
+  font-size: 32px;
+  line-height: 1.15;
+}
+.fx-session-day-trades-list h4 {
+  font-size: 13px;
+  line-height: 1.4;
+}
+.fx-session-day-trade-main > strong,
+.fx-session-day-trade-main > span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.fx-session-day-trade-main > .fx-day-trade-side {
+  font-size: 10px;
+}
+.fx-session-day-trade-row > strong {
+  font-size: 13px;
+}
+.fx-session-day-trades-empty {
+  font-size: 12px;
+  line-height: 1.55;
+}
+.app .fx-analytics-insight-card {
+  padding: 22px;
+}
+.app .fx-analytics-insight-heading h2 {
+  font-size: 20px;
+}
+.app .fx-analytics-side-columns .fx-side-card-rate,
+.app .fx-analytics-time-columns .fx-time-card-rate {
+  font-size: 13px;
+}
+.app .fx-analytics-side-columns .fx-side-card-trades,
+.app .fx-analytics-time-columns .fx-time-card-trades {
+  font-size: 10px;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-label,
+.app .fx-analytics-time-columns .fx-time-card-period .fx-analytics-vertical-label,
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+  font-size: 11px;
+  line-height: 1.3;
+}
+.app .fx-analytics-day-columns .fx-day-card-rate {
+  font-size: 11px;
+}
+.app .fx-analytics-day-columns .fx-day-card-trades {
+  font-size: 9px;
+}
+.app .fx-analytics-day-columns .fx-day-card .fx-day-card-pnl {
+  font-size: 11px;
+}
+@media (max-width: 1050px) {
+  .heading h1,
+  .fx-session-page-heading h1,
+  .trade-page-title-row h1,
+  .tb-title-line h1 {
+    font-size: 30px;
+  }
+  .app .fx-analytics-insight-card,
+  .fx-session-calendar-card,
+  .fx-session-trades-card {
+    padding: 18px;
+  }
+  .fx-session-day {
+    min-height: 86px;
+    padding: 9px 7px;
+  }
+  .fx-session-day.selected {
+    padding: 8px 6px;
+  }
+  .fx-session-day-number {
+    font-size: 13px;
+  }
+}
+@media (max-width: 620px) {
+  body { font-size: 14px; }
+  .heading h1,
+  .fx-session-page-heading h1,
+  .trade-page-title-row h1,
+  .tb-title-line h1 {
+    font-size: 27px;
+  }
+  .heading p,
+  .fx-session-page-heading p,
+  .trade-page-title-row p {
+    font-size: 14px;
+  }
+  .app .fx-analytics-insight-heading h2,
+  .fx-session-calendar-heading h2,
+  .fx-session-trades-heading h2 {
+    font-size: 18px;
+  }
+  .fx-session-calendar-card,
+  .fx-session-trades-card,
+  .app .fx-analytics-insight-card {
+    padding: 14px;
+  }
+  .fx-session-weekdays>div,
+  .fx-session-weekly-heading {
+    font-size: 11px;
+  }
+  .fx-session-day {
+    min-height: 72px;
+    padding: 7px 4px;
+    gap: 6px;
+  }
+  .fx-session-day.selected {
+    padding: 6px 3px;
+  }
+  .fx-session-day-number {
+    font-size: 12px;
+  }
+  .fx-session-day>small {
+    font-size: 9px;
+  }
+  .fx-session-day>strong {
+    font-size: 10px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card-rate {
+    font-size: 10px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card-trades {
+    font-size: 8px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label {
+    font-size: 10px;
+  }
+}
