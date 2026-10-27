@@ -5914,3 +5914,10 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-overview-details-heading{margin:11px 0 7px}
  .app .fx-analytics-frequency-overview-title{margin-bottom:8px}
 }
+
+
+/* Analytics layout: let Performance by day span the full width beneath
+   Performance by side and Performance by time, from Long through Evening. */
+.app .fx-analytics-insights-grid > .fx-analytics-day-card {
+  grid-column: 1 / -1;
+}
