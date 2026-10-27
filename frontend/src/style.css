@@ -5916,8 +5916,35 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 }
 
 
-/* Analytics layout: let Performance by day span the full width beneath
-   Performance by side and Performance by time, from Long through Evening. */
+/* Analytics layout: Performance by day sits within the red-marked inner span,
+   with a little extra height for a more balanced chart. */
 .app .fx-analytics-insights-grid > .fx-analytics-day-card {
   grid-column: 1 / -1;
+  width: 80%;
+  margin-left: 9%;
+  min-height: 420px;
+  box-sizing: border-box;
+}
+.app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
+  min-height: 278px;
+}
+.app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-plot {
+  flex-basis: 125px;
+  height: 125px;
+  min-height: 125px;
+}
+@media (max-width: 1050px) {
+  .app .fx-analytics-insights-grid > .fx-analytics-day-card {
+    width: 100%;
+    margin-left: 0;
+    min-height: 0;
+  }
+  .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
+    min-height: 250px;
+  }
+  .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-plot {
+    flex-basis: 115px;
+    height: 115px;
+    min-height: 115px;
+  }
 }
