@@ -7460,3 +7460,58 @@ td {
     font-size: 11px;
   }
 }
+
+
+/* Slightly narrower replay session/date controls with larger, clearer text. */
+.toolbar .saved-session-select,
+.fullscreen-controls .saved-session-select {
+  box-sizing: border-box;
+  width: 210px;
+  min-width: 145px;
+  max-width: 210px;
+  font-size: 14px;
+}
+.toolbar .replay-date-jump .atlas-date-field {
+  box-sizing: border-box;
+  width: 148px;
+  min-width: 132px;
+  flex: 0 1 148px;
+  font-size: 14px;
+}
+.toolbar .replay-date-jump .atlas-date-trigger {
+  font-size: 14px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-field {
+  box-sizing: border-box;
+  width: 138px;
+  min-width: 128px;
+  flex: 0 1 138px;
+  font-size: 13px;
+}
+.fullscreen-controls .replay-date-jump .atlas-date-trigger {
+  font-size: 13px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+@media (max-width: 700px) {
+  .toolbar .saved-session-select,
+  .fullscreen-controls .saved-session-select {
+    width: auto;
+    min-width: 125px;
+    max-width: 180px;
+    font-size: 13px;
+  }
+  .toolbar .replay-date-jump .atlas-date-field,
+  .fullscreen-controls .replay-date-jump .atlas-date-field {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    font-size: 13px;
+  }
+  .toolbar .replay-date-jump .atlas-date-trigger,
+  .fullscreen-controls .replay-date-jump .atlas-date-trigger {
+    font-size: 13px;
+  }
+}
