@@ -6349,3 +6349,19 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   background: #3b2028;
 }
 .theme-dark .fx-session-day-trades-empty { color: #9aa9bb; }
+
+
+/* Preserve a clear selection outline alongside the profit/loss color stripe. */
+.fx-session-day.selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  z-index: 1;
+}
+.theme-dark .fx-session-day.selected {
+  outline-color: #4d8aff;
+}
+.fx-session-day-trades-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
