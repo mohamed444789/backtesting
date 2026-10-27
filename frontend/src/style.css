@@ -4371,3 +4371,33 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-breakdown-grid>div{padding:11px}
  .app .fx-analytics-breakdown-grid>div>strong{font-size:17px}
 }
+
+
+/* Hover interaction for Analytics Results breakdown metric tiles. */
+.app .fx-analytics-breakdown-grid>div{
+ cursor:default;
+ transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease;
+}
+.app .fx-analytics-breakdown-grid>div:hover{
+ transform:translateY(-3px);
+ border-color:#c7d7f0;
+ background:#fff;
+ box-shadow:0 8px 20px rgba(25,45,75,.09);
+}
+.app .fx-analytics-breakdown-grid>div:focus-within{
+ border-color:#9dbbf4;
+ box-shadow:0 0 0 3px rgba(37,99,235,.10);
+}
+.theme-dark .app .fx-analytics-breakdown-grid>div{
+ transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease;
+}
+.theme-dark .app .fx-analytics-breakdown-grid>div:hover{
+ transform:translateY(-3px);
+ border-color:#425b79;
+ background:#152231;
+ box-shadow:0 8px 20px rgba(0,0,0,.22);
+}
+@media(prefers-reduced-motion:reduce){
+ .app .fx-analytics-breakdown-grid>div{transition:none}
+ .app .fx-analytics-breakdown-grid>div:hover{transform:none}
+}
