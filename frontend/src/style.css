@@ -7318,3 +7318,13 @@ td {
     font-size: 13px !important;
   }
 }
+
+
+/* Replay chart mini-stat order: W Rate and F Factor follow Equity. */
+.app .fullscreen-mini-stats > div:nth-child(1) { order: 1; } /* Equity */
+.app .fullscreen-mini-stats > div:nth-child(6) { order: 2; } /* W Rate */
+.app .fullscreen-mini-stats > div:nth-child(7) { order: 3; } /* F Factor */
+.app .fullscreen-mini-stats > div:nth-child(3) { order: 4; } /* Closed trades */
+.app .fullscreen-mini-stats > div:nth-child(4) { order: 5; } /* W */
+.app .fullscreen-mini-stats > div:nth-child(5) { order: 6; } /* L */
+.app .fullscreen-mini-stats > div:nth-child(2) { order: 7; } /* Open positions */
