@@ -4785,3 +4785,87 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 @media(prefers-reduced-motion:reduce){
  .app .fx-analytics-vertical-plot>i{transition:none}
 }
+
+
+/* Profit/loss status cards for each weekday, inspired by the weekly summary. */
+.app .fx-analytics-day-columns .fx-analytics-vertical-column{
+ padding:10px 5px 9px;
+ border:1px solid #e7ebf2;
+ border-radius:11px;
+ background:linear-gradient(160deg,#fbfcfe 0%,#fff 100%);
+ transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease;
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column:hover{
+ transform:translateY(-2px);
+ box-shadow:0 6px 16px rgba(25,45,75,.07);
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day{
+ border-color:#bdebd5;
+ background:linear-gradient(160deg,#edfbf4 0%,#f8fffb 100%);
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#34d399,#059669);
+ box-shadow:0 0 0 1px rgba(5,150,105,.14);
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day .fx-analytics-vertical-value,
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day .fx-analytics-vertical-label{color:#087f5b}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day>small{color:#16815f}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day{
+ border-color:#f4c7cc;
+ background:linear-gradient(160deg,#fff0f1 0%,#fff9f9 100%);
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#fb7185,#e24c52);
+ box-shadow:0 0 0 1px rgba(226,76,82,.14);
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day .fx-analytics-vertical-value,
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day .fx-analytics-vertical-label{color:#c93643}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day>small{color:#c93643}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.flat-day{
+ border-color:#e2e8f0;
+ background:linear-gradient(160deg,#f8fafc 0%,#fff 100%);
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.flat-day .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#cbd5e1,#94a3b8);
+ box-shadow:none;
+}
+.app .fx-analytics-day-columns .fx-analytics-vertical-column.flat-day .fx-analytics-vertical-label{color:#64748b}
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column{border-color:#263343;background:#101821}
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day{border-color:#1d5c43;background:linear-gradient(160deg,#10271f 0%,#122c23 100%)}
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day .fx-analytics-vertical-value,
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day .fx-analytics-vertical-label,
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.profit-day>small{color:#6ee7b7}
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day{border-color:#6f2b37;background:linear-gradient(160deg,#2b171d 0%,#321a21 100%)}
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day .fx-analytics-vertical-value,
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day .fx-analytics-vertical-label,
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.loss-day>small{color:#fda4af}
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-column.flat-day{background:#131d29;border-color:#334155}
+/* The calendar also highlights each profitable or losing day, just like the
+   green/red weekly P&L summary cards. */
+.fx-session-day.profit-day:not(.selected){
+ border-color:#bdebd5;
+ background:linear-gradient(160deg,#edfbf4 0%,#f8fffb 100%);
+}
+.fx-session-day.loss-day:not(.selected){
+ border-color:#f4c7cc;
+ background:linear-gradient(160deg,#fff0f1 0%,#fff9f9 100%);
+}
+.fx-session-day.profit-day.selected{
+ border-color:#2563eb;
+ background:linear-gradient(160deg,#e8f9f0 0%,#f2f7ff 100%);
+}
+.fx-session-day.loss-day.selected{
+ border-color:#2563eb;
+ background:linear-gradient(160deg,#ffebed 0%,#f2f7ff 100%);
+}
+.theme-dark .fx-session-day.profit-day:not(.selected){background:#10271f;border-color:#1d5c43}
+.theme-dark .fx-session-day.loss-day:not(.selected){background:#2b171d;border-color:#6f2b37}
+.theme-dark .fx-session-day.profit-day.selected{background:linear-gradient(160deg,#10271f 0%,#172d49 100%);border-color:#4d8aff}
+.theme-dark .fx-session-day.loss-day.selected{background:linear-gradient(160deg,#2b171d 0%,#172d49 100%);border-color:#4d8aff}
+@media(max-width:620px){
+ .app .fx-analytics-day-columns .fx-analytics-vertical-column{padding:8px 3px 7px;border-radius:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .app .fx-analytics-day-columns .fx-analytics-vertical-column{transition:none}
+ .app .fx-analytics-day-columns .fx-analytics-vertical-column:hover{transform:none}
+}
