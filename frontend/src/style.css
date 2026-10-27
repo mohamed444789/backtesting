@@ -6067,3 +6067,32 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
     width: 100%;
   }
 }
+
+
+/* Match Side and Time scorecards to the centered, narrower weekday layout. */
+.app .fx-analytics-side-columns,
+.app .fx-analytics-time-columns {
+  width: 74%;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 6px;
+}
+.app .fx-analytics-side-columns .fx-side-card,
+.app .fx-analytics-time-columns .fx-time-card {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 1050px) {
+  .app .fx-analytics-side-columns,
+  .app .fx-analytics-time-columns {
+    width: 92%;
+    gap: 5px;
+  }
+}
+@media (max-width: 620px) {
+  .app .fx-analytics-side-columns,
+  .app .fx-analytics-time-columns {
+    width: 100%;
+    gap: 8px;
+  }
+}
