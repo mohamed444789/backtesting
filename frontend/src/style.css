@@ -2966,3 +2966,21 @@ main .content:has(.the5ers-trades-page){max-width:none;width:100%;margin:0;paddi
  .trade-media-arrow.next{right:5px}
  .trade-media-lightbox-thumbs button{flex-basis:78px;width:78px;height:54px}
 }
+
+
+/* Media gallery polish: controls mirror the chart's compact floating actions. */
+.trade-media-thumb-actions button{display:grid;place-items:center;width:25px;height:25px;padding:0;border:0;border-radius:4px;background:#555;color:#fff;cursor:pointer}
+.trade-media-thumb-actions button svg{display:block}
+.trade-media-thumb-actions button:focus-visible,
+.trade-media-upload-icon:focus-within,
+.trade-media-lightbox-header button:focus-visible,
+.trade-media-arrow:focus-visible,
+.trade-media-lightbox-thumbs button:focus-visible{outline:2px solid #1769ff;outline-offset:2px}
+.trade-media-lightbox-header button{display:grid;place-items:center;flex:0 0 28px;padding:0;border-radius:4px}
+.trade-media-lightbox-header button:hover{background:#f1f3f6;color:#202b3d}
+.trade-media-lightbox-stage>img{pointer-events:none}
+.trade-media-timeframe{display:inline-flex;align-items:center;gap:4px}
+.trade-media-upload-icon{position:relative;flex:0 0 36px}
+@media(prefers-reduced-motion:no-preference){
+ .trade-media-thumb-actions button,.trade-media-arrow,.trade-media-lightbox-header button{transition:background-color .12s ease,color .12s ease}
+}
