@@ -3341,3 +3341,212 @@ main .content:has(.the5ers-trades-page){max-width:none;width:100%;margin:0;paddi
  .fx-replay-session-info>b{font-size:13px}
  .fx-replay-session-info>span{font-size:11px}
 }
+
+
+/* FXReplay-style application shell: primary tabs across the top and utility
+   navigation pinned to the bottom of a narrow left rail. */
+.app aside.fx-left-rail{
+  width:76px;
+  padding:12px 4px 10px;
+  background:#fff;
+  border-right:1px solid #e5e9ef;
+  align-items:stretch;
+  gap:0;
+  z-index:50;
+}
+main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
+.app .rail-top-mark{
+  height:45px;
+  display:grid;
+  place-items:center;
+  color:#1765ed;
+  border-bottom:1px solid #edf0f5;
+  padding-bottom:10px;
+}
+.app .rail-spacer{flex:1;min-height:24px}
+.app .rail-utility-nav{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  margin-top:auto;
+  padding-top:10px;
+  border-top:1px solid #edf0f5;
+}
+.app .rail-item{
+  min-height:60px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  width:100%;
+  padding:8px 2px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:#64748b;
+  text-align:center;
+  font-size:9px;
+  line-height:1.15;
+  white-space:normal;
+}
+.app .rail-item span{max-width:100%;overflow-wrap:anywhere}
+.app .rail-item:hover{background:#f1f5f9;color:#1d4ed8}
+.app .rail-item.active{background:#edf3ff;color:#1d4ed8;box-shadow:inset 2px 0 #2563eb}
+.app .rail-bottom-space{height:4px;flex:0 0 4px}
+.app .app-header-bar{
+  display:flex;
+  align-items:center;
+  height:64px;
+  gap:18px;
+  padding:0 24px;
+  background:#fff;
+  border-bottom:1px solid #e5e9ef;
+  color:#64748b;
+}
+.app .app-brand{
+  display:flex;
+  flex:0 0 auto;
+  align-items:center;
+  gap:9px;
+  color:#1f2937;
+}
+.app .app-brand>svg{color:#2563eb}
+.app .app-brand>span{
+  display:flex;
+  flex-direction:column;
+  font:700 17px 'Space Grotesk',sans-serif;
+  line-height:1;
+  letter-spacing:1.2px;
+}
+.app .app-brand small{
+  margin-top:4px;
+  color:#8190a4;
+  font:600 8px 'DM Sans',sans-serif;
+  letter-spacing:1.7px;
+}
+.app .app-header-page{display:none}
+.app .app-header-spacer{flex:1}
+.app .app-local-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-right:5px;
+  color:#718096;
+  font-size:10px;
+  white-space:nowrap;
+}
+.app .app-local-pill>span{
+  width:7px;height:7px;border-radius:50%;background:#10b981;
+}
+.app .app-header-bar .theme-toggle{
+  margin-left:0!important;
+  border:1px solid #dce3ec!important;
+  border-radius:7px!important;
+  background:#fff!important;
+  color:#475569!important;
+  padding:8px 11px!important;
+  font-size:11px;
+  white-space:nowrap;
+}
+.app .app-header-bar .app-refresh{
+  display:grid;
+  place-items:center;
+  border:1px solid #dce3ec;
+  border-radius:7px;
+  background:#fff;
+  color:#536174;
+  padding:8px;
+}
+.app .workspace-tabs{
+  height:45px;
+  display:flex;
+  align-items:stretch;
+  gap:5px;
+  padding:0 22px;
+  background:#fff;
+  border-bottom:1px solid #e5e9ef;
+  overflow-x:auto;
+}
+.app .workspace-tab{
+  position:relative;
+  display:inline-flex;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:102px;
+  padding:0 12px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#64748b;
+  font-size:12px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.app .workspace-tab svg{color:currentColor;flex:0 0 auto}
+.app .workspace-tab:hover{background:#f8fafc;color:#1d4ed8}
+.app .workspace-tab.active{
+  color:#1f2937;
+  font-weight:600;
+}
+.app .workspace-tab.active:after{
+  position:absolute;
+  right:0;
+  bottom:0;
+  left:0;
+  height:2px;
+  content:"";
+  background:#2563eb;
+  border-radius:2px 2px 0 0;
+}
+.app .content{max-width:1600px;padding:26px 28px;margin:0 auto}
+.app .fx-sessions-page{padding:8px 20px}
+.app .fx-sessions-page .fx-session-row{padding:16px 3px}
+.app .fx-session-open-button{
+  flex:0 0 auto;
+  border:1px solid #dbe3ed;
+  border-radius:7px;
+  background:#fff;
+  color:#2563eb;
+  padding:8px 12px;
+  font-size:11px;
+}
+.app .fx-session-open-button:hover{background:#eff6ff}
+.theme-dark aside.fx-left-rail{background:#0e151e;border-color:#263343}
+.theme-dark .rail-top-mark,.theme-dark .rail-utility-nav{border-color:#263343}
+.theme-dark .rail-top-mark{color:#75a7ff}
+.theme-dark .rail-item{color:#a2b0c2}
+.theme-dark .rail-item:hover,.theme-dark .rail-item.active{background:#172d49;color:#8bb6ff}
+.theme-dark .app-header-bar,.theme-dark .workspace-tabs{background:#0e151e;border-color:#263343;color:#a2b0c2}
+.theme-dark .app-brand{color:#e4ebf4}
+.theme-dark .app-brand small{color:#8292a6}
+.theme-dark .app .app-header-bar .theme-toggle,.theme-dark .app .app-header-bar .app-refresh{background:#17212d!important;border-color:#334155!important;color:#cbd5e1!important}
+.theme-dark .app .workspace-tab{color:#a2b0c2}
+.theme-dark .app .workspace-tab.active{color:#f1f5f9}
+.theme-dark .app .workspace-tab:hover{background:#17212d;color:#8bb6ff}
+.theme-dark main{background:#0a1017}
+.theme-dark .app .fx-session-open-button{background:#17212d;border-color:#334155;color:#8bb6ff}
+@media(max-width:850px){
+ .app aside.fx-left-rail{width:64px;padding-left:3px;padding-right:3px}
+ main{margin-left:64px}
+ .app .app-header-bar{height:58px;padding:0 14px;gap:10px}
+ .app .workspace-tabs{padding:0 8px;gap:0}
+ .app .workspace-tab{min-width:84px;padding:0 9px;gap:6px}
+ .app .content{padding:20px 14px}
+ .app .app-local-pill{display:none}
+}
+@media(max-width:560px){
+ .app aside.fx-left-rail{width:54px}
+ main{margin-left:54px}
+ .app .rail-item{font-size:8px;min-height:55px}
+ .app .app-brand>span{font-size:14px}
+ .app .app-brand small{font-size:7px}
+ .app .app-header-bar{padding:0 9px}
+ .app .workspace-tabs{height:43px}
+ .app .workspace-tab{min-width:67px;flex-direction:column;gap:2px;font-size:9px;padding:3px 6px}
+ .app .workspace-tab svg{width:15px;height:15px}
+ .app .app-header-bar .theme-toggle{padding:6px 7px!important;font-size:10px}
+ .app .content{padding:16px 9px}
+}
