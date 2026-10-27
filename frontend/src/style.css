@@ -6046,17 +6046,24 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   padding-right: 14px;
 }
 .app .fx-analytics-day-card .fx-analytics-day-columns {
+  width: 74%;
+  margin-left: auto;
+  margin-right: auto;
   gap: 6px;
 }
 .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
-  width: 94%;
+  width: 100%;
 }
 @media (max-width: 1050px) {
   .app .fx-analytics-insights-grid > .fx-analytics-day-card {
     padding-left: 12px;
     padding-right: 12px;
   }
+  .app .fx-analytics-day-card .fx-analytics-day-columns {
+    width: 92%;
+    gap: 5px;
+  }
   .app .fx-analytics-day-card .fx-analytics-day-columns .fx-analytics-vertical-column {
-    width: 96%;
+    width: 100%;
   }
 }
