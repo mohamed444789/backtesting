@@ -4421,3 +4421,25 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
   padding:16px 9px;
  }
 }
+
+
+/* Keep the brand bar and primary navigation pinned while page content scrolls. */
+.app .app-header-bar{
+ position:sticky;
+ top:0;
+ z-index:120;
+ flex:0 0 64px;
+}
+.app .workspace-tabs{
+ position:sticky;
+ top:64px;
+ z-index:119;
+ flex:0 0 45px;
+}
+@media(max-width:850px){
+ .app .app-header-bar{flex-basis:58px}
+ .app .workspace-tabs{top:58px}
+}
+@media(max-width:560px){
+ .app .workspace-tabs{flex-basis:43px}
+}
