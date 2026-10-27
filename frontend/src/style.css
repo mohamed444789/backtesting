@@ -7082,3 +7082,29 @@ td {
     font-size: 18px;
   }
 }
+
+
+/* Slightly enlarge W/L summaries across all three Performance cards. */
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-wl {
+  font-size: 11px;
+  line-height: 1.35;
+}
+.app .fx-analytics-time-columns .fx-time-card .fx-time-card-wl {
+  font-size: 12px;
+  line-height: 1.35;
+}
+.app .fx-analytics-day-columns .fx-day-card > small {
+  font-size: 10px;
+  line-height: 1.35;
+}
+@media (max-width: 620px) {
+  .app .fx-analytics-side-columns .fx-side-card .fx-side-card-wl {
+    font-size: 10px;
+  }
+  .app .fx-analytics-time-columns .fx-time-card .fx-time-card-wl {
+    font-size: 11px;
+  }
+  .app .fx-analytics-day-columns .fx-day-card > small {
+    font-size: 9px;
+  }
+}
