@@ -5881,3 +5881,36 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-frequency-overview .fx-analytics-frequency-grid>.fx-frequency-metric>strong{margin-left:32px;font-size:23px}
  .app .fx-analytics-frequency-overview .fx-analytics-frequency-grid>.fx-frequency-metric>small{margin-left:32px;font-size:9px}
 }
+
+
+/* Minimal titles for overview subsections, with no extra descriptive subtitle. */
+.app .fx-analytics-overview-details-heading{
+ display:flex;
+ align-items:center;
+ margin:12px 0 8px;
+}
+.app .fx-analytics-overview-details-heading h3{
+ margin:0;
+ color:#172033;
+ font:600 14px/1.35 'Space Grotesk',sans-serif;
+ letter-spacing:-.15px;
+}
+.app .fx-analytics-frequency-overview-title{
+ display:flex;
+ align-items:center;
+ margin:0 0 10px;
+}
+.app .fx-analytics-frequency-overview-title h3{
+ margin:0;
+ color:#172033;
+ font:600 14px/1.35 'Space Grotesk',sans-serif;
+ letter-spacing:-.15px;
+}
+.theme-dark .app .fx-analytics-overview-details-heading h3,
+.theme-dark .app .fx-analytics-frequency-overview-title h3{
+ color:#e4ebf4;
+}
+@media(max-width:620px){
+ .app .fx-analytics-overview-details-heading{margin:11px 0 7px}
+ .app .fx-analytics-frequency-overview-title{margin-bottom:8px}
+}
