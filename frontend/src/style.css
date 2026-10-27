@@ -3966,3 +3966,28 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 }
 .fx-calendar-month-controls .atlas-date-trigger svg{width:15px;height:15px}
 .fx-calendar-month-controls .atlas-calendar-popover{z-index:10000}
+
+
+/* Rename session action beside Open and Delete. */
+.fx-session-rename-action{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ gap:7px;
+ border:1px solid #dbe3ed;
+ border-radius:8px;
+ padding:10px 12px;
+ background:#fff;
+ color:#475569;
+ font-size:11px;
+ font-weight:600;
+ white-space:nowrap;
+}
+.fx-session-rename-action:hover{background:#f1f6ff;border-color:#bfd4f5;color:#1d5ed2}
+.fx-session-rename-action:disabled{opacity:.45;cursor:not-allowed}
+.theme-dark .fx-session-rename-action{background:#17212d;border-color:#334155;color:#cbd5e1}
+.theme-dark .fx-session-rename-action:hover{background:#1b2d43;border-color:#47638b;color:#8bb6ff}
+@media(max-width:760px){
+ .fx-session-selector-actions{width:100%}
+ .fx-session-rename-action,.fx-session-delete-action,.fx-session-open-action{flex:1}
+}
