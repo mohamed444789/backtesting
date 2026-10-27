@@ -5565,3 +5565,103 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
  .app .fx-analytics-time-columns .fx-time-card{transition:none}
  .app .fx-analytics-time-columns .fx-time-card:hover{transform:none}
 }
+
+
+/* Performance by Day cards now mirror the Side/Time cards: win rate and trade
+   count share the top row, the vertical bar shows volume, and W/L + P&L sit below. */
+.app .fx-analytics-day-columns .fx-day-card{
+ align-items:stretch;
+ min-height:278px;
+ padding:11px 5px 9px;
+ border-radius:11px;
+ transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease;
+}
+.app .fx-analytics-day-columns .fx-day-card-topline{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:3px;
+ min-height:22px;
+ width:100%;
+ padding:0 1px;
+}
+.app .fx-analytics-day-columns .fx-day-card-rate{
+ color:#e24c52;
+ font-size:10px;
+ line-height:1.2;
+ font-weight:800;
+ font-variant-numeric:tabular-nums;
+ white-space:nowrap;
+}
+.app .fx-analytics-day-columns .fx-day-card-rate.fx-rate-good{color:#079669}
+.app .fx-analytics-day-columns .fx-day-card-rate.fx-rate-bad{color:#e24c52}
+.app .fx-analytics-day-columns .fx-day-card-trades{
+ color:#64748b;
+ font-size:8px;
+ font-weight:650;
+ text-align:right;
+ white-space:nowrap;
+}
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot{
+ margin-top:5px;
+ flex-basis:112px;
+ height:112px;
+ min-height:112px;
+ border-radius:4px 4px 0 0;
+}
+.app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-label{
+ margin-top:8px;
+ font-size:10px;
+}
+.app .fx-analytics-day-columns .fx-day-card>small{
+ min-height:17px;
+ padding-top:3px;
+ font-size:8px;
+}
+.app .fx-analytics-day-columns .fx-day-card .fx-day-card-pnl{
+ margin-top:4px;
+ font-size:10px;
+ line-height:1.2;
+ font-weight:800;
+}
+.app .fx-analytics-day-columns .fx-day-card.profit-day .fx-analytics-vertical-plot{
+ border-bottom-color:#bdebd5;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(16,185,129,.09) calc(25% - 1px),rgba(16,185,129,.09) 25%);
+}
+.app .fx-analytics-day-columns .fx-day-card.loss-day .fx-analytics-vertical-plot{
+ border-bottom-color:#f4c7cc;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(226,76,82,.08) calc(25% - 1px),rgba(226,76,82,.08) 25%);
+}
+.app .fx-analytics-day-columns .fx-day-card.flat-day .fx-analytics-vertical-plot{
+ border-bottom-color:#cbd5e1;
+}
+.app .fx-analytics-day-columns .fx-day-card:hover{
+ transform:translateY(-2px);
+ box-shadow:0 6px 16px rgba(25,45,75,.07);
+}
+.theme-dark .app .fx-analytics-day-columns .fx-day-card-rate.fx-rate-good{color:#34d399}
+.theme-dark .app .fx-analytics-day-columns .fx-day-card-rate.fx-rate-bad{color:#fb7185}
+.theme-dark .app .fx-analytics-day-columns .fx-day-card-trades{color:#cbd5e1}
+.theme-dark .app .fx-analytics-day-columns .fx-day-card.profit-day .fx-analytics-vertical-plot{
+ border-bottom-color:#1d5c43;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(52,211,153,.08) calc(25% - 1px),rgba(52,211,153,.08) 25%);
+}
+.theme-dark .app .fx-analytics-day-columns .fx-day-card.loss-day .fx-analytics-vertical-plot{
+ border-bottom-color:#6f2b37;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(251,113,133,.08) calc(25% - 1px),rgba(251,113,133,.08) 25%);
+}
+@media(max-width:1050px){
+ .app .fx-analytics-day-columns .fx-day-card{min-height:272px}
+ .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot{flex-basis:110px;height:110px;min-height:110px}
+}
+@media(max-width:620px){
+ .app .fx-analytics-day-columns .fx-day-card{padding:9px 4px 7px;min-height:260px}
+ .app .fx-analytics-day-columns .fx-day-card-rate{font-size:9px}
+ .app .fx-analytics-day-columns .fx-day-card-trades{font-size:7px}
+ .app .fx-analytics-day-columns .fx-day-card .fx-analytics-vertical-plot{flex-basis:100px;height:100px;min-height:100px}
+ .app .fx-analytics-day-columns .fx-day-card .fx-day-card-pnl{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .app .fx-analytics-day-columns .fx-day-card{transition:none}
+ .app .fx-analytics-day-columns .fx-day-card:hover{transform:none}
+}
