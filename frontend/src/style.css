@@ -7884,3 +7884,270 @@ td {
     font-size: 14px;
   }
 }
+
+
+/* FXReplay-style journal dock beside the chart and vertical Order rail. */
+/* Keep the tool rail vertical, with Journal directly beneath Order. */
+.terminal > .order-tools-rail {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+}
+.terminal.journal-panel-open.order-ticket-closed {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px) 44px;
+}
+.terminal.journal-panel-open > .chart-journal-panel {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.terminal.journal-panel-open > .order-tools-rail {
+  grid-column: 3;
+  grid-row: 1;
+}
+.chart-journal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #2b3c4e;
+  border-radius: 10px;
+  background: #101a25;
+  color: #dce6f2;
+}
+.chart-journal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2b3c4e;
+}
+.chart-journal-heading h3 {
+  margin: 3px 0 0;
+  font-size: 17px;
+}
+.chart-journal-eyebrow {
+  color: #6ee7bd;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.chart-journal-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #35465a;
+  border-radius: 7px;
+  background: #172431;
+  color: #cbd5e1;
+  font-size: 20px;
+}
+.chart-journal-trade-picker,
+.chart-journal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #9fb0c3;
+  font-size: 11px;
+  font-weight: 650;
+}
+.chart-journal-panel input,
+.chart-journal-panel select,
+.chart-journal-panel textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #33465b;
+  border-radius: 7px;
+  background: #0b131d;
+  color: #e5edf6;
+  padding: 9px 10px;
+  font: inherit;
+}
+.chart-journal-panel textarea {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.chart-journal-trade-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #2b3c4e;
+  border-radius: 8px;
+  background: #0c1520;
+}
+.chart-journal-trade-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.chart-journal-trade-summary span,
+.chart-journal-hint,
+.chart-journal-no-trades span {
+  color: #91a3b8;
+  font-size: 11px;
+}
+.chart-journal-shortcuts,
+.chart-journal-tabs,
+.chart-journal-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chart-journal-shortcuts button,
+.chart-journal-upload,
+.chart-journal-tabs button,
+.chart-journal-footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #35465a;
+  border-radius: 7px;
+  background: #142130;
+  color: #cbd8e7;
+  font-size: 11px;
+  cursor: pointer;
+}
+.chart-journal-upload input[type="file"] {
+  display: none;
+}
+.chart-journal-tabs {
+  padding: 4px;
+  border: 1px solid #33465b;
+  border-radius: 9px;
+  background: #0b131d;
+}
+.chart-journal-tabs button {
+  flex: 1 1 0;
+  border-color: transparent;
+  background: transparent;
+}
+.chart-journal-tabs button.active {
+  border-color: #33465b;
+  background: #233244;
+  color: #f1f5f9;
+}
+.chart-journal-footer {
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid #2b3c4e;
+}
+.chart-journal-footer button {
+  border-color: #168b6a;
+  background: #0f684f;
+  color: #effff8;
+  font-weight: 700;
+}
+.chart-journal-feedback {
+  color: #9fb0c3;
+  font-size: 10px;
+}
+.chart-journal-no-trades {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 8px;
+}
+.theme-light .terminal > .chart-journal-panel {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+}
+.theme-light .chart-journal-heading,
+.theme-light .chart-journal-footer {
+  border-color: #dbe3ec;
+}
+.theme-light .chart-journal-close,
+.theme-light .chart-journal-shortcuts button,
+.theme-light .chart-journal-upload,
+.theme-light .chart-journal-tabs,
+.theme-light .chart-journal-tabs button,
+.theme-light .chart-journal-trade-summary {
+  border-color: #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+.theme-light .chart-journal-panel input,
+.theme-light .chart-journal-panel select,
+.theme-light .chart-journal-panel textarea {
+  border-color: #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+}
+.theme-light .chart-journal-trade-summary,
+.theme-light .chart-journal-tabs {
+  background: #f1f5f9;
+}
+.theme-light .chart-journal-trade-summary span,
+.theme-light .chart-journal-hint,
+.theme-light .chart-journal-no-trades span,
+.theme-light .chart-journal-feedback {
+  color: #64748b;
+}
+.fullscreen-terminal.journal-panel-open.order-ticket-closed {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px) 44px !important;
+}
+.fullscreen-terminal.journal-panel-open > .chart-journal-panel {
+  grid-column: 2;
+  grid-row: 1;
+  max-height: none;
+}
+.fullscreen-terminal.journal-panel-open > .order-tools-rail {
+  grid-column: 3;
+  grid-row: 1;
+}
+@media (max-width: 1050px) {
+  .terminal.journal-panel-open.order-ticket-closed {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .terminal.journal-panel-open > .chart-journal-panel {
+    grid-column: 1;
+    grid-row: 2;
+    max-height: 45vh;
+  }
+  .terminal.journal-panel-open > .order-tools-rail {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .fullscreen-terminal.journal-panel-open.order-ticket-closed {
+    grid-template-columns: minmax(0, 1fr) 44px !important;
+    grid-template-rows: minmax(0, 1fr) minmax(200px, 40dvh) !important;
+  }
+  .fullscreen-terminal.journal-panel-open > .chart-journal-panel {
+    grid-column: 1;
+    grid-row: 2;
+    max-height: 40dvh;
+    overflow: auto;
+  }
+  .fullscreen-terminal.journal-panel-open > .order-tools-rail {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+@media (max-width: 600px) {
+  .chart-journal-panel {
+    padding: 10px;
+  }
+  .chart-journal-panel textarea {
+    min-height: 110px;
+  }
+  .chart-journal-tabs button {
+    padding: 6px 4px;
+    font-size: 10px;
+  }
+}
