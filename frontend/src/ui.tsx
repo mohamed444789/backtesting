@@ -312,6 +312,7 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
  const [selectedTrade,setSelectedTrade]=useState<any>(null),[detailTab,setDetailTab]=useState<'details'|'tags'|'media'>('details');
  const [detailNotes,setDetailNotes]=useState(''),[detailStrategy,setDetailStrategy]=useState(''),[detailTags,setDetailTags]=useState('');
  const [detailMedia,setDetailMedia]=useState<any[]>([]),[detailMediaLoading,setDetailMediaLoading]=useState(false);
+ const [galleryIndex,setGalleryIndex]=useState(0),[galleryOpen,setGalleryOpen]=useState(false);
  const [detailSaving,setDetailSaving]=useState(false),[detailUploading,setDetailUploading]=useState(false),[detailFeedback,setDetailFeedback]=useState('');
  const outcome=(t:any)=>{
   if(t.status!=='closed')return 'Open';
@@ -376,6 +377,17 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
    await refreshMedia(Number(selectedTrade.id));setDetailFeedback('Screenshot uploaded');
   }catch(err:any){setDetailFeedback(err.message||'Screenshot upload failed')}finally{setDetailUploading(false);e.target.value=''}
  };
+ const deleteMedia=async(filename:string)=>{
+  if(!selectedTrade||!window.confirm('Delete this screenshot? This cannot be undone.'))return;
+  setDetailFeedback('');
+  try{
+   const response=await fetch('/api/trades/'+selectedTrade.id+'/screenshots/'+encodeURIComponent(filename),{method:'DELETE'});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||'Screenshot deletion failed');
+   await refreshMedia(Number(selectedTrade.id));
+   setGalleryOpen(false);setDetailFeedback('Screenshot deleted');
+  }catch(err:any){setDetailFeedback(err.message||'Screenshot deletion failed')}
+ };
  const goTrade=(offset:number)=>{const index=sorted.findIndex((t:any)=>Number(t.id)===Number(selectedTrade?.id)),next=sorted[index+offset];if(next)setSelectedTrade(next)};
  const timeDuration=(t:any)=>{if(t.exit_time==null||t.entry_time==null)return t.status==='open'?'Trade still open':'—';const minutes=Math.max(0,Math.round((Number(t.exit_time)-Number(t.entry_time))/60));if(minutes<60)return minutes+'m';const hours=Math.floor(minutes/60),remaining=minutes%60;if(hours<24)return hours+'h '+remaining+'m';return Math.floor(hours/24)+'d '+hours%24+'h'};
  const isClosed=selectedTrade?.status==='closed',pnlValue=Number(selectedTrade?.pnl||0),pnlText=selectedTrade?.pnl!=null&&Number.isFinite(pnlValue)?fmt(pnlValue):'—';
@@ -425,8 +437,14 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
      </div>}
      {detailTab==='tags'&&<div className="trade-detail-tag-content"><label>Tags, separated by commas<textarea value={detailTags} onChange={e=>setDetailTags(e.target.value)} placeholder="Breakout, London session, A setup"/></label><div className="trade-detail-tag-list">{detailTags.split(',').map(x=>x.trim()).filter(Boolean).map((tag,i)=><span key={tag+'-'+i}>{tag}</span>)}</div><button className="trade-detail-save" onClick={saveDetails} disabled={detailSaving}>{detailSaving?'Saving…':'Save tags'}</button></div>}
      {detailTab==='media'&&<div className="trade-detail-media">
-      <label className="trade-detail-upload">{detailUploading?'Uploading…':'＋ Upload screenshot'}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={detailUploading} onChange={uploadMedia}/></label>
-      {detailMediaLoading?<p>Loading media…</p>:screenshots.length?screenshots.map((item:any)=><a className="trade-detail-media-item" key={item.id} href={'/trade-media/'+encodeURIComponent(item.filename)} target="_blank" rel="noreferrer"><img src={'/trade-media/'+encodeURIComponent(item.filename)} alt="Trade screenshot"/><span>{item.created_at||item.filename}</span></a>):<div className="trade-detail-empty"><b>No media yet</b><p>Upload a screenshot of the chart or your setup.</p></div>}
+      <div className="trade-media-gallery">
+       {detailMediaLoading?<p>Loading media…</p>:screenshots.length?<div className="trade-media-grid">{screenshots.map((item:any,index:number)=><div className="trade-media-thumb" key={item.id}>
+        <button className="trade-media-preview" type="button" onClick={()=>{setGalleryIndex(index);setGalleryOpen(true)}} aria-label={'Open screenshot '+(index+1)}><img src={'/trade-media/'+encodeURIComponent(item.filename)} alt="Trade screenshot"/><span className="trade-media-timeframe">▧ 1min</span></button>
+        <div className="trade-media-thumb-actions"><button type="button" title="View fullscreen" aria-label="View fullscreen" onClick={()=>{setGalleryIndex(index);setGalleryOpen(true)}}>⤢</button><button type="button" className="danger" title="Delete screenshot" aria-label="Delete screenshot" onClick={()=>void deleteMedia(item.filename)}>▤</button></div>
+        <span className="trade-media-caption">{item.created_at||item.filename}</span>
+       </div>)}</div>:<div className="trade-detail-empty"><b>No media yet</b><p>Upload a screenshot of the chart or your setup.</p></div>}
+       <div className="trade-media-upload-bar"><label className="trade-media-upload-icon" title={detailUploading?'Uploading screenshot':'Upload screenshot'} aria-label="Upload screenshot">{detailUploading?'…':<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m0 0L7 8m5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={detailUploading} onChange={uploadMedia}/></label></div>
+      </div>
      </div>}
     </aside>
     <section className="trade-detail-journal">
@@ -438,6 +456,15 @@ function DrawingToolIcon({tool}:{tool:string}){switch(tool){case'horizontal-line
      <button className="trade-detail-ai" title="Journal assistant" aria-label="Journal assistant" onClick={()=>setDetailNotes(v=>(v.trim()?v.trim()+'\n\n':'')+'Review this trade: ')}><span>✦</span></button>
     </section>
    </div>
+   {galleryOpen&&screenshots.length>0&&<div className="trade-media-lightbox" role="dialog" aria-modal="true" aria-label="Screenshot gallery" onClick={e=>{if(e.target===e.currentTarget)setGalleryOpen(false)}}>
+    <header className="trade-media-lightbox-header"><strong>Gallery</strong><span>{galleryIndex+1} of {screenshots.length}</span><button type="button" aria-label="Close gallery" title="Close gallery" onClick={()=>setGalleryOpen(false)}>×</button></header>
+    <div className="trade-media-lightbox-stage">
+     <button type="button" className="trade-media-arrow previous" aria-label="Previous image" disabled={galleryIndex<=0} onClick={()=>setGalleryIndex(n=>Math.max(0,n-1))}>‹</button>
+     <img src={'/trade-media/'+encodeURIComponent(screenshots[galleryIndex]?.filename||'')} alt={'Trade screenshot '+(galleryIndex+1)}/>
+     <button type="button" className="trade-media-arrow next" aria-label="Next image" disabled={galleryIndex>=screenshots.length-1} onClick={()=>setGalleryIndex(n=>Math.min(screenshots.length-1,n+1))}>›</button>
+    </div>
+    <div className="trade-media-lightbox-thumbs">{screenshots.map((item:any,index:number)=><button type="button" key={item.id} className={index===galleryIndex?'active':''} aria-label={'Show image '+(index+1)} onClick={()=>setGalleryIndex(index)}><img src={'/trade-media/'+encodeURIComponent(item.filename)} alt=""/></button>)}</div>
+   </div>}
   </div>}
  </>
 }function Settings({note}:{note:(s:string)=>void}){const[c,C]=useState('USD'),[spread,S]=useState('1.2'),[slip,SL]=useState('0.2'),[comm,CO]=useState('0'),[policy,P]=useState('conservative');useEffect(()=>{api('/settings').then(x=>{C(x.currency||'USD');S(String(x.spread??1.2));SL(String(x.slippage??.2));CO(String(x.commission??0));P(x.ambiguityPolicy||'conservative')}).catch(()=>{})},[]);return <section className="panel form"><label>Account currency<select value={c} onChange={e=>C(e.target.value)}>{['USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD'].map(x=><option key={x}>{x}</option>)}</select></label><label>Spread (pips)<input type="number" value={spread} onChange={e=>S(e.target.value)}/></label><label>Slippage (pips)<input type="number" value={slip} onChange={e=>SL(e.target.value)}/></label><label>Commission per lot<input type="number" value={comm} onChange={e=>CO(e.target.value)}/></label><label>Ambiguous M1 candle policy<select value={policy} onChange={e=>P(e.target.value)}><option value="conservative">Conservative — stop first</option><option value="target-first">Target first (optimistic)</option></select></label><button className="primary" onClick={async()=>{try{await api('/settings',{method:'PUT',body:JSON.stringify({currency:c,spread:+spread,slippage:+slip,commission:+comm,ambiguityPolicy:policy})});note('Settings saved')}catch(e:any){note(e.message)}}}>Save settings</button></section>}
