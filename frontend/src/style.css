@@ -7840,3 +7840,47 @@ td {
     font-size: 13px;
   }
 }
+
+
+/* Fullscreen replay statistic typography: larger labels and values. */
+.app .fullscreen-controls .fullscreen-mini-stats > div {
+  flex-basis: 72px;
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
+  height: 64px;
+  min-height: 64px;
+  gap: 6px;
+  padding: 5px 4px;
+}
+.app .fullscreen-controls .fullscreen-mini-stats > div > span,
+.app .fullscreen-controls .fullscreen-mini-stats > div > div {
+  font-size: 11px;
+  line-height: 1.15;
+  font-weight: 650;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.app .fullscreen-controls .fullscreen-mini-stats > div > b {
+  font-size: 16px;
+  line-height: 1.15;
+  font-weight: 750;
+}
+@media (max-width: 760px) {
+  .app .fullscreen-controls .fullscreen-mini-stats > div {
+    flex-basis: 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: 60px;
+    min-height: 60px;
+    padding: 4px 3px;
+  }
+  .app .fullscreen-controls .fullscreen-mini-stats > div > span,
+  .app .fullscreen-controls .fullscreen-mini-stats > div > div {
+    font-size: 9px;
+  }
+  .app .fullscreen-controls .fullscreen-mini-stats > div > b {
+    font-size: 14px;
+  }
+}
