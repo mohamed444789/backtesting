@@ -6104,3 +6104,43 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
     gap: 8px;
   }
 }
+
+
+/* Make Performance by side cards match the weekday cards in physical size. */
+.app .fx-analytics-side-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 34%;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+  gap: 6px;
+}
+.app .fx-analytics-side-columns .fx-side-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 258px;
+  padding: 10px 5px 9px;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot {
+  flex: 0 0 118px;
+  height: 118px;
+  min-height: 118px;
+  margin-top: 6px;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-label {
+  margin-top: 9px;
+  padding-top: 0;
+}
+@media (max-width: 1050px) {
+  .app .fx-analytics-side-columns {
+    width: 56%;
+    gap: 6px;
+  }
+}
+@media (max-width: 620px) {
+  .app .fx-analytics-side-columns {
+    width: 100%;
+    gap: 8px;
+  }
+}
