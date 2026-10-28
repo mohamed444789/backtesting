@@ -19,6 +19,7 @@ function createTestDatabase(filePath: string) {
     CREATE TABLE settings(key TEXT PRIMARY KEY, value TEXT);
     CREATE TABLE drawings(id INTEGER PRIMARY KEY, session_id INTEGER, kind TEXT, payload TEXT);
     CREATE TABLE journal_notes(id INTEGER PRIMARY KEY, trade_id INTEGER REFERENCES trades(id), body TEXT);
+    CREATE TABLE media_files(filename TEXT PRIMARY KEY, mime_type TEXT NOT NULL, data BLOB NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
   `);
   return db;
 }
@@ -38,6 +39,8 @@ test('portable backup restores SQLite content, screenshots and browser state', a
     sourceDb.prepare('INSERT INTO trades(id,session_id,notes) VALUES(?,?,?)').run(9, 7, 'Keep this note');
     sourceDb.prepare('INSERT INTO journal_notes(id,trade_id,body) VALUES(?,?,?)').run(4, 9, 'Journal content');
     sourceDb.prepare('INSERT INTO settings(key,value) VALUES(?,?)').run('risk', '1');
+    sourceDb.prepare('INSERT INTO media_files(filename,mime_type,data) VALUES(?,?,?)').run('inline.png','image/png',Buffer.from('embedded screenshot'));
+
     fs.writeFileSync(path.join(sourceDir, 'screenshots', 'chart-1.png'), 'source screenshot');
     targetDb.prepare('INSERT INTO instruments(symbol,provider_symbol,pip_size) VALUES(?,?,?)').run('GBPUSD', 'gbpusd', 0.0001);
     targetDb.prepare('INSERT INTO sessions(id,name) VALUES(?,?)').run(1, 'Destination data');
@@ -53,6 +56,7 @@ test('portable backup restores SQLite content, screenshots and browser state', a
     assert.equal((targetDb.prepare('SELECT name FROM sessions WHERE id=7').get() as any).name, 'Source session');
     assert.equal((targetDb.prepare('SELECT notes FROM trades WHERE id=9').get() as any).notes, 'Keep this note');
     assert.equal((targetDb.prepare('SELECT COUNT(*) AS n FROM candles').get() as any).n, 1);
+    assert.equal((targetDb.prepare('SELECT CAST(data AS TEXT) AS data FROM media_files WHERE filename=?').get('inline.png') as any).data, 'embedded screenshot');
     assert.equal(fs.readFileSync(path.join(targetDir, 'screenshots', 'chart-1.png'), 'utf8'), 'source screenshot');
     assert.equal(fs.existsSync(path.join(targetDir, 'screenshots', 'old.png')), false);
     assert.deepEqual(browserState, { 'atlas-drawings-session-7': '[{"kind":"rectangle"}]' });
