@@ -11,7 +11,7 @@ import CalendarDatePicker from './CalendarDatePicker';import React,{useEffect,us
  };
  const bootstrap=async()=>{try{const settings=await api('/settings');if(!active)return;applyBrowserState(settings);const local=collectBrowserState(),missing:Record<string,string>={};for(const[key,value]of Object.entries(local))if(settings[key]===undefined)missing[key]=value;if(Object.keys(missing).length)await api('/settings',{method:'PUT',body:JSON.stringify(missing)});initialized=true}catch(error){console.warn('Could not synchronize Atlas preferences with the database',error);initialized=true}};
  void bootstrap();
- const timer=window.setInterval(()=>{if(!active||!initialized)return;const state=collectBrowserState();if(Object.keys(state).length)api('/settings',{method:'PUT',body:JSON.stringify(state)}).catch(error=>console.warn('Could not save Atlas browser preferences',error))},15000);
+ const timer=window.setInterval(()=>{if(!active||!initialized)return;const state=collectBrowserState();if(Object.keys(state).length)api('/settings',{method:'PUT',body:JSON.stringify(state)}).catch(error=>console.warn('Could not save Atlas browser preferences',error))},5000);
  return()=>{active=false;window.clearInterval(timer)};
 },[]);
 useEffect(()=>{
