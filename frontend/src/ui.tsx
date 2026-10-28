@@ -33,6 +33,21 @@ useEffect(()=>{
 },[journalGalleryOpen,journalScreenshots.length]);
 useEffect(()=>{if(!sessions.length){if(selectedSessionId)setSelectedSessionId('');return}if(!selectedSessionId||!sessions.some((item:any)=>String(item.id)===selectedSessionId))setSelectedSessionId(String(sessions[0].id))},[sessions,selectedSessionId]);useEffect(()=>{if(page!=='Sessions'||!selectedSessionId){setSessionTrades([]);return}let active=true;api('/sessions/'+selectedSessionId+'/trades').then((rows:any)=>{if(!active)return;const list=Array.isArray(rows)?rows:[];setSessionTrades(list);const latest=list.reduce((max:number,t:any)=>Math.max(max,Number(t.exit_time||t.entry_time)||0),0);if(latest>0){const key=dateOnlyBerlin(latest);setSessionCalendarMonth(key.slice(0,7));setSessionCalendarDay(key)}}).catch((e:any)=>{if(active){setSessionTrades([]);note(e.message||'Could not load session trades')}});return()=>{active=false}},[page,selectedSessionId]);useEffect(()=>{if(page!=='Analytics'||!trades.length)return;const latest=trades.reduce((max:number,t:any)=>Math.max(max,Number(t.exit_time||t.entry_time)||0),0);if(latest>0){const key=dateOnlyBerlin(latest);setSessionCalendarMonth(key.slice(0,7));setSessionCalendarDay(key)}},[page,trades.length]);const chooseOrAddInstrument=async(raw:string)=>{const code=raw.trim().toUpperCase().replace(/\s+/g,'');if(!code)return;const existing=symbols.find((item:any)=>item.symbol===code);if(existing){Y(code);return}if(!/^[A-Z0-9]{6,20}$/.test(code))return;try{const created=await api('/instruments',{method:'POST',body:JSON.stringify({symbol:code})});S(await api('/instruments'));Y(created.symbol);note('Added '+created.symbol+' to the instrument list')}catch(e:any){if(String(e.message||'').includes('already in the instrument list')){S(await api('/instruments'));Y(code)}else note(e.message)}};useEffect(()=>{if(page!=='Historical Data')setHistoricalSection('Historical Data')},[page]);const open=async(id:number)=>{try{let d=await api(`/sessions/${id}/visible`);if(!Array.isArray(d.candles)||d.candles.length===0){const first=await api(`/sessions/${id}/step`,{method:'POST',body:'{"count":1}'});d=await api(`/sessions/${id}/visible`);if(first.done&&(!d.candles||!d.candles.length))note('No candles available at this replay date. Check Historical Data coverage.')}SE(d.session);C(Array.isArray(d.candles)?d.candles:[]);F(d.session.timeframe);T(await api(`/sessions/${id}/trades`));P('Replay Terminal')}catch(e:any){note(e.message)}};useEffect(()=>{if(page!=='Replay Terminal'||!chartEl.current)return;const c=createChart(chartEl.current,{autoSize:true,layout:{background:{type:ColorType.Solid,color:theme==='dark'?'#0b1119':'#ffffff'},textColor:theme==='dark'?'#94a3b8':'#475569'},grid:{vertLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'},horzLines:{color:theme==='dark'?'#1b2734':'#e2e8f0'}},crosshair:{mode:0,vertLine:{labelVisible:true},horzLine:{labelVisible:true}},rightPriceScale:{visible:true,borderVisible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',autoScale:true,minimumWidth:80,ticksVisible:true,scaleMargins:{top:0.08,bottom:0.08}},timeScale:{timeVisible:true,visible:true,borderColor:theme==='dark'?'#334155':'#cbd5e1',tickMarkFormatter:(time:any,tickMarkType:any)=>formatBerlinAxisTime(time,tickMarkType)},localization:{locale:'de-DE',timeFormatter:(time:any)=>typeof time==='number'?fmtCrosshair.format(new Date(time*1000)):String(time)}});series.current=c.addSeries(CandlestickSeries,{upColor:'#26c99a',downColor:'#ef666b',wickUpColor:'#26c99a',wickDownColor:'#ef666b',borderVisible:false,priceLineVisible:true,lastValueVisible:true,priceFormat:{type:'price',precision:session?.symbol==='XAUUSD'?2:session?.symbol?.endsWith('JPY')?3:5,minMove:session?.symbol==='XAUUSD'?0.01:session?.symbol?.endsWith('JPY')?0.001:0.00001}});chart.current=c;emaSeries.current=c.addSeries(LineSeries,{color:'#60a5fa',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false,visible:emaVisible});lastDataCount.current=0;chartDataRef.current=[];const manager=new DrawingManager(c,series.current,{magnet:'weak'});
 drawingManager.current=manager;
+// Locked drawings: the library calls holdChart() and stops the event, which blocks chart panning.
+// Override that gesture so a locked drawing is only selected (so it can still be unlocked) and the
+// press falls through to the chart, letting the user drag/pan the chart over it.
+{
+  const mgr: any = manager;
+  const originalSelectionDown = mgr.selectionDown.bind(mgr);
+  mgr.selectionDown = (event: PointerEvent, point: any) => {
+    const hit = mgr.hitTopmost(point);
+    if (hit?.drawing?.locked) {
+      if (!(event.ctrlKey || event.metaKey) && !mgr.selected.includes(hit.drawing.id)) mgr.select([hit.drawing.id]);
+      return;
+    }
+    originalSelectionDown(event, point);
+  };
+}
 // Weak magnet snaps dragged prices to candle OHLC. Disable it only for a position's
 // left entry anchor so that anchor can follow the cursor vertically at arbitrary prices.
 // Use the same pane-local coordinates as DrawingManager.panePoint() in the library.
@@ -78,12 +93,66 @@ const storageKey=`atlas-drawings-session-${session?.id??'draft'}`;
 try{manager.importJSON(localStorage.getItem(storageKey)??'[]')}catch(e){console.warn('Could not restore chart drawings',e)}
 let applyingFibDefaults=false;
 const defaultFibLevels=[{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'#4caf50',visible:true},{coeff:.681,color:'#089981',visible:true},{coeff:1,color:'#808080',visible:true}];
-const syncSelectedDrawing=()=>{try{const ids=manager.selection();const id=ids[ids.length-1];const d=id?manager.get(id):null;setSelectedDrawing(d&&!d.hidden&&['horizontal-line','horizontal-ray','horizontalline','horizontalray','hline','fib-retracement','long-position','short-position','price-range','date-range','date-and-price-range','rectangle'].includes(String(d.kind).toLowerCase())?{...d}:null)}catch{setSelectedDrawing(null)}};manager.on('selection',syncSelectedDrawing);manager.on('change',()=>{syncSelectedDrawing();if(!applyingFibDefaults){try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(d?.kind==='fib-retracement'){const levels=d.style?.levels;if(!Array.isArray(levels)||levels.length!==defaultFibLevels.length||defaultFibLevels.some((x,i)=>Number(levels[i]?.coeff)!==x.coeff)){applyingFibDefaults=true;manager.update({...d,style:{...d.style,levels:defaultFibLevels}});applyingFibDefaults=false}}}catch(e){applyingFibDefaults=false;console.warn('Could not apply Fibonacci defaults',e)}try{localStorage.setItem(storageKey,manager.exportJSON())}catch(e){console.warn('Could not save chart drawings',e)}}});
+const syncSelectedDrawing=()=>{try{const ids=manager.selection();const id=ids[ids.length-1];const d=id?manager.get(id):null;setSelectedDrawing(d&&!d.hidden&&['horizontal-line','horizontal-ray','horizontalline','horizontalray','hline','fib-retracement','long-position','short-position','price-range','date-range','date-and-price-range','rectangle'].includes(String(d.kind).toLowerCase())?{...d}:null)}catch{setSelectedDrawing(null)}};
+// A locked drawing should be protected from accidental edits/deletion, but still movable on drag.
+// Temporarily unlock the hit drawing before the drawing manager handles pointerdown, then
+// restore its locked flag after the manager finishes the pointerup drag operation.
+let temporarilyUnlockedDrawingId: string | number | null = null;
+const findDrawingAtPointer = (event: PointerEvent) => {
+  if (!chartEl.current || !chart.current || !series.current) return null;
+  const paneEl = series.current.getPane?.().getHTMLElement?.();
+  if (!paneEl) return null;
+  const paneRect = paneEl.getBoundingClientRect();
+  const chartRect = chartEl.current.getBoundingClientRect();
+  const pointerX = event.clientX - chartRect.left - (chart.current.priceScale('left')?.width?.() || 0);
+  const pointerY = event.clientY - paneRect.top;
+  const drawings = manager.drawings();
+  for (let i = drawings.length - 1; i >= 0; i--) {
+    const candidate = drawings[i];
+    if (!candidate.locked || candidate.hidden || !candidate.points?.length) continue;
+    if (isHorizontalDrawingKind(candidate.kind)) {
+      const lineY = series.current.priceToCoordinate(Number(candidate.points[0].price));
+      if (lineY != null && Math.abs(pointerY - lineY) <= 12) {
+        if (String(candidate.kind).toLowerCase().includes('ray')) {
+          const anchorX = chart.current.timeScale().timeToCoordinate(candidate.points[0].time);
+          if (anchorX != null && pointerX < anchorX - 10) continue;
+        }
+        return candidate;
+      }
+      continue;
+    }
+    const coords = candidate.points.map((point: any) => ({ x: chart.current.timeScale().timeToCoordinate(point.time), y: series.current.priceToCoordinate(Number(point.price)) })).filter((point: any) => point.x != null && point.y != null);
+    if (!coords.length) continue;
+    const xs = coords.map((point: any) => Number(point.x));
+    const ys = coords.map((point: any) => Number(point.y));
+    if (pointerX >= Math.min(...xs) - 14 && pointerX <= Math.max(...xs) + 14 && pointerY >= Math.min(...ys) - 14 && pointerY <= Math.max(...ys) + 14) return candidate;
+  }
+  return null;
+};
+const onLockedDrawingPointerDown = (event: PointerEvent) => {
+  if (event.button !== 0 || manager.tool() !== null || temporarilyUnlockedDrawingId !== null) return;
+  const drawing = findDrawingAtPointer(event);
+  if (!drawing) return;
+  temporarilyUnlockedDrawingId = drawing.id;
+  manager.update({ ...drawing, locked: false });
+};
+const restoreLockedDrawing = () => {
+  if (temporarilyUnlockedDrawingId === null) return;
+  const id = temporarilyUnlockedDrawingId;
+  temporarilyUnlockedDrawingId = null;
+  const drawing = manager.get(String(id));
+  if (drawing) manager.update({ ...drawing, locked: true });
+};
+const onLockedDrawingPointerUp = () => { if (temporarilyUnlockedDrawingId !== null) window.setTimeout(restoreLockedDrawing, 0); };
+document.addEventListener('pointerdown', onLockedDrawingPointerDown, true);
+document.addEventListener('pointerup', onLockedDrawingPointerUp);
+document.addEventListener('pointercancel', onLockedDrawingPointerUp);
+manager.on('selection',syncSelectedDrawing);manager.on('change',()=>{syncSelectedDrawing();if(!applyingFibDefaults){try{const selected=manager.selection();const id=selected[selected.length-1];const d=id?manager.get(id):null;if(d?.kind==='fib-retracement'){const levels=d.style?.levels;if(!Array.isArray(levels)||levels.length!==defaultFibLevels.length||defaultFibLevels.some((x,i)=>Number(levels[i]?.coeff)!==x.coeff)){applyingFibDefaults=true;manager.update({...d,style:{...d.style,levels:defaultFibLevels}});applyingFibDefaults=false}}}catch(e){applyingFibDefaults=false;console.warn('Could not apply Fibonacci defaults',e)}try{localStorage.setItem(storageKey,manager.exportJSON())}catch(e){console.warn('Could not save chart drawings',e)}}});
 // A placed drawing completes the current tool. Reselect a tool to draw another one.
 manager.on('add',()=>{if(manager.tool()!==null){manager.setTool(null);setDrawMode('none')}});
 const onDrawingDoubleClick=(event:MouseEvent)=>{window.setTimeout(()=>{try{const container=chartEl.current;const paneEl=series.current?.getPane?.().getHTMLElement?.();const paneRect=paneEl?.getBoundingClientRect();const chartRect=container?.getBoundingClientRect();if(!container||!container.contains(event.target as Node)||!paneRect||!chartRect||!series.current||!chart.current)return;const plotLeft=chartRect.left+(chart.current.priceScale('left')?.width?.()||0);const pointerX=event.clientX-plotLeft;const pointerY=event.clientY-paneRect.top;const drawings=manager.drawings();let d:any=null;for(let i=drawings.length-1;i>=0;i--){const candidate=drawings[i];if(candidate.hidden||!candidate.points?.length)continue;if(isHorizontalDrawingKind(candidate.kind)){const price=Number(candidate.points[0].price);if(!Number.isFinite(price))continue;const lineY=series.current.priceToCoordinate(price);if(lineY==null||Math.abs(pointerY-lineY)>12)continue;const kind=String(candidate.kind).toLowerCase();if(kind.includes('ray')){const anchorX=chart.current.timeScale().timeToCoordinate(candidate.points[0].time);if(anchorX!=null&&pointerX<anchorX-10)continue;}d=candidate;break;}if(!['fib-retracement','long-position','short-position','rectangle'].includes(candidate.kind))continue;const coords=(candidate.points||[]).map((point:any)=>({x:chart.current.timeScale().timeToCoordinate(point.time),y:series.current.priceToCoordinate(Number(point.price))})).filter((point:any)=>point.x!=null&&point.y!=null);if(!coords.length)continue;const xs=coords.map((point:any)=>Number(point.x));const ys=coords.map((point:any)=>Number(point.y));const left=Math.min(...xs)-14,right=Math.max(...xs)+14,top=Math.min(...ys)-14,bottom=Math.max(...ys)+14;if(pointerX>=left&&pointerX<=right&&pointerY>=top&&pointerY<=bottom){d=candidate;break;}}if(!d)return;manager.select([d.id]);if(isHorizontalDrawingKind(d.kind)){setDrawingEditor({id:d.id,kind:d.kind,borderColor:String(d.style?.color??d.style?.lineColor??'#2962ff'),borderWidth:Number((d.style as any)?.lineWidth??(d.style as any)?.width??1)});return;}if(d.kind==='rectangle'){setDrawingEditor({id:d.id,kind:d.kind,color:String(d.style?.color??'#9c27b0')});return;}if(!['fib-retracement','long-position','short-position'].includes(d.kind))return;const entry=Number(d.points?.[0]?.price??0);const fallbackDistance=Math.abs(Number(d.points?.[1]?.price??entry)-entry)||0;const stopDistance=Number(d.style?.stopLevel??fallbackDistance);const targetDistance=Number(d.style?.profitLevel??fallbackDistance);const isLong=d.kind==='long-position';setDrawingEditor({id:d.id,kind:d.kind,entry:priceText(entry,session?.symbol),stop:priceText(isLong?entry-stopDistance:entry+stopDistance,session?.symbol),target:priceText(isLong?entry+targetDistance:entry-targetDistance,session?.symbol),levels:((()=>{try{if(Array.isArray(d.style?.levels)&&d.style.levels.length)return d.style.levels;const saved=localStorage.getItem('atlas-fib-default-levels');if(saved)return JSON.parse(saved)}catch(e){console.warn('Could not load Fibonacci defaults',e)}return [{coeff:0,color:'#808080',visible:true},{coeff:.5,color:'#4caf50',visible:true},{coeff:.681,color:'#089981',visible:true},{coeff:1,color:'#808080',visible:true}]})()).map((level:any)=>({...level}))})}catch(e){console.warn('Could not open drawing settings',e)}},0)};
 document.addEventListener('dblclick',onDrawingDoubleClick,true);
-return()=>{document.removeEventListener('pointerdown',onPositionEntryPointerDown,true);document.removeEventListener('pointerup',onPositionEntryPointerUp,true);document.removeEventListener('pointercancel',onPositionEntryPointerUp,true);window.removeEventListener('blur',onPositionEntryWindowBlur);if(positionEntryMagnetPointer!==null)manager.setMagnet('weak');positionEntryMagnetPointer=null;document.removeEventListener('dblclick',onDrawingDoubleClick,true);setSelectedDrawing(null);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
+return()=>{document.removeEventListener('pointerdown',onPositionEntryPointerDown,true);document.removeEventListener('pointerup',onPositionEntryPointerUp,true);document.removeEventListener('pointercancel',onPositionEntryPointerUp,true);window.removeEventListener('blur',onPositionEntryWindowBlur);if(positionEntryMagnetPointer!==null)manager.setMagnet('weak');positionEntryMagnetPointer=null;document.removeEventListener('dblclick',onDrawingDoubleClick,true);document.removeEventListener('pointerdown',onLockedDrawingPointerDown,true);document.removeEventListener('pointerup',onLockedDrawingPointerUp);document.removeEventListener('pointercancel',onLockedDrawingPointerUp);temporarilyUnlockedDrawingId=null;setSelectedDrawing(null);drawingManager.current?.destroy();drawingManager.current=null;c.remove();chart.current=null;series.current=null;emaSeries.current=null;lastDataCount.current=0;chartDataRef.current=[];drawingRefs.current=[];trendStart.current=null}},[page,theme,session?.symbol,session?.id]);useEffect(()=>{
 if(!series.current)return;
 const timeframeChanged=lastChartTf.current!==tf;lastChartTf.current=tf;
 const previousRange=chart.current?.timeScale().getVisibleLogicalRange();
