@@ -37,8 +37,22 @@ const stopDownload=useCallback(async(id:number)=>{setStoppingJobs(prev=>prev.inc
 const createPortableBackup=async()=>{
  setBackupBusy(true);setBackupRestoreMessage('Preparing backup…');setError('');
  try{
+  // Let the chart's debounced save finish before packaging the DB.
+  await new Promise(resolve=>window.setTimeout(resolve,600));
   const browserState:Record<string,string>={};
-  for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('atlas-')){const value=localStorage.getItem(key);if(value!==null)browserState[key]=value}}
+  const localDrawings:Array<{key:string;value:string;sessionId:number}>=[];
+  for(let i=0;i<localStorage.length;i++){
+   const key=localStorage.key(i);if(!key||!key.startsWith('atlas-'))continue;
+   const value=localStorage.getItem(key);if(value===null)continue;
+   const drawingMatch=key.match(/^atlas-drawings-session-(\\d+)$/);
+   if(drawingMatch){localDrawings.push({key,value,sessionId:Number(drawingMatch[1])});continue}
+   browserState[key]=value;
+  }
+  // Migrate legacy localStorage drawings only where SQLite does not already have a snapshot.
+  for(const drawing of localDrawings){
+   const saved=await api('/sessions/'+drawing.sessionId+'/drawings');
+   if(saved?.snapshot==null)await api('/sessions/'+drawing.sessionId+'/drawings',{method:'PUT',body:JSON.stringify({snapshot:drawing.value})});
+  }
   const response=await fetch('/api/backup/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({browserState})});
   if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.error||response.statusText||'Backup failed')}
   const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');
