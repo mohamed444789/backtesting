@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 
 type SqliteDatabase = InstanceType<typeof Database>;
 
-const REQUIRED_TABLES = ['instruments', 'candles', 'sessions', 'trades', 'orders', 'downloads', 'settings', 'drawings', 'journal_notes'];
+const REQUIRED_TABLES = ['instruments', 'candles', 'sessions', 'trades', 'orders', 'downloads', 'settings', 'drawings', 'journal_notes', 'media_files'];
 
 function runProcess(command: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -110,6 +110,24 @@ export async function restoreBackupArchive(
     if (manifest?.format !== 'atlas-backup' || manifest?.version !== 1) throw new Error('Unsupported backup format or version.');
     browserState = parseBrowserState(JSON.parse(fs.readFileSync(path.join(extractedDir, 'browser-state.json'), 'utf8')));
     const snapshotPath = path.join(extractedDir, 'atlas.sqlite');
+    // Older portable archives may contain screenshot files instead of SQLite BLOBs.
+    // Import those into the snapshot database before validating/restoring it.
+    const archivedScreenshotsPath = path.join(extractedDir, 'screenshots');
+    const legacySnapshotDb = new Database(snapshotPath);
+    try {
+      const mediaTable = legacySnapshotDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='media_files'").get();
+      if (!mediaTable) throw new Error('Backup database is missing required table: media_files');
+      const insertMedia = legacySnapshotDb.prepare('INSERT OR IGNORE INTO media_files(filename,mime_type,data) VALUES(?,?,?)');
+      for (const entry of fs.readdirSync(archivedScreenshotsPath, { withFileTypes: true })) {
+        if (!entry.isFile()) continue;
+        const ext = path.extname(entry.name).toLowerCase();
+        const mime = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.webp' ? 'image/webp' : null;
+        if (!mime) continue;
+        insertMedia.run(entry.name, mime, fs.readFileSync(path.join(archivedScreenshotsPath, entry.name)));
+      }
+    } finally {
+      legacySnapshotDb.close();
+    }
     const snapshot = new Database(snapshotPath, { readonly: true, fileMustExist: true });
     try {
       const integrity = snapshot.pragma('integrity_check', { simple: true });
@@ -125,20 +143,6 @@ export async function restoreBackupArchive(
     const sourceDb = new Database(snapshotPath, { readonly: true, fileMustExist: true });
     const sourceTables = new Set((sourceDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[]).map(row => row.name));
     const targetTables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as { name: string }[]).map(row => row.name);
-    if (fs.existsSync(liveScreenshotsPath)) {
-      fs.renameSync(liveScreenshotsPath, previousScreenshotsPath);
-      oldScreenshotsMoved = true;
-    }
-    try {
-      fs.renameSync(path.join(extractedDir, 'screenshots'), liveScreenshotsPath);
-      newScreenshotsMoved = true;
-    } catch (error) {
-      if (oldScreenshotsMoved) {
-        fs.renameSync(previousScreenshotsPath, liveScreenshotsPath);
-        oldScreenshotsMoved = false;
-      }
-      throw error;
-    }
     try {
       for (const name of targetTables) {
         if (!sourceTables.has(name)) throw new Error('This backup does not contain the current table: ' + name + '. Use a backup from a compatible Atlas version.');
@@ -177,11 +181,8 @@ export async function restoreBackupArchive(
       sourceDb.close();
     }
 
-    if (oldScreenshotsMoved) { try { fs.rmSync(previousScreenshotsPath, { recursive: true, force: true }); } catch { /* The restored data is already committed; stale backup files can be cleaned up later. */ } }
     return browserState;
   } catch (error) {
-    if (newScreenshotsMoved) fs.rmSync(liveScreenshotsPath, { recursive: true, force: true });
-    if (oldScreenshotsMoved && fs.existsSync(previousScreenshotsPath) && !fs.existsSync(liveScreenshotsPath)) fs.renameSync(previousScreenshotsPath, liveScreenshotsPath);
     throw error;
   } finally {
     fs.rmSync(workDir, { recursive: true, force: true });
