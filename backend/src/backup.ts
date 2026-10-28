@@ -169,7 +169,7 @@ export async function restoreBackupArchive(
       sourceDb.close();
     }
 
-    if (oldScreenshotsMoved) fs.rmSync(previousScreenshotsPath, { recursive: true, force: true });
+    if (oldScreenshotsMoved) { try { fs.rmSync(previousScreenshotsPath, { recursive: true, force: true }); } catch { /* The restored data is already committed; stale backup files can be cleaned up later. */ } }
     return browserState;
   } catch (error) {
     if (newScreenshotsMoved) fs.rmSync(liveScreenshotsPath, { recursive: true, force: true });
