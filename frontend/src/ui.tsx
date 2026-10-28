@@ -7,7 +7,7 @@ import CalendarDatePicker from './CalendarDatePicker';import React,{useEffect,us
   if(applied['atlas-download-end'])setDownloadEnd(applied['atlas-download-end']);
   if(applied['atlas-download-start']&&applied['atlas-download-end'])setDownloadDatesInitialized(true);
   if(applied['atlas-time-invested-seconds']!==undefined)setTimeInvestedSeconds(Math.max(0,Number(applied['atlas-time-invested-seconds'])||0));
-  if(applied['atlas-storage-size-history']){try{const parsed=JSON.parse(applied['atlas-storage-size-history']);if(Array.isArray(parsed))setHistory(parsed.filter((p:any)=>Number.isFinite(p?.at)&&Number.isFinite(p?.bytes)).slice(-10080))}catch{}}
+  // Storage size history is restored to localStorage above and loaded by DatabaseStorage when it mounts.
  };
  const bootstrap=async()=>{try{const settings=await api('/settings');if(!active)return;applyBrowserState(settings);const local=collectBrowserState(),missing:Record<string,string>={};for(const[key,value]of Object.entries(local))if(settings[key]===undefined)missing[key]=value;if(Object.keys(missing).length)await api('/settings',{method:'PUT',body:JSON.stringify(missing)});initialized=true}catch(error){console.warn('Could not synchronize Atlas preferences with the database',error);initialized=true}};
  void bootstrap();
