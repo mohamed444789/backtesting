@@ -34,6 +34,35 @@ const deleteInstrumentCandles=useCallback(async()=>{
  finally{setDeletingInstrument(false)}
 },[selectedDeleteSymbol,deleteInstrumentConfirmation,refresh,inspect,sortBy,sortDir]);
 const stopDownload=useCallback(async(id:number)=>{setStoppingJobs(prev=>prev.includes(id)?prev:[...prev,id]);try{await api('/downloads/'+id+'/stop',{method:'POST'});const jobs=await api('/downloads');setDownloadJobs(jobs||[]);setSelectedFailedJobs(prev=>prev.filter(jobId=>jobId!==id));setError('')}catch(e:any){setError(e.message||'Could not stop download')}finally{setStoppingJobs(prev=>prev.filter(jobId=>jobId!==id))}},[]);
+const createPortableBackup=async()=>{
+ setBackupBusy(true);setBackupRestoreMessage('Preparing backup…');setError('');
+ try{
+  const browserState:Record<string,string>={};
+  for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('atlas-')){const value=localStorage.getItem(key);if(value!==null)browserState[key]=value}}
+  const response=await fetch('/api/backup/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({browserState})});
+  if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.error||response.statusText||'Backup failed')}
+  const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='atlas-backup-'+new Date().toISOString().replace(/[:.]/g,'-')+'.tar.gz';document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  setBackupRestoreMessage('Backup downloaded. Copy the .tar.gz file to a safe place before restoring on another computer.');
+ }catch(e:any){setBackupRestoreMessage('');setError(e.message||'Could not create a backup')}
+ finally{setBackupBusy(false)}
+};
+const restorePortableBackup=async(event:React.ChangeEvent<HTMLInputElement>)=>{
+ const file=event.target.files?.[0];event.target.value='';if(!file)return;
+ if(!window.confirm('RESTORE WILL REPLACE ALL DATA ON THIS ATLAS INSTANCE, including candles, sessions, trades, settings, journal records and screenshots. This cannot be undone unless you have a separate backup. Continue?'))return;
+ setRestoreBusy(true);setBackupRestoreMessage('Uploading and validating backup…');setError('');
+ try{
+  const form=new FormData();form.append('backup',file);
+  const response=await fetch('/api/backup/restore',{method:'POST',body:form});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||response.statusText||'Restore failed');
+  for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key?.startsWith('atlas-'))localStorage.removeItem(key)}
+  const browserState=result.browserState&&typeof result.browserState==='object'?result.browserState:{};
+  for(const[key,value]of Object.entries(browserState)){if(key.startsWith('atlas-')&&typeof value==='string')localStorage.setItem(key,value)}
+  setBackupRestoreMessage('Restore completed. Reloading Atlas…');window.location.reload();
+ }catch(e:any){setError(e.message||'Could not restore the selected backup');setBackupRestoreMessage('')}
+ finally{setRestoreBusy(false)}
+};
 const retrySelectedFailed=useCallback(async()=>{const ids=[...new Set(selectedFailedJobs)];if(!ids.length||bulkRetrying)return;setBulkRetrying(true);setError('');try{const result=await api('/downloads/retry-failed',{method:'POST',body:JSON.stringify({ids})});const jobs=await api('/downloads');setDownloadJobs(jobs||[]);setSelectedFailedJobs([]);setDownloadFilter('ACTIVE');if(result?.skipped)setError('Queued '+(result.jobs?.length||0)+' retries; skipped '+result.skipped+' jobs that were no longer failed.')}catch(e:any){setError(e.message||'Could not retry selected jobs')}finally{setBulkRetrying(false)}},[selectedFailedJobs,bulkRetrying]);
 return <div className={embedded?"ds-page ds-embedded":"ds-page"}>{!embedded&&<div className="ds-title"><div className="ds-title-icon"><Database size={28}/></div><div><h1>Database &amp; Storage</h1><p>Monitor your SQLite database, Docker storage and application logs.</p></div><div className="ds-actions"><span className={"ds-health "+(error?"is-error":"")}><i/> {error?"Attention":loading?"Checking":"Healthy"}</span><button className="secondary" onClick={refresh} disabled={loading}><RefreshCw size={14}/>{loading?'Refreshing…':'Refresh'}</button></div></div>}
 {!embedded&&<nav className="ds-tabs">{['Overview','Tables','Application Logs','Download Console','Backup & Restore'].map((x,i)=><button key={x} className={tab===x?'active':''} onClick={()=>setTab(x)}>{[<Activity/>,<Table2/>,<Terminal/>,<Download/>,<DatabaseBackup/>][i]}{x}{x==='Application Logs'&&logs.some(l=>l.level==='ERROR')?<em>{logs.filter(l=>l.level==='ERROR').length}</em>:null}</button>)}</nav>}
