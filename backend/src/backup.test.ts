@@ -36,6 +36,7 @@ test('portable backup restores SQLite content, screenshots and browser state', a
     sourceDb.prepare('INSERT INTO instruments(symbol,provider_symbol,pip_size) VALUES(?,?,?)').run('EURUSD', 'eurusd', 0.0001);
     sourceDb.prepare('INSERT INTO candles(symbol,time,open,high,low,close) VALUES(?,?,?,?,?,?)').run('EURUSD', 100, 1, 1.1, 0.9, 1.05);
     sourceDb.prepare('INSERT INTO sessions(id,name) VALUES(?,?)').run(7, 'Source session');
+    sourceDb.prepare('INSERT INTO drawings(session_id,kind,payload) VALUES(?,?,?)').run(7, 'chart_snapshot', '[{"kind":"rectangle"}]');
     sourceDb.prepare('INSERT INTO trades(id,session_id,notes) VALUES(?,?,?)').run(9, 7, 'Keep this note');
     sourceDb.prepare('INSERT INTO journal_notes(id,trade_id,body) VALUES(?,?,?)').run(4, 9, 'Journal content');
     sourceDb.prepare('INSERT INTO settings(key,value) VALUES(?,?)').run('risk', '1');
@@ -57,7 +58,9 @@ test('portable backup restores SQLite content, screenshots and browser state', a
     assert.equal((targetDb.prepare('SELECT notes FROM trades WHERE id=9').get() as any).notes, 'Keep this note');
     assert.equal((targetDb.prepare('SELECT COUNT(*) AS n FROM candles').get() as any).n, 1);
     assert.equal((targetDb.prepare('SELECT CAST(data AS TEXT) AS data FROM media_files WHERE filename=?').get('inline.png') as any).data, 'embedded screenshot');
-    assert.equal(fs.readFileSync(path.join(targetDir, 'screenshots', 'chart-1.png'), 'utf8'), 'source screenshot');
+    assert.equal((targetDb.prepare('SELECT payload FROM drawings WHERE session_id=7 AND kind=?').get('chart_snapshot') as any).payload, '[{"kind":"rectangle"}]');
+    assert.equal((targetDb.prepare('SELECT CAST(data AS TEXT) AS data FROM media_files WHERE filename=?').get('chart-1.png') as any).data, 'source screenshot');
+    assert.equal(fs.existsSync(path.join(targetDir, 'screenshots', 'chart-1.png')), false);
     assert.equal(fs.existsSync(path.join(targetDir, 'screenshots', 'old.png')), false);
     assert.deepEqual(browserState, { 'atlas-drawings-session-7': '[{"kind":"rectangle"}]' });
   } finally {
