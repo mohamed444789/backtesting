@@ -125,6 +125,20 @@ export async function restoreBackupArchive(
     const sourceDb = new Database(snapshotPath, { readonly: true, fileMustExist: true });
     const sourceTables = new Set((sourceDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[]).map(row => row.name));
     const targetTables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as { name: string }[]).map(row => row.name);
+    if (fs.existsSync(liveScreenshotsPath)) {
+      fs.renameSync(liveScreenshotsPath, previousScreenshotsPath);
+      oldScreenshotsMoved = true;
+    }
+    try {
+      fs.renameSync(path.join(extractedDir, 'screenshots'), liveScreenshotsPath);
+      newScreenshotsMoved = true;
+    } catch (error) {
+      if (oldScreenshotsMoved) {
+        fs.renameSync(previousScreenshotsPath, liveScreenshotsPath);
+        oldScreenshotsMoved = false;
+      }
+      throw error;
+    }
     try {
       for (const name of targetTables) {
         if (!sourceTables.has(name)) throw new Error('This backup does not contain the current table: ' + name + '. Use a backup from a compatible Atlas version.');
@@ -154,17 +168,6 @@ export async function restoreBackupArchive(
       sourceDb.close();
     }
 
-    if (fs.existsSync(liveScreenshotsPath)) {
-      fs.renameSync(liveScreenshotsPath, previousScreenshotsPath);
-      oldScreenshotsMoved = true;
-    }
-    try {
-      fs.renameSync(path.join(extractedDir, 'screenshots'), liveScreenshotsPath);
-      newScreenshotsMoved = true;
-    } catch (error) {
-      if (oldScreenshotsMoved) fs.renameSync(previousScreenshotsPath, liveScreenshotsPath);
-      throw error;
-    }
     if (oldScreenshotsMoved) fs.rmSync(previousScreenshotsPath, { recursive: true, force: true });
     return browserState;
   } catch (error) {
