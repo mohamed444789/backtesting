@@ -143,6 +143,14 @@ export async function restoreBackupArchive(
       for (const name of targetTables) {
         if (!sourceTables.has(name)) throw new Error('This backup does not contain the current table: ' + name + '. Use a backup from a compatible Atlas version.');
       }
+      const unsupportedTables = [...sourceTables].filter(name => !targetTables.includes(name));
+      if (unsupportedTables.length) throw new Error('This backup contains tables not supported by this Atlas version. Update Atlas before restoring.');
+      for (const table of targetTables) {
+        const sourceColumns = new Set((sourceDb.prepare('PRAGMA table_info(' + quoteIdentifier(table) + ')').all() as { name: string }[]).map(column => column.name));
+        const targetColumns = new Set((db.prepare('PRAGMA main.table_info(' + quoteIdentifier(table) + ')').all() as { name: string }[]).map(column => column.name));
+        const unsupportedColumns = [...sourceColumns].filter(column => !targetColumns.has(column));
+        if (unsupportedColumns.length) throw new Error('This backup uses a newer schema for table ' + table + '. Update Atlas before restoring.');
+      }
       db.pragma('foreign_keys = OFF');
       db.prepare('ATTACH DATABASE ? AS restore_source').run(snapshotPath);
       try {
