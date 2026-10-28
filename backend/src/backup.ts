@@ -79,10 +79,6 @@ export async function restoreBackupArchive(
   const workDir = fs.mkdtempSync(path.join(root, '.atlas-backup-restore-'));
   const extractedDir = path.join(workDir, 'extracted');
   fs.mkdirSync(extractedDir, { recursive: true });
-  let oldScreenshotsMoved = false;
-  let newScreenshotsMoved = false;
-  const liveScreenshotsPath = path.join(root, 'screenshots');
-  const previousScreenshotsPath = path.join(workDir, 'previous-screenshots');
   let browserState: Record<string, string> = {};
   try {
     const namesOutput = await runProcess('tar', ['-tzf', archivePath]);
@@ -181,6 +177,16 @@ export async function restoreBackupArchive(
       sourceDb.close();
     }
 
+    // The database now contains all media. Clear pre-migration files so a later startup
+    // cannot re-import stale destination screenshots into the restored database.
+    const legacyMediaDir = path.join(root, 'screenshots');
+    try {
+      for (const entry of fs.readdirSync(legacyMediaDir, { withFileTypes: true })) {
+        fs.rmSync(path.join(legacyMediaDir, entry.name), { recursive: true, force: true });
+      }
+    } catch (cleanupError) {
+      console.error('Restored database successfully but could not clean legacy screenshot files:', cleanupError);
+    }
     return browserState;
   } catch (error) {
     throw error;
