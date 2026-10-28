@@ -156,6 +156,7 @@ export async function restoreBackupArchive(
             const columns = commonColumns.map(quoteIdentifier).join(',');
             db.exec('INSERT INTO main.' + quoteIdentifier(table) + '(' + columns + ') SELECT ' + columns + ' FROM restore_source.' + quoteIdentifier(table));
           }
+          db.prepare("UPDATE downloads SET status='failed', error='Restored from backup; retry this job if needed.' WHERE status IN ('queued','running')").run();
           const violations = db.pragma('foreign_key_check') as any[];
           if (violations.length) throw new Error('Backup contains broken references and was not restored.');
         });
