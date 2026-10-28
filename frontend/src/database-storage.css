@@ -751,3 +751,22 @@
   padding-left: 28px;
   padding-right: 28px;
 }
+
+
+.ds-backup-page{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.ds-backup-hero{grid-column:1/-1}
+.ds-backup-hero>p,.ds-restore-card>p{font-size:12px;line-height:1.65;color:#9db0c6;max-width:900px;margin:0 0 16px}
+.ds-backup-includes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.ds-backup-includes>div{display:flex;flex-direction:column;gap:7px;padding:13px;border:1px solid #26384c;border-radius:9px;background:#0b1521;min-width:0}
+.ds-backup-includes b{font-size:12px;color:#dce8f5}
+.ds-backup-includes span{font-size:11px;line-height:1.55;color:#91a5bc}
+.ds-backup-create,.ds-restore-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px}
+.ds-backup-status{font-size:11px;line-height:1.5;color:#6ee7b7;margin:12px 0 0;overflow-wrap:anywhere}
+.ds-backup-file-input{display:none}
+.ds-restore-card{min-height:210px}
+.ds-restore-card code{color:#7dd3fc}
+.ds-backup-warning{grid-column:1/-1;display:flex;gap:11px;align-items:flex-start;padding:15px 16px;border:1px solid #6b4c20;border-radius:10px;background:#221b10;color:#fbbf24}
+.ds-backup-warning>svg{flex:0 0 auto;margin-top:1px}
+.ds-backup-warning b{font-size:12px}
+.ds-backup-warning p{font-size:11px;line-height:1.65;color:#d1b98d;margin:6px 0 0}
+@media(max-width:900px){.ds-backup-includes{grid-template-columns:1fr}.ds-backup-page{grid-template-columns:1fr}.ds-backup-hero,.ds-backup-warning{grid-column:auto}}
