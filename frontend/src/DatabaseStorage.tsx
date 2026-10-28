@@ -44,7 +44,7 @@ const createPortableBackup=async()=>{
   for(let i=0;i<localStorage.length;i++){
    const key=localStorage.key(i);if(!key||!key.startsWith('atlas-'))continue;
    const value=localStorage.getItem(key);if(value===null)continue;
-   const drawingMatch=key.match(/^atlas-drawings-session-(\\d+)$/);
+   const drawingMatch=key.match(/^atlas-drawings-session-(\d+)$/);
    if(drawingMatch){localDrawings.push({key,value,sessionId:Number(drawingMatch[1])});continue}
    browserState[key]=value;
   }
