@@ -125,7 +125,7 @@ const restoreLockedDrawing = () => {
   if (temporarilyUnlockedDrawingId === null) return;
   const id = temporarilyUnlockedDrawingId;
   temporarilyUnlockedDrawingId = null;
-  const drawing = manager.get(id);
+  const drawing = manager.get(String(id));
   if (drawing) manager.update({ ...drawing, locked: true });
 };
 const onLockedDrawingPointerUp = () => { if (temporarilyUnlockedDrawingId !== null) window.setTimeout(restoreLockedDrawing, 0); };
