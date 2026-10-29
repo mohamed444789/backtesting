@@ -37,6 +37,21 @@ function parseBrowserState(value: unknown): Record<string, string> {
   return result;
 }
 
+async function savePreRestoreSnapshot(db: SqliteDatabase, root: string): Promise<void> {
+  const backupDir = path.join(root, 'backups');
+  fs.mkdirSync(backupDir, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const snapshotPath = path.join(backupDir, 'pre-restore-' + timestamp + '.sqlite');
+  await db.backup(snapshotPath);
+  const snapshots = fs.readdirSync(backupDir, { withFileTypes: true })
+    .filter(entry => entry.isFile() && /^pre-restore-.*\\.sqlite$/.test(entry.name))
+    .map(entry => ({ name: entry.name, mtime: fs.statSync(path.join(backupDir, entry.name)).mtimeMs }))
+    .sort((a, b) => a.mtime - b.mtime);
+  for (const stale of snapshots.slice(0, Math.max(0, snapshots.length - 3))) {
+    fs.rmSync(path.join(backupDir, stale.name), { force: true });
+  }
+}
+
 export async function createBackupArchive(
   db: SqliteDatabase,
   dataDir: string,
@@ -151,6 +166,8 @@ export async function restoreBackupArchive(
         const unsupportedColumns = [...sourceColumns].filter(column => !targetColumns.has(column));
         if (unsupportedColumns.length) throw new Error('This backup uses a newer schema for table ' + table + '. Update Atlas before restoring.');
       }
+      // Preserve the current database before the replacement transaction starts.
+      await savePreRestoreSnapshot(db, root);
       db.pragma('foreign_keys = OFF');
       db.prepare('ATTACH DATABASE ? AS restore_source').run(snapshotPath);
       try {
