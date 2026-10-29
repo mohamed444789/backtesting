@@ -8188,3 +8188,34 @@ td {
 .theme-dark .selected-drawing-toolbar .drawing-lock-button.is-unlocked{background:#fff;border-color:#d1d5db;color:#131722}
 .theme-dark .tradingview-color-palette{background:#fff;border-color:#d1d5db}
 @media(max-width:600px){.selected-drawing-toolbar{left:8px;right:8px;transform:none;max-width:none;gap:4px;padding:4px;justify-content:center}.selected-drawing-toolbar button{flex-basis:32px;width:32px;height:32px;min-height:32px}.tradingview-color-palette{width:224px;left:-58px}.tradingview-color-palette button{width:17px;height:17px;min-height:17px}}
+
+/* Equity growth labels inherit semantic profit/loss colors in both themes. */
+.fx-equity-growth-positive{color:#079669!important;font-weight:650}
+.fx-equity-growth-negative{color:#e24c52!important;font-weight:650}
+.fx-equity-growth-neutral{color:#8a96a6!important;font-weight:500}
+.theme-dark .fx-equity-growth-positive{color:#34d399!important}
+.theme-dark .fx-equity-growth-negative{color:#fb7185!important}
+.theme-dark .fx-equity-growth-neutral{color:#9aa9bb!important}
+
+/* Double the equity-growth label size and the Equity card's SVG icon. */
+.fx-session-stat>small.fx-equity-growth-positive,
+.fx-session-stat>small.fx-equity-growth-negative,
+.fx-session-stat>small.fx-equity-growth-neutral,
+.app .fx-session-stat>small.fx-equity-growth-positive,
+.app .fx-session-stat>small.fx-equity-growth-negative,
+.app .fx-session-stat>small.fx-equity-growth-neutral{
+ font-size:26px !important;
+ line-height:1.15;
+ font-weight:700;
+ display:block;
+ margin-top:6px;
+}
+.fx-stat-equity .fx-stat-icon{
+ width:44px;
+ height:44px;
+ flex-basis:44px;
+}
+.fx-stat-equity .fx-stat-icon svg{
+ width:36px;
+ height:36px;
+}
