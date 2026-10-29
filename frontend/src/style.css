@@ -8204,7 +8204,7 @@ td {
 .app .fx-session-stat>small.fx-equity-growth-positive,
 .app .fx-session-stat>small.fx-equity-growth-negative,
 .app .fx-session-stat>small.fx-equity-growth-neutral{
- font-size:28px !important;
+ font-size:26px !important;
  line-height:1.15;
  font-weight:700;
  display:block;
