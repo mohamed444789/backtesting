@@ -49,6 +49,7 @@ async function savePreRestoreSnapshot(db: SqliteDatabase, root: string): Promise
     .sort((a, b) => a.mtime - b.mtime);
   for (const stale of snapshots.slice(0, Math.max(0, snapshots.length - 3))) {
     fs.rmSync(path.join(backupDir, stale.name), { force: true });
+    for (const suffix of ['-wal', '-shm']) fs.rmSync(path.join(backupDir, stale.name + suffix), { force: true });
   }
 }
 
