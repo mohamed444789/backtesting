@@ -46,6 +46,7 @@ const createPortableBackup=async()=>{
    const value=localStorage.getItem(key);if(value===null)continue;
    const drawingMatch=key.match(/^atlas-drawings-session-(\d+)$/);
    if(drawingMatch){localDrawings.push({key,value,sessionId:Number(drawingMatch[1])});continue}
+   if(key.startsWith('atlas-drawings-session-'))continue;
    browserSettings['browser:'+key]=value;
   }
   // Flush legacy browser drawings to the database before the archive is generated.
