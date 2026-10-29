@@ -44,7 +44,7 @@ async function savePreRestoreSnapshot(db: SqliteDatabase, root: string): Promise
   const snapshotPath = path.join(backupDir, 'pre-restore-' + timestamp + '.sqlite');
   await db.backup(snapshotPath);
   const snapshots = fs.readdirSync(backupDir, { withFileTypes: true })
-    .filter(entry => entry.isFile() && /^pre-restore-.*\\.sqlite$/.test(entry.name))
+    .filter(entry => entry.isFile() && entry.name.startsWith('pre-restore-') && entry.name.endsWith('.sqlite'))
     .map(entry => ({ name: entry.name, mtime: fs.statSync(path.join(backupDir, entry.name)).mtimeMs }))
     .sort((a, b) => a.mtime - b.mtime);
   for (const stale of snapshots.slice(0, Math.max(0, snapshots.length - 3))) {
