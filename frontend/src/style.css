@@ -8196,3 +8196,22 @@ td {
 .theme-dark .fx-equity-growth-positive{color:#34d399!important}
 .theme-dark .fx-equity-growth-negative{color:#fb7185!important}
 .theme-dark .fx-equity-growth-neutral{color:#9aa9bb!important}
+
+/* Double the equity-growth label size and the Equity card's SVG icon. */
+.fx-session-stat>small.fx-equity-growth-positive,
+.fx-session-stat>small.fx-equity-growth-negative,
+.fx-session-stat>small.fx-equity-growth-neutral{
+ font-size:20px;
+ line-height:1.2;
+ display:block;
+ margin-top:4px;
+}
+.fx-stat-equity .fx-stat-icon{
+ width:44px;
+ height:44px;
+ flex-basis:44px;
+}
+.fx-stat-equity .fx-stat-icon svg{
+ width:34px;
+ height:34px;
+}
