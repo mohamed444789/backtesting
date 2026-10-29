@@ -37,28 +37,28 @@ const stopDownload=useCallback(async(id:number)=>{setStoppingJobs(prev=>prev.inc
 const createPortableBackup=async()=>{
  setBackupBusy(true);setBackupRestoreMessage('Preparing backup…');setError('');
  try{
-  // Let the chart's debounced save finish before packaging the DB.
+  // Let recent drawing edits reach localStorage before synchronizing them to SQLite.
   await new Promise(resolve=>window.setTimeout(resolve,600));
-  const browserState:Record<string,string>={};
   const localDrawings:Array<{key:string;value:string;sessionId:number}>=[];
+  const browserSettings:Record<string,string>={};
   for(let i=0;i<localStorage.length;i++){
    const key=localStorage.key(i);if(!key||!key.startsWith('atlas-'))continue;
    const value=localStorage.getItem(key);if(value===null)continue;
    const drawingMatch=key.match(/^atlas-drawings-session-(\d+)$/);
    if(drawingMatch){localDrawings.push({key,value,sessionId:Number(drawingMatch[1])});continue}
-   browserState[key]=value;
+   browserSettings['browser:'+key]=value;
   }
-  // Migrate legacy localStorage drawings only where SQLite does not already have a snapshot.
+  // Flush legacy browser drawings to the database before the archive is generated.
   for(const drawing of localDrawings){
    let saved:any;
    try{saved=await api('/sessions/'+drawing.sessionId+'/drawings')}catch(error:any){if(String(error?.message||'').includes('Session not found')){localStorage.removeItem(drawing.key);continue}throw error}
-   if(saved?.snapshot==null)await api('/sessions/'+drawing.sessionId+'/drawings',{method:'PUT',body:JSON.stringify({snapshot:drawing.value})});
+   if(saved?.snapshot!==drawing.value)await api('/sessions/'+drawing.sessionId+'/drawings',{method:'PUT',body:JSON.stringify({snapshot:drawing.value})});
   }
-  const response=await fetch('/api/backup/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({browserState})});
-  if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.error||response.statusText||'Backup failed')}
-  const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');
-  link.href=url;link.download='atlas-backup-'+new Date().toISOString().replace(/[:.]/g,'-')+'.tar.gz';document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
-  setBackupRestoreMessage('Backup downloaded. Copy the .tar.gz file to a safe place before restoring on another computer.');
+  // Flush the latest preference values; the backup itself is now generated from SQLite.
+  if(Object.keys(browserSettings).length)await api('/settings',{method:'PUT',body:JSON.stringify(browserSettings)});
+  // Navigate directly to the attachment endpoint so the browser streams the archive to disk.
+  const link=document.createElement('a');link.href='/api/backup/download';document.body.appendChild(link);link.click();link.remove();
+  setBackupRestoreMessage('Backup download started. Check your browser Downloads and copy the .tar.gz file to a safe place.');
  }catch(e:any){setBackupRestoreMessage('');setError(e.message||'Could not create a backup')}
  finally{setBackupBusy(false)}
 };
