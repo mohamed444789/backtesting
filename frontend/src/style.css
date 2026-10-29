@@ -8200,11 +8200,15 @@ td {
 /* Double the equity-growth label size and the Equity card's SVG icon. */
 .fx-session-stat>small.fx-equity-growth-positive,
 .fx-session-stat>small.fx-equity-growth-negative,
-.fx-session-stat>small.fx-equity-growth-neutral{
- font-size:22px;
- line-height:1.2;
+.fx-session-stat>small.fx-equity-growth-neutral,
+.app .fx-session-stat>small.fx-equity-growth-positive,
+.app .fx-session-stat>small.fx-equity-growth-negative,
+.app .fx-session-stat>small.fx-equity-growth-neutral{
+ font-size:28px !important;
+ line-height:1.15;
+ font-weight:700;
  display:block;
- margin-top:4px;
+ margin-top:6px;
 }
 .fx-stat-equity .fx-stat-icon{
  width:44px;
