@@ -53,6 +53,16 @@ test('portable backup restores SQLite content, screenshots and browser state', a
     });
     const browserState = await restoreBackupArchive(targetDb, targetDir, backup.archivePath);
 
+    const preRestoreFiles = fs.readdirSync(path.join(targetDir, 'backups')).filter(name => name.startsWith('pre-restore-') && name.endsWith('.sqlite'));
+    assert.equal(preRestoreFiles.length, 1, 'restore should preserve a pre-restore snapshot');
+    const preRestoreDb = new Database(path.join(targetDir, 'backups', preRestoreFiles[0]), { readonly: true, fileMustExist: true });
+    try {
+      assert.equal((preRestoreDb.prepare('SELECT symbol FROM instruments').get() as any).symbol, 'GBPUSD');
+      assert.equal((preRestoreDb.prepare('SELECT name FROM sessions WHERE id=1').get() as any).name, 'Destination data');
+    } finally {
+      preRestoreDb.close();
+    }
+
     assert.equal(targetDb.prepare('SELECT symbol FROM instruments').get() && (targetDb.prepare('SELECT symbol FROM instruments').get() as any).symbol, 'EURUSD');
     assert.equal((targetDb.prepare('SELECT name FROM sessions WHERE id=7').get() as any).name, 'Source session');
     assert.equal((targetDb.prepare('SELECT notes FROM trades WHERE id=9').get() as any).notes, 'Keep this note');
