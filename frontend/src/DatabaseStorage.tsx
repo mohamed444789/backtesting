@@ -53,7 +53,7 @@ const createPortableBackup=async()=>{
   for(const drawing of localDrawings){
    let saved:any;
    try{saved=await api('/sessions/'+drawing.sessionId+'/drawings')}catch(error:any){if(String(error?.message||'').includes('Session not found')){localStorage.removeItem(drawing.key);continue}throw error}
-   if(saved?.snapshot!==drawing.value)await api('/sessions/'+drawing.sessionId+'/drawings',{method:'PUT',body:JSON.stringify({snapshot:drawing.value})});
+   if(saved?.snapshot==null)await api('/sessions/'+drawing.sessionId+'/drawings',{method:'PUT',body:JSON.stringify({snapshot:drawing.value})});
   }
   // Flush the latest preference values; the backup itself is now generated from SQLite.
   if(Object.keys(browserSettings).length)await api('/settings',{method:'PUT',body:JSON.stringify(browserSettings)});
@@ -65,7 +65,7 @@ const createPortableBackup=async()=>{
 };
 const restorePortableBackup=async(event:React.ChangeEvent<HTMLInputElement>)=>{
  const file=event.target.files?.[0];event.target.value='';if(!file)return;
- if(!window.confirm('RESTORE WILL REPLACE ALL DATA ON THIS ATLAS INSTANCE, including candles, sessions, trades, settings, journal records and screenshots. This cannot be undone unless you have a separate backup. Continue?'))return;
+ if(!window.confirm('RESTORE WILL REPLACE ALL DATA ON THIS ATLAS INSTANCE, including candles, sessions, trades, settings, journal records and screenshots. Before restoring, Atlas saves a safety snapshot of the current SQLite database under /data/backups/ and keeps the latest 3 snapshots. This snapshot is not restored automatically and may require manual server-side recovery. Keep a separate portable backup too. Continue?'))return;
  setRestoreBusy(true);setBackupRestoreMessage('Uploading and validating backup…');setError('');
  try{
   const form=new FormData();form.append('backup',file);
