@@ -8201,7 +8201,7 @@ td {
 .fx-session-stat>small.fx-equity-growth-positive,
 .fx-session-stat>small.fx-equity-growth-negative,
 .fx-session-stat>small.fx-equity-growth-neutral{
- font-size:20px;
+ font-size:22px;
  line-height:1.2;
  display:block;
  margin-top:4px;
@@ -8212,6 +8212,6 @@ td {
  flex-basis:44px;
 }
 .fx-stat-equity .fx-stat-icon svg{
- width:34px;
- height:34px;
+ width:36px;
+ height:36px;
 }
