@@ -5266,8 +5266,8 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 }
 
 
-/* Side comparison: win rate and trade count share the top row; Long is green,
-   Short is red regardless of whether its net P&L is positive or negative. */
+/* Side comparison: win rate and trade count share the top row; outcome colors
+   follow the combined realized P&L for each side. */
 .app .fx-analytics-side-columns .fx-side-card{
  align-items:stretch;
  padding:13px 10px 11px;
