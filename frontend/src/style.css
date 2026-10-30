@@ -8541,3 +8541,75 @@ td {
 .theme-dark .app .fx-analytics-side-columns .fx-side-card.loss-day .fx-side-card-wl,
 .theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day .fx-side-card-wl{color:#cbd5e1}
 .theme-dark .app .fx-analytics-side-columns .fx-side-card .fx-side-card-pnl.pnl-neutral{color:#cbd5e1!important}
+
+
+/* Signed net-P&L pillars for Side, Time, and Day charts.
+   A shared center line is zero: positive bars grow upward, negative bars downward. */
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot{
+ position:relative;
+ display:block;
+ overflow:hidden;
+ align-items:stretch;
+ justify-content:stretch;
+ border-bottom:0;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot::after,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot::after,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot::after{
+ content:"";
+ position:absolute;
+ z-index:2;
+ top:50%;
+ right:0;
+ left:0;
+ height:1px;
+ background:#94a3b8;
+ opacity:.9;
+ pointer-events:none;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar{
+ position:absolute;
+ z-index:1;
+ left:50%;
+ display:block;
+ min-height:0;
+ transform:translateX(-50%);
+ transition:height .2s ease,top .2s ease,bottom .2s ease;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit{
+ border-radius:5px 5px 0 0;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss{
+ border-radius:0 0 5px 5px;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit{
+ background:linear-gradient(180deg,#34d399,#059669);
+ box-shadow:0 0 0 1px rgba(5,150,105,.12);
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss{
+ background:linear-gradient(180deg,#fb7185,#e24c52);
+ box-shadow:0 0 0 1px rgba(226,76,82,.14);
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-flat,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-flat,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-flat{
+ background:linear-gradient(180deg,#94a3b8,#64748b);
+ box-shadow:none;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-analytics-vertical-plot::after,
+.theme-dark .app .fx-analytics-time-columns .fx-analytics-vertical-plot::after,
+.theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-plot::after{
+ background:#64748b;
+}
