@@ -8613,3 +8613,18 @@ td {
 .theme-dark .app .fx-analytics-day-columns .fx-analytics-vertical-plot::after{
  background:#64748b;
 }
+
+
+/* Ensure side pillar fills follow P&L outcome rather than the old Long/Short palette. */
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot>i.fx-pnl-pillar-profit{
+ background:linear-gradient(180deg,#34d399,#059669)!important;
+ box-shadow:0 0 0 1px rgba(5,150,105,.12)!important;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot>i.fx-pnl-pillar-loss{
+ background:linear-gradient(180deg,#fb7185,#e24c52)!important;
+ box-shadow:0 0 0 1px rgba(226,76,82,.14)!important;
+}
+.app .fx-analytics-side-columns .fx-side-card .fx-analytics-vertical-plot>i.fx-pnl-pillar-flat{
+ background:linear-gradient(180deg,#94a3b8,#64748b)!important;
+ box-shadow:none!important;
+}
