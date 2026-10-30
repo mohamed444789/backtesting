@@ -8389,6 +8389,7 @@ td {
    Restore the prior centered page width and fixed selected-day panel. */
 .app .content{
  max-width:1600px;
+ width:auto;
  padding:26px 28px;
  margin:0 auto;
 }
