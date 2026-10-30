@@ -8222,25 +8222,38 @@ td {
 
 
 
-/* Selected-day trade details: retain the compact horizontal table and use available page width. */
-.content{max-width:1800px;width:100%;padding-left:18px;padding-right:18px;box-sizing:border-box}
-.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr) 330px;gap:14px}
-.fx-session-day-trades-list{max-height:none;overflow:visible;padding-right:0}
-.fx-session-day-trades-table-wrap{width:100%;overflow:visible;border:1px solid var(--border-color,#dbe3ef);border-radius:8px}
-.fx-session-day-trades-table{display:table;width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;font-size:10px;text-align:left;white-space:nowrap}
+/* Selected-day trade details: compact calendar cells and a balanced, readable trade table. */
+.content{max-width:1800px;width:100%;padding-left:14px;padding-right:14px;box-sizing:border-box}
+.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr) 340px;gap:12px}
+.fx-session-calendar-card{padding:16px}
+.fx-session-day{min-height:76px;padding:6px 6px;gap:5px}
+.fx-session-day.selected{padding:5px}
+.fx-session-weekdays,.fx-session-calendar-grid{gap:4px}
+.fx-session-day-trades-list{max-height:none;overflow:visible;padding-right:0;gap:7px}
+.fx-session-day-trades-list h4{font-size:12px;color:#172b4d;font-weight:750}
+.fx-session-day-trades-table-wrap{width:100%;max-width:100%;overflow:hidden;border:1px solid #dbe3ef;border-radius:8px}
+.fx-session-day-trades-table{display:table;width:100%;max-width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:10px;line-height:1.35;text-align:left;white-space:nowrap}
 .fx-session-day-trades-table thead{display:table-header-group}
 .fx-session-day-trades-table tbody{display:table-row-group;width:auto}
 .fx-session-day-trades-table tbody tr{display:table-row;width:auto;border:0}
-.fx-session-day-trades-table th{padding:7px 5px;border-bottom:1px solid var(--border-color,#dbe3ef);color:var(--muted,#718096);font-size:9px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
-.fx-session-day-trades-table td{display:table-cell;min-width:0;padding:8px 5px;border-bottom:1px solid var(--border-color,#dbe3ef);vertical-align:middle;overflow-wrap:normal}
+.fx-session-day-trades-table th{padding:8px 3px;border-bottom:1px solid #dbe3ef;color:#344256;font-size:8px;line-height:1.25;font-weight:800;letter-spacing:.025em;text-transform:uppercase;white-space:normal}
+.fx-session-day-trades-table td{display:table-cell;min-width:0;padding:9px 3px;border-bottom:1px solid #e3e9f1;vertical-align:middle;overflow:hidden;text-overflow:clip;color:#26364b;font-size:10px;font-weight:550;font-variant-numeric:tabular-nums}
 .fx-session-day-trades-table tbody tr:last-child td{border-bottom:0}
+.fx-session-day-trades-table th:nth-child(1),.fx-session-day-trades-table td:nth-child(1){width:23%;padding-left:7px}
+.fx-session-day-trades-table th:nth-child(2),.fx-session-day-trades-table td:nth-child(2){width:14%}
+.fx-session-day-trades-table th:nth-child(3),.fx-session-day-trades-table td:nth-child(3){width:14%}
+.fx-session-day-trades-table th:nth-child(4),.fx-session-day-trades-table td:nth-child(4){width:16%}
+.fx-session-day-trades-table th:nth-child(5),.fx-session-day-trades-table td:nth-child(5){width:15%}
+.fx-session-day-trades-table th:nth-child(6),.fx-session-day-trades-table td:nth-child(6){width:18%;padding-right:7px;text-align:right}
 .fx-session-day-trades-table td::before{content:none!important}
-.fx-session-day-trades-table .fx-session-day-instrument{font-weight:700;color:var(--text,#172b4d)}
-.fx-session-day-trades-table .fx-session-day-pnl{font-weight:800;text-align:right}
-.fx-session-day-trades-table .fx-session-day-pnl-heading{text-align:right}
-.fx-session-day-trades-table .fx-day-trade-side{display:inline-flex}
-.fx-session-day-trades-table th:first-child,.fx-session-day-trades-table td:first-child{padding-left:8px}
-.fx-session-day-trades-table th:last-child,.fx-session-day-trades-table td:last-child{padding-right:8px}
-.fx-session-day-trades-table .fx-session-day-entry{font-weight:750}
-@media(max-width:1250px){.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr) 300px}.content{padding-left:12px;padding-right:12px}.fx-session-day-trades-table{font-size:9px}.fx-session-day-trades-table th,.fx-session-day-trades-table td{padding-left:3px;padding-right:3px}}
+.fx-session-day-trades-table .fx-session-day-instrument{font-weight:800;color:#172b4d}
+.fx-session-day-trades-table .fx-session-day-entry{font-weight:650;color:#26364b!important}
+.fx-session-day-trades-table .fx-session-day-pnl{font-weight:850}
+.fx-session-day-trades-table .fx-session-day-pnl.fx-pnl-positive{color:#079669!important}
+.fx-session-day-trades-table .fx-session-day-pnl.fx-pnl-negative{color:#e02435!important}
+.fx-session-day-trades-table .fx-session-day-pnl.fx-day-trade-flat{color:#26364b!important}
+.fx-session-day-trades-table .fx-day-trade-side{display:inline-flex;align-items:center;justify-content:center;padding:3px 4px;border-radius:4px;font-size:8px;line-height:1;font-weight:850;letter-spacing:.015em}
+.fx-session-day-trades-table .fx-day-trade-side.buy{color:#078653;background:#d9fbe9}
+.fx-session-day-trades-table .fx-day-trade-side.sell{color:#d82135;background:#ffe1e5}
+@media(max-width:1250px){.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr) 330px}.content{padding-left:10px;padding-right:10px}.fx-session-calendar-card{padding:12px}.fx-session-day-trades-table{font-size:9px}.fx-session-day-trades-table th,.fx-session-day-trades-table td{padding-left:2px;padding-right:2px}.fx-session-day-trades-table th:nth-child(1),.fx-session-day-trades-table td:nth-child(1){padding-left:5px}.fx-session-day-trades-table th:nth-child(6),.fx-session-day-trades-table td:nth-child(6){padding-right:5px}}
 @media(max-width:950px){.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr)}.fx-session-day-trades-list{max-height:none;overflow:visible}.fx-session-day-trades-table-wrap{overflow-x:auto}.fx-session-day-trades-table{min-width:520px}}
