@@ -8441,3 +8441,13 @@ td {
  .fx-day-trades-wrap .fx-day-trades-grid .trade-pnl{font-size:12px}
  .fx-day-trades-wrap .fx-day-trades-grid .trade-direction{font-size:9.5px}
 }
+
+
+/* Use regular font weight throughout the selected-day trade table. */
+.fx-session-day-trades-list h4,
+.fx-day-trades-wrap .fx-day-trades-grid th,
+.fx-day-trades-wrap .fx-day-trades-grid th *,
+.fx-day-trades-wrap .fx-day-trades-grid td,
+.fx-day-trades-wrap .fx-day-trades-grid td *{
+ font-weight:400!important;
+}
