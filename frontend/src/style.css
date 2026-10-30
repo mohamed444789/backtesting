@@ -5266,8 +5266,8 @@ main{margin-left:76px;min-width:0;background:#f8fafc;min-height:100vh}
 }
 
 
-/* Side comparison: win rate and trade count share the top row; Long is green,
-   Short is red regardless of whether its net P&L is positive or negative. */
+/* Side comparison: win rate and trade count share the top row; outcome colors
+   follow the combined realized P&L for each side. */
 .app .fx-analytics-side-columns .fx-side-card{
  align-items:stretch;
  padding:13px 10px 11px;
@@ -8450,4 +8450,184 @@ td {
 .fx-day-trades-wrap .fx-day-trades-grid td,
 .fx-day-trades-wrap .fx-day-trades-grid td *{
  font-weight:400!important;
+}
+
+
+/* Performance by side: use net closed-trade P&L for the card and pillar color,
+   matching the profit/loss/flat logic used by Performance by time and day.
+   Win-rate percentage color remains independently based on the 50% threshold. */
+.app .fx-analytics-side-columns .fx-side-card.profit-day{
+ border-color:#bdebd5;
+ background:linear-gradient(160deg,#edfbf4 0%,#f8fffb 100%);
+}
+.app .fx-analytics-side-columns .fx-side-card.loss-day{
+ border-color:#f4c7cc;
+ background:linear-gradient(160deg,#fff0f1 0%,#fff8f8 100%);
+}
+.app .fx-analytics-side-columns .fx-side-card.flat-day{
+ border-color:#e2e8f0;
+ background:linear-gradient(160deg,#f8fafc 0%,#fff 100%);
+}
+.app .fx-analytics-side-columns .fx-side-card.profit-day .fx-analytics-vertical-plot{
+ border-bottom-color:#bdebd5;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(16,185,129,.09) calc(25% - 1px),rgba(16,185,129,.09) 25%);
+}
+.app .fx-analytics-side-columns .fx-side-card.profit-day .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#34d399,#059669);
+ box-shadow:0 0 0 1px rgba(5,150,105,.12);
+}
+.app .fx-analytics-side-columns .fx-side-card.loss-day .fx-analytics-vertical-plot{
+ border-bottom-color:#f4c7cc;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(226,76,82,.08) calc(25% - 1px),rgba(226,76,82,.08) 25%);
+}
+.app .fx-analytics-side-columns .fx-side-card.loss-day .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#fb7185,#e24c52);
+ box-shadow:0 0 0 1px rgba(226,76,82,.14);
+}
+.app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-plot{
+ border-bottom-color:#cbd5e1;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(100,116,139,.09) calc(25% - 1px),rgba(100,116,139,.09) 25%);
+}
+.app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#94a3b8,#64748b);
+ box-shadow:none;
+}
+.app .fx-analytics-side-columns .fx-side-card.profit-day .fx-analytics-vertical-label{color:#087f5b}
+.app .fx-analytics-side-columns .fx-side-card.loss-day .fx-analytics-vertical-label{color:#c93643}
+.app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-label{color:#64748b}
+.app .fx-analytics-side-columns .fx-side-card.profit-day .fx-side-card-trades,
+.app .fx-analytics-side-columns .fx-side-card.loss-day .fx-side-card-trades,
+.app .fx-analytics-side-columns .fx-side-card.flat-day .fx-side-card-trades{color:#64748b}
+.app .fx-analytics-side-columns .fx-side-card.profit-day .fx-side-card-wl,
+.app .fx-analytics-side-columns .fx-side-card.loss-day .fx-side-card-wl,
+.app .fx-analytics-side-columns .fx-side-card.flat-day .fx-side-card-wl{color:#8290a2}
+.app .fx-analytics-side-columns .fx-side-card .fx-side-card-pnl.pnl-neutral{color:#64748b!important}
+
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.profit-day{
+ border-color:#1d5c43;
+ background:linear-gradient(160deg,#10271f 0%,#122c23 100%);
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.loss-day{
+ border-color:#6f2b37;
+ background:linear-gradient(160deg,#2b171d 0%,#321a21 100%);
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day{
+ border-color:#334155;
+ background:#131d29;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.profit-day .fx-analytics-vertical-plot{
+ border-bottom-color:#1d5c43;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(52,211,153,.08) calc(25% - 1px),rgba(52,211,153,.08) 25%);
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.loss-day .fx-analytics-vertical-plot{
+ border-bottom-color:#6f2b37;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(251,113,133,.08) calc(25% - 1px),rgba(251,113,133,.08) 25%);
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-plot{
+ border-bottom-color:#334155;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(148,163,184,.08) calc(25% - 1px),rgba(148,163,184,.08) 25%);
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-plot>i{
+ background:linear-gradient(180deg,#94a3b8,#64748b);
+ box-shadow:none;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.profit-day .fx-analytics-vertical-label{color:#6ee7b7}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.loss-day .fx-analytics-vertical-label{color:#fda4af}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-label{color:#cbd5e1}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.profit-day .fx-side-card-trades,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.loss-day .fx-side-card-trades,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day .fx-side-card-trades,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.profit-day .fx-side-card-wl,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.loss-day .fx-side-card-wl,
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day .fx-side-card-wl{color:#cbd5e1}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card .fx-side-card-pnl.pnl-neutral{color:#cbd5e1!important}
+
+
+
+
+/* All net-P&L pillars rise from the bottom baseline.
+   Positive P&L is green; negative P&L is red; zero stays on the neutral baseline. */
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot{
+ position:relative;
+ display:block;
+ overflow:hidden;
+ border-bottom:1px solid #cbd5e1;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot::after,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot::after,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot::after{
+ display:none!important;
+ content:none!important;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar{
+ position:absolute;
+ z-index:1;
+ left:50%;
+ top:auto!important;
+ bottom:0!important;
+ display:block;
+ min-height:0;
+ transform:translateX(-50%);
+ border-radius:5px 5px 0 0;
+ transition:height .2s ease;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-profit{
+ background:linear-gradient(180deg,#34d399,#059669)!important;
+ box-shadow:0 0 0 1px rgba(5,150,105,.12)!important;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-loss{
+ background:linear-gradient(180deg,#fb7185,#e24c52)!important;
+ box-shadow:0 0 0 1px rgba(226,76,82,.14)!important;
+}
+.app .fx-analytics-side-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-flat,
+.app .fx-analytics-time-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-flat,
+.app .fx-analytics-day-columns .fx-analytics-vertical-plot>.fx-pnl-pillar-flat{
+ background:linear-gradient(180deg,#94a3b8,#64748b)!important;
+ box-shadow:none!important;
+}
+
+/* Keep grid and baseline accents aligned with the P&L outcome in every chart. */
+.app .fx-analytics-side-columns .fx-side-card.profit-day .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-time-card.profit-day .fx-analytics-vertical-plot,
+.app .fx-analytics-day-columns .fx-day-card.profit-day .fx-analytics-vertical-plot{
+ border-bottom-color:#bdebd5!important;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(16,185,129,.09) calc(25% - 1px),rgba(16,185,129,.09) 25%)!important;
+}
+.app .fx-analytics-side-columns .fx-side-card.loss-day .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-time-card.loss-day .fx-analytics-vertical-plot,
+.app .fx-analytics-day-columns .fx-day-card.loss-day .fx-analytics-vertical-plot{
+ border-bottom-color:#f4c7cc!important;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(226,76,82,.08) calc(25% - 1px),rgba(226,76,82,.08) 25%)!important;
+}
+.app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-plot,
+.app .fx-analytics-time-columns .fx-time-card.flat-day .fx-analytics-vertical-plot,
+.app .fx-analytics-day-columns .fx-day-card.flat-day .fx-analytics-vertical-plot{
+ border-bottom-color:#cbd5e1!important;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(100,116,139,.09) calc(25% - 1px),rgba(100,116,139,.09) 25%)!important;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.profit-day .fx-analytics-vertical-plot,
+.theme-dark .app .fx-analytics-time-columns .fx-time-card.profit-day .fx-analytics-vertical-plot,
+.theme-dark .app .fx-analytics-day-columns .fx-day-card.profit-day .fx-analytics-vertical-plot{
+ border-bottom-color:#1d5c43!important;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(52,211,153,.08) calc(25% - 1px),rgba(52,211,153,.08) 25%)!important;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.loss-day .fx-analytics-vertical-plot,
+.theme-dark .app .fx-analytics-time-columns .fx-time-card.loss-day .fx-analytics-vertical-plot,
+.theme-dark .app .fx-analytics-day-columns .fx-day-card.loss-day .fx-analytics-vertical-plot{
+ border-bottom-color:#6f2b37!important;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(251,113,133,.08) calc(25% - 1px),rgba(251,113,133,.08) 25%)!important;
+}
+.theme-dark .app .fx-analytics-side-columns .fx-side-card.flat-day .fx-analytics-vertical-plot,
+.theme-dark .app .fx-analytics-time-columns .fx-time-card.flat-day .fx-analytics-vertical-plot,
+.theme-dark .app .fx-analytics-day-columns .fx-day-card.flat-day .fx-analytics-vertical-plot{
+ border-bottom-color:#334155!important;
+ background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(148,163,184,.08) calc(25% - 1px),rgba(148,163,184,.08) 25%)!important;
 }
