@@ -8451,3 +8451,14 @@ td {
 .fx-day-trades-wrap .fx-day-trades-grid td *{
  font-weight:400!important;
 }
+
+
+/* Give the selected-day trade table a little more horizontal room on desktop. */
+.app .content.fx-sessions-content .fx-session-calendar-layout{
+ grid-template-columns:minmax(0,1fr) 380px;
+}
+@media(max-width:1250px) and (min-width:951px){
+ .app .content.fx-sessions-content .fx-session-calendar-layout{
+  grid-template-columns:minmax(0,1fr) 360px;
+ }
+}
