@@ -8421,3 +8421,23 @@ td {
 
 /* Use regular weight for instrument names in the selected-day trade table. */
 .fx-day-trades-wrap .fx-day-trades-grid .trade-pair{font-weight:500}
+
+
+/* Increase all selected-day trade table typography by 1px. */
+.fx-session-day-trades-list h4{font-size:14px!important}
+.fx-day-trades-wrap .fx-day-trades-grid thead th{font-size:10px}
+.fx-day-trades-wrap .fx-day-trades-grid .trade-sort-button{font-size:10px}
+.fx-day-trades-wrap .fx-day-trades-grid tbody td{font-size:13px}
+.fx-day-trades-wrap .fx-day-trades-grid .trade-pair{font-size:13px;font-weight:500}
+.fx-day-trades-wrap .fx-day-trades-grid .trade-date,
+.fx-day-trades-wrap .fx-day-trades-grid .trade-numeric,
+.fx-day-trades-wrap .fx-day-trades-grid .trade-pnl{font-size:13px}
+.fx-day-trades-wrap .fx-day-trades-grid .trade-direction{font-size:10px}
+@media(max-width:1250px){
+ .fx-day-trades-wrap .fx-day-trades-grid tbody td{font-size:12px}
+ .fx-day-trades-wrap .fx-day-trades-grid .trade-pair,
+ .fx-day-trades-wrap .fx-day-trades-grid .trade-date,
+ .fx-day-trades-wrap .fx-day-trades-grid .trade-numeric,
+ .fx-day-trades-wrap .fx-day-trades-grid .trade-pnl{font-size:12px}
+ .fx-day-trades-wrap .fx-day-trades-grid .trade-direction{font-size:9.5px}
+}
