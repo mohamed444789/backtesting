@@ -8222,22 +8222,25 @@ td {
 
 
 
-/* Selected-day trade details table: compact cards avoid horizontal scrolling in the narrow day panel */
+/* Selected-day trade details: retain the compact horizontal table and use available page width. */
+.content{max-width:1800px;width:100%;padding-left:18px;padding-right:18px;box-sizing:border-box}
+.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr) 330px;gap:14px}
+.fx-session-day-trades-list{max-height:none;overflow:visible;padding-right:0}
 .fx-session-day-trades-table-wrap{width:100%;overflow:visible;border:1px solid var(--border-color,#dbe3ef);border-radius:8px}
-.fx-session-day-trades-table{display:block;width:100%;border-collapse:separate;border-spacing:0;font-size:12px;text-align:left;white-space:normal;table-layout:fixed}
-.fx-session-day-trades-table thead{display:none}
-.fx-session-day-trades-table tbody{display:block;width:100%}
-.fx-session-day-trades-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:100%;border-bottom:1px solid var(--border-color,#dbe3ef)}
-.fx-session-day-trades-table tbody tr:last-child{border-bottom:0}
-.fx-session-day-trades-table td{display:flex;min-width:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:9px 8px;border:0;overflow-wrap:anywhere}
-.fx-session-day-trades-table td::before{color:var(--muted,#718096);font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-.fx-session-day-trades-table td:nth-child(1)::before{content:"Instrument"}
-.fx-session-day-trades-table td:nth-child(2)::before{content:"Entry"}
-.fx-session-day-trades-table td:nth-child(3)::before{content:"Exit"}
-.fx-session-day-trades-table td:nth-child(4)::before{content:"Lot size"}
-.fx-session-day-trades-table td:nth-child(5)::before{content:"Side"}
-.fx-session-day-trades-table td:nth-child(6)::before{content:"P&L"}
+.fx-session-day-trades-table{display:table;width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;font-size:10px;text-align:left;white-space:nowrap}
+.fx-session-day-trades-table thead{display:table-header-group}
+.fx-session-day-trades-table tbody{display:table-row-group;width:auto}
+.fx-session-day-trades-table tbody tr{display:table-row;width:auto;border:0}
+.fx-session-day-trades-table th{padding:7px 5px;border-bottom:1px solid var(--border-color,#dbe3ef);color:var(--muted,#718096);font-size:9px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.fx-session-day-trades-table td{display:table-cell;min-width:0;padding:8px 5px;border-bottom:1px solid var(--border-color,#dbe3ef);vertical-align:middle;overflow-wrap:normal}
+.fx-session-day-trades-table tbody tr:last-child td{border-bottom:0}
+.fx-session-day-trades-table td::before{content:none!important}
 .fx-session-day-trades-table .fx-session-day-instrument{font-weight:700;color:var(--text,#172b4d)}
-.fx-session-day-trades-table .fx-session-day-pnl{font-weight:800;text-align:left}
-.fx-session-day-trades-table .fx-day-trade-side{display:inline-flex;max-width:100%}
-.fx-session-day-trades-table td:last-child{padding-right:8px}
+.fx-session-day-trades-table .fx-session-day-pnl{font-weight:800;text-align:right}
+.fx-session-day-trades-table .fx-session-day-pnl-heading{text-align:right}
+.fx-session-day-trades-table .fx-day-trade-side{display:inline-flex}
+.fx-session-day-trades-table th:first-child,.fx-session-day-trades-table td:first-child{padding-left:8px}
+.fx-session-day-trades-table th:last-child,.fx-session-day-trades-table td:last-child{padding-right:8px}
+.fx-session-day-trades-table .fx-session-day-entry{font-weight:750}
+@media(max-width:1250px){.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr) 300px}.content{padding-left:12px;padding-right:12px}.fx-session-day-trades-table{font-size:9px}.fx-session-day-trades-table th,.fx-session-day-trades-table td{padding-left:3px;padding-right:3px}}
+@media(max-width:950px){.fx-session-calendar-layout{grid-template-columns:minmax(0,1fr)}.fx-session-day-trades-list{max-height:none;overflow:visible}.fx-session-day-trades-table-wrap{overflow-x:auto}.fx-session-day-trades-table{min-width:520px}}
