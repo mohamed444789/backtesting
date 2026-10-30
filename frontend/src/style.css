@@ -8339,3 +8339,24 @@ td {
 .theme-dark .fx-day-trades-wrap .fx-day-trades-grid .pnl-neutral{color:#f1f5f9!important}
 .theme-dark .fx-day-trades-wrap .fx-day-trades-grid tbody .trade-clickable-row:hover td{background:#1b3046}
 @media(max-width:1250px){.fx-day-trades-wrap .fx-day-trades-grid tbody td{padding:11px 3px;font-size:11px}.fx-day-trades-wrap .fx-day-trades-grid .trade-pair,.fx-day-trades-wrap .fx-day-trades-grid .trade-date,.fx-day-trades-wrap .fx-day-trades-grid .trade-numeric,.fx-day-trades-wrap .fx-day-trades-grid .trade-pnl{font-size:11px}.fx-day-trades-wrap .fx-day-trades-grid .trade-direction{font-size:8.5px;padding:4px 5px}}
+
+
+/* Use the full available workspace width for the Sessions calendar. */
+.app .content.fx-sessions-content{
+ max-width:none;
+ width:100%;
+ margin:0;
+ padding:18px 12px;
+ box-sizing:border-box;
+}
+.app .content.fx-sessions-content .fx-session-calendar-layout{
+ grid-template-columns:minmax(0,1fr) 360px;
+ gap:14px;
+}
+@media(max-width:1250px){
+ .app .content.fx-sessions-content{padding-left:8px;padding-right:8px}
+ .app .content.fx-sessions-content .fx-session-calendar-layout{grid-template-columns:minmax(0,1fr) 350px;gap:10px}
+}
+@media(max-width:950px){
+ .app .content.fx-sessions-content .fx-session-calendar-layout{grid-template-columns:minmax(0,1fr)}
+}
