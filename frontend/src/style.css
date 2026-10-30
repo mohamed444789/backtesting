@@ -8302,3 +8302,12 @@ td {
 .theme-dark .fx-day-trades-grid .pnl-neutral{color:#e2eaf5!important}
 .theme-dark .fx-day-trades-grid .trade-clickable-row:hover td{background:#1a2c40}
 @media(max-width:950px){.fx-session-daily-summary{height:auto;overflow:visible}.fx-session-day-trades-list{flex:0 0 auto;overflow:visible;max-height:none}.fx-day-trades-wrap{overflow-x:auto!important}.fx-day-trades-wrap .fx-day-trades-grid{min-width:550px!important}}
+
+/* Ensure the compact day table wins over the wider journal-table defaults. */
+.fx-day-trades-wrap .fx-day-trades-grid{width:100%!important;min-width:0!important;max-width:100%;table-layout:fixed}
+.fx-day-trades-wrap .fx-day-trades-grid thead th{position:sticky;top:0;z-index:3;padding:0 3px;background:#f2f6fb;color:#26364b;border-bottom:1px solid #dbe3ef;font-size:8px;font-weight:850}
+.fx-day-trades-wrap .fx-day-trades-grid thead .trade-sort-button{min-height:32px;padding:0 2px;color:#26364b;font-size:8px;font-weight:850}
+.fx-day-trades-wrap .fx-day-trades-grid tbody td{padding:9px 3px;border-bottom:1px solid #e6ebf2;color:#26364b;font-size:10px;font-weight:600;line-height:1.35}
+.theme-dark .fx-day-trades-wrap .fx-day-trades-grid thead th{background:#182536;color:#e2eaf5;border-bottom-color:#334155}
+.theme-dark .fx-day-trades-wrap .fx-day-trades-grid thead .trade-sort-button{color:#e2eaf5}
+.theme-dark .fx-day-trades-wrap .fx-day-trades-grid tbody td{background:#101a26;color:#e2eaf5;border-bottom-color:#26384b}
