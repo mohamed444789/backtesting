@@ -8417,3 +8417,7 @@ td {
 @media(max-width:560px){
  .app .content.fx-sessions-content{padding:16px 9px}
 }
+
+
+/* Use regular weight for instrument names in the selected-day trade table. */
+.fx-day-trades-wrap .fx-day-trades-grid .trade-pair{font-weight:500}
